@@ -2,45 +2,60 @@
 id: data-driven-characters
 title: "How a Friend is Modelled"
 tags: [characters, CharacterData, resource, weapons, evolution]
-links: [adr-data-driven-roster, adr-godot, run-state]
+links: [adr-data-driven-roster, adr-godot, run-state, character-data, upgrade-system, how-to-add-a-character]
 ---
 
 # How a Friend is Modelled
 
-A "friend" in Friends Swarm is the intersection of four things:
+A "friend" in Friends Swarm is the intersection of:
 
 1. **`CharacterData` resource** (`.tres`) — the schema below.
-2. **Weapon scene** (`PackedScene`) — the starting weapon instantiated at run start.
-3. **Passive bonus** — stat modifiers stored on `CharacterData`.
-4. **Evolution path** — conditions + target weapon ID that trigger [[game-events]]`evolution_unlocked`.
+2. **Weapon scene** (`PackedScene`) — the signature weapon instantiated at run start.
+3. **Three `Upgrade` resources** — the character's signature, passive, and evolution upgrades.
+4. **`StatBlock` resource** — base numeric stats (HP, speed, etc.).
 
-## `CharacterData` Field Spec (planned)
+## `CharacterData` Field Spec (as shipped)
+
+See `core/character_data.gd` and [[character-data]]:
 
 ```gdscript
-class_name CharacterData
-extends Resource
+class_name CharacterData extends Resource
 
-@export var id: StringName           # unique key, e.g. &"alex"
-@export var display_name: String
-@export var portrait: Texture2D
-@export var max_hp: float = 100.0
-@export var move_speed: float = 120.0
-@export var weapon_scene: PackedScene  # starting weapon
-@export var passive_label: String      # human-readable passive description
-@export var evolution_weapon_id: StringName  # emitted via GameEvents when unlocked
+@export var id: StringName                  # unique key, e.g. &"ziv"
+@export var display_name: String = ""
+@export var color: Color = Color.WHITE       # placeholder art tint
+@export var base_stats: StatBlock            # StatBlock .tres (see [[stat-block]])
+@export var weapon_scene: PackedScene        # signature weapon scene
+@export var passive_id: StringName           # dedicated passive's id
+@export var evolution_id: StringName         # evolved ability id (emitted on unlock)
+@export var max_signature_level: int = 5
+# Upgrade resources fed into UpgradeSystem (see [[upgrade-system]]):
+@export var signature_upgrade: Upgrade
+@export var passive_upgrade: Upgrade
+@export var evolution_upgrade: Upgrade
 ```
+
+There is **no** `portrait`, `max_hp`, `move_speed`, `passive_label`, or
+`evolution_weapon_id` field — HP/speed live on the `StatBlock` (`base_stats`),
+and the evolution id is `evolution_id`.
 
 ## Runtime flow
 
-1. **Character select screen** sets `RunState.selected_character` (see [[run-state]]).
-2. **Main scene** reads `selected_character` and instantiates `weapon_scene`.
-3. On evolution condition met → emit `GameEvents.evolution_unlocked(evolution_weapon_id)` (see [[game-events]]).
-4. Weapon manager swaps the active weapon.
+1. **Character select** (`ui/character_select.gd`) sets `RunState.selected_character` (see [[run-state]]).
+2. **GameManager** (`game/game_manager.gd`) reads `selected_character` in `_ready`:
+   - `player.setup(character)` — duplicates `base_stats`, instantiates `weapon_scene`.
+   - Builds an `UpgradeSystem` from the generic pool + the character's
+     `signature_upgrade` / `passive_upgrade` / `evolution_upgrade`.
+3. On level-up the player picks an `Upgrade`; the **upgrade-effect router**
+   (`GameManager._apply_upgrade`) translates it to player/weapon calls — see [[upgrade-system]].
+4. When the signature is maxed and the passive is owned, the evolution becomes
+   available; applying it emits `GameEvents.evolution_unlocked(evolution_id)`
+   (see [[game-events]], [[evolution-rule]]).
 
 ## Adding a new friend
 
-1. Create `CharacterData` resource class (once, in Task 0.2).
-2. Duplicate an existing `.tres`, fill in fields, drop portrait in `assets/portraits/`.
-3. No code changes needed — the roster is auto-discovered via `ResourceLoader`.
+Follow the runbook: [[how-to-add-a-character]] — author the weapon scene, three
+`Upgrade` `.tres`, a `StatBlock` sub-resource, the `CharacterData` `.tres`, and
+register a button in `ui/character_select.gd`.
 
 See [[adr-data-driven-roster]] for the decision rationale.

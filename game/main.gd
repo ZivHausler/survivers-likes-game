@@ -1,4 +1,4 @@
-# See docs/notes/game-manager.md
+# See docs/notes/main-routing.md
 extends Node
 ## Entry point: immediately routes to the character selection screen.
 ## main.tscn is the project's main scene (set in project.godot).

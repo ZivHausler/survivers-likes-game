@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://dg51ebxxt1vyo" path="res://ui/hud.gd" id="1_hud"]
 
 [node name="HUD" type="CanvasLayer"]
+process_mode = 3
 script = ExtResource("1_hud")
 
 [node name="VBox" type="VBoxContainer" parent="."]

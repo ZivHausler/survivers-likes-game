@@ -1,4 +1,4 @@
-# See docs/notes/how-to-add-a-character.md
+# See docs/notes/main-routing.md
 class_name CharacterSelect extends Control
 ## Character selection screen: two buttons, one per playable character.
 ## Sets RunState.selected_character then transitions to the arena.

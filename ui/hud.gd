@@ -1,7 +1,8 @@
 # See docs/notes/hud.md
 class_name HUD extends CanvasLayer
 ## In-run heads-up display: timer, HP bar, XP bar + level, kill counter.
-## process_mode = PROCESS_MODE_WHEN_PAUSED so it stays live during level-up overlay.
+## process_mode = PROCESS_MODE_ALWAYS so _process runs BOTH during normal play
+## (live timer/kills/XP) and while the level-up overlay pauses the tree.
 
 @onready var _timer_label:  Label      = $VBox/TimerLabel
 @onready var _kills_label:  Label      = $VBox/KillsLabel
@@ -13,7 +14,7 @@ var _game_manager: GameManager = null
 var _player: Player = null
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	GameEvents.player_hp_changed.connect(_on_hp_changed)
 	GameEvents.player_leveled_up.connect(_on_leveled_up)
 

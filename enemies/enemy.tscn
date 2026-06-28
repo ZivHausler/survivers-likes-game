@@ -9,6 +9,8 @@ radius = 8.0
 radius = 8.0
 
 [node name="Enemy" type="CharacterBody2D" groups=["enemies"]]
+collision_layer = 1
+collision_mask = 0
 script = ExtResource("1_enemy")
 
 [node name="Body" type="ColorRect" parent="."]
