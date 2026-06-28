@@ -10,6 +10,9 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[game-events]] — Global signal bus (`GameEvents` autoload)
 - [[run-state]] — Cross-scene run persistence (`RunState` autoload)
 - [[data-driven-characters]] — How a friend is modelled as `CharacterData` + weapon + passive + evolution
+- [[stat-block]] — `StatBlock` resource: all numeric stats for a character/enemy
+- [[character-data]] — `CharacterData` resource: complete friend definition (stats, weapon, passive, evolution)
+- [[weapon-system]] — `Weapon` base class: self-driving timer, lifecycle contract, subclass pattern
 
 ## Concepts
 
