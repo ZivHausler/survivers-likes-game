@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://weapons/ziv_stunning_looks.gd" id="1_ziv"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_beam"]
+size = Vector2(400, 16)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_charm"]
+radius = 150.0
+
+[node name="ZivStunningLooks" type="Node2D"]
+script = ExtResource("1_ziv")
+
+[node name="Beam" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Beam"]
+shape = SubResource("RectangleShape2D_beam")
+
+[node name="CharmField" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharmField"]
+shape = SubResource("CircleShape2D_charm")

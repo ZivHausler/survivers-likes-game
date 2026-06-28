@@ -13,6 +13,7 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[stat-block]] — `StatBlock` resource: all numeric stats for a character/enemy
 - [[character-data]] — `CharacterData` resource: complete friend definition (stats, weapon, passive, evolution)
 - [[weapon-system]] — `Weapon` base class: self-driving timer, lifecycle contract, subclass pattern
+- [[weapon-ziv]] — `ZivStunningLooks`: "Stunning Looks" beam + charm; evolution "Absolutely Fabulous"
 - [[upgrade-system]] — `UpgradeSystem`: pool generation, `build_choices`, `apply`, level tracking
 - [[player]] — `Player` (`CharacterBody2D`): WASD movement, HP, XP, leveling, weapon spawn
 - [[enemy]] — `Enemy` (`CharacterBody2D`): steering, contact damage, death; `EnemyData` variants (swarmer, tank, spitter)

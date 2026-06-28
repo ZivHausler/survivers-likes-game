@@ -42,11 +42,13 @@ links:
 ```gdscript
 func setup(p_data: EnemyData, p_target: Node2D) -> void
 func take_damage(amount: float) -> void
+func charm(duration: float) -> void
 ```
 
 - On death: `GameEvents.enemy_killed.emit(global_position, data.xp_value)` then `queue_free()`.
 - Contact damage: cooldown 0.5 s per hit, calls `target.take_damage(data.contact_damage)`.
 - `_physics_process` guards against `data == null` and invalid target before running.
+- `charm(duration)`: suppresses enemy movement for `duration` seconds. Sets an internal `_charm_timer` (takes the max of current remaining time and the new duration, so charms stack by keeping the longest). While the timer is active, `_physics_process` sets `velocity = Vector2.ZERO` and returns early. Added in task 2C (see [[weapon-ziv]]).
 
 ## Variants
 
