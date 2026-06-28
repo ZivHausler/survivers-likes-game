@@ -16,6 +16,8 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[upgrade-system]] — `UpgradeSystem`: pool generation, `build_choices`, `apply`, level tracking
 - [[player]] — `Player` (`CharacterBody2D`): WASD movement, HP, XP, leveling, weapon spawn
 - [[enemy]] — `Enemy` (`CharacterBody2D`): steering, contact damage, death; `EnemyData` variants (swarmer, tank, spitter)
+- [[difficulty-timeline]] — `DifficultyTimeline` (`RefCounted`): spawn interval curve, variant thresholds, 300 s boss windows
+- [[spawner]] — `Spawner` (`Node2D`): ring spawner driven by `DifficultyTimeline`; mini-boss on boss_due
 
 ## Concepts
 
