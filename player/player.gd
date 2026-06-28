@@ -18,6 +18,8 @@ func setup(data: CharacterData) -> void:
 	GameEvents.player_hp_changed.emit(hp, stats.max_hp)
 
 func _physics_process(_dt: float) -> void:
+	if not stats:
+		return
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = dir * stats.move_speed
 	move_and_slide()

@@ -71,11 +71,11 @@ func test_take_damage_blocked_entirely_by_armor() -> void:
 	p.take_damage(5.0)  # dealt = max(0, 5 - 10) = 0
 	assert_almost_eq(p.hp, 100.0, 0.001, "Armor fully blocks damage below armor value")
 
-func test_take_damage_emits_player_hp_changed() -> void:
+func test_take_damage_emits_player_hp_changed_with_values() -> void:
 	var p = _make_player(100.0, 0.0)
 	watch_signals(GameEvents)
-	p.take_damage(30.0)
-	assert_signal_emitted(GameEvents, "player_hp_changed")
+	p.take_damage(30.0)  # hp: 100 → 70, max_hp stays 100
+	assert_signal_emitted_with_parameters(GameEvents, "player_hp_changed", [70.0, 100.0])
 
 func test_take_damage_emits_player_died_at_zero() -> void:
 	var p = _make_player(100.0, 0.0)
@@ -94,3 +94,12 @@ func test_take_damage_emits_player_died_on_overkill() -> void:
 func test_get_pickup_range_matches_stat() -> void:
 	var p = _make_player()
 	assert_almost_eq(p.get_pickup_range(), 48.0, 0.001, "pickup_range should match StatBlock default")
+
+# ── setup() initial HP emission ──────────────────────────────────────────────
+
+func test_setup_emits_initial_player_hp_changed() -> void:
+	# Watch BEFORE setup() so the initial emission is captured.
+	var player = add_child_autofree(PlayerScene.instantiate())
+	watch_signals(GameEvents)
+	player.setup(_make_char_data(80.0, 0.0))  # full HP at start: (max_hp, max_hp)
+	assert_signal_emitted_with_parameters(GameEvents, "player_hp_changed", [80.0, 80.0])
