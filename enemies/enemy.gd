@@ -42,7 +42,7 @@ func _physics_process(dt: float) -> void:
 	if sprite.visible:
 		_wobble_phase += dt * 4.0
 		var squash: float = 1.0 + 0.06 * sin(_wobble_phase)
-		sprite.scale = Vector2(squash, 2.0 - squash) * 0.5
+		sprite.scale = Vector2(squash, 2.0 - squash) * 0.22
 	# Tick charm timer and suppress movement while charmed.
 	_charm_timer = max(0.0, _charm_timer - dt)
 	if _charm_timer > 0.0:

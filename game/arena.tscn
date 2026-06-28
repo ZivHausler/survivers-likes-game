@@ -12,8 +12,8 @@ code = "shader_type canvas_item;
 void fragment() {
     vec2 uv = UV - vec2(0.5);
     float dist = length(uv) * 2.0;
-    float v = smoothstep(0.4, 1.0, dist);
-    COLOR = vec4(0.0, 0.0, 0.0, v * 0.65);
+    float v = smoothstep(0.7, 1.25, dist);
+    COLOR = vec4(0.0, 0.0, 0.0, v * 0.28);
 }"
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
