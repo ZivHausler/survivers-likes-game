@@ -95,7 +95,7 @@ func _process(dt: float) -> void:
 	elapsed += dt
 	# Keep tiled background centred on player so it never runs out.
 	# Snap to tile grid (16 px) to prevent sub-pixel shimmer.
-	if _background != null and is_instance_valid(player):
+	if is_instance_valid(_background) and is_instance_valid(player):
 		_background.global_position = player.global_position.snapped(Vector2(16.0, 16.0))
 
 func get_elapsed() -> float:
