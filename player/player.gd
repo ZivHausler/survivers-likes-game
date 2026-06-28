@@ -51,7 +51,9 @@ func _physics_process(dt: float) -> void:
 			sprite.scale = Vector2.ONE
 
 func xp_to_next(lvl: int) -> int:
-	return 5 + lvl * 5
+	# Superlinear (quadratic) curve: each level costs noticeably more than the last.
+	# Formula: 5 + lvl*3 + lvl²*2  →  lvl1=10, lvl2=19, lvl3=32, lvl5=70, lvl10=235
+	return 5 + lvl * 3 + lvl * lvl * 2
 
 func add_xp(amount: int) -> void:
 	xp += amount

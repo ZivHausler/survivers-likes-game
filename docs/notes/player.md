@@ -32,17 +32,21 @@ Player (CharacterBody2D, group "player")
 | `add_xp(amount: int)` | `func` | Add XP, auto-level-up with carry-over remainder |
 | `take_damage(amount: float)` | `func` | Subtract `max(0, amount − armor)` from HP; emit death if hp ≤ 0 |
 | `get_pickup_range()` | `func` | Returns `stats.pickup_range` (read by [[XPGem]]) |
-| `xp_to_next(lvl: int) -> int` | `func` | XP curve: `5 + lvl * 5` |
+| `xp_to_next(lvl: int) -> int` | `func` | XP curve: `5 + lvl*3 + lvl²*2` (superlinear) |
 
 ## XP curve
+
+Superlinear (quadratic) formula: `5 + lvl*3 + lvl²*2`. Each level requires
+progressively more XP — the game gets harder over time.
 
 | Level | XP to next |
 |---|---|
 | 1 | 10 |
-| 2 | 15 |
-| 3 | 20 |
-| … | … |
-| n | 5 + n*5 |
+| 2 | 19 |
+| 3 | 32 |
+| 5 | 70 |
+| 10 | 235 |
+| n | 5 + n*3 + n²*2 |
 
 ## Signals emitted (via [[game-events]])
 

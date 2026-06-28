@@ -14,6 +14,7 @@ const SPITTER_PATH     := "res://enemies/spitter.tres"
 const SPAWN_RING_RADIUS: float = 400.0
 const BOSS_HP_MULT:    float = 8.0
 const BOSS_SCALE_MULT: float = 3.0
+const BOSS_XP_VALUE:   int   = 50
 
 var _target: Node2D
 var _timeline: DifficultyTimeline
@@ -82,9 +83,10 @@ func _spawn_boss() -> void:
 	var data: EnemyData = _variants.get(&"tank")
 	if data == null:
 		return
-	# Duplicate so we can mutate HP without touching the shared resource
+	# Duplicate so we can mutate HP/xp_value without touching the shared resource
 	var boss_data: EnemyData = data.duplicate() as EnemyData
 	boss_data.max_hp *= BOSS_HP_MULT
+	boss_data.xp_value = BOSS_XP_VALUE
 	var boss: Enemy = _instance_enemy(boss_data, BOSS_SCALE_MULT)
 	# Boss visual: menacing red tint on the sprite (visual only — HP/scale untouched).
 	if boss != null:

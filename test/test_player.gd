@@ -28,15 +28,15 @@ func _make_player(max_hp: float = 100.0, armor: float = 0.0) -> Node:
 
 func test_xp_to_next_level1() -> void:
 	var p = _make_player()
-	assert_eq(p.xp_to_next(1), 10, "xp_to_next(1) should be 5 + 1*5 = 10")
+	assert_eq(p.xp_to_next(1), 10, "xp_to_next(1): 5 + 1*3 + 1*1*2 = 10")
 
 func test_xp_to_next_level2() -> void:
 	var p = _make_player()
-	assert_eq(p.xp_to_next(2), 15, "xp_to_next(2) should be 5 + 2*5 = 15")
+	assert_eq(p.xp_to_next(2), 19, "xp_to_next(2): 5 + 2*3 + 2*2*2 = 19")
 
 func test_xp_to_next_level5() -> void:
 	var p = _make_player()
-	assert_eq(p.xp_to_next(5), 30, "xp_to_next(5) should be 5 + 5*5 = 30")
+	assert_eq(p.xp_to_next(5), 70, "xp_to_next(5): 5 + 5*3 + 5*5*2 = 70")
 
 # ── add_xp leveling ──────────────────────────────────────────────────────────
 
@@ -48,8 +48,8 @@ func test_add_xp_exact_single_level_up() -> void:
 
 func test_add_xp_multi_level_up_with_remainder() -> void:
 	var p = _make_player()
-	# level 1→2 costs 10, level 2→3 costs 15; total = 25; give 26 → 1 remainder
-	p.add_xp(26)
+	# level 1→2 costs 10, level 2→3 costs 19; total = 29; give 30 → 1 remainder
+	p.add_xp(30)
 	assert_eq(p.level, 3, "Should advance two levels")
 	assert_eq(p.xp, 1, "Remainder 1 should carry over")
 
