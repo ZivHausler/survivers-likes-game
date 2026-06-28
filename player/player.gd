@@ -43,3 +43,24 @@ func take_damage(amount: float) -> void:
 
 func get_pickup_range() -> float:
 	return stats.pickup_range
+
+## Apply a per-level stat delta from a GENERIC upgrade.
+## Called by GameManager._apply_upgrade when kind == GENERIC.
+func apply_stat_upgrade(kind: StringName, value: float) -> void:
+	match kind:
+		&"move_speed":
+			stats.move_speed += value
+		&"max_hp":
+			stats.max_hp += value
+			hp += value
+			GameEvents.player_hp_changed.emit(hp, stats.max_hp)
+		&"pickup_range":
+			stats.pickup_range += value
+		&"fire_rate":
+			stats.fire_rate_mult += value
+			if weapon:
+				weapon.refresh_cooldown()
+		&"damage":
+			stats.damage_mult += value
+		&"armor":
+			stats.armor += value

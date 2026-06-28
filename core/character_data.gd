@@ -9,3 +9,7 @@ class_name CharacterData extends Resource
 @export var passive_id: StringName               # dedicated passive's id
 @export var evolution_id: StringName             # evolved ability id
 @export var max_signature_level: int = 5
+## Upgrade resources — set in each character's .tres file.
+@export var signature_upgrade: Upgrade
+@export var passive_upgrade: Upgrade
+@export var evolution_upgrade: Upgrade

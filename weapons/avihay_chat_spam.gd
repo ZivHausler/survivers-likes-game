@@ -88,6 +88,13 @@ func _nearest_enemy_direction() -> Vector2:
 		return (nearest.global_position - my_pos).normalized()
 	return Vector2.RIGHT
 
+## Passive bonus: increases fire rate (bubbles per second).
+## value = passive Upgrade's effect_value (fire_rate_mult delta per passive level).
+func apply_passive(value: float) -> void:
+	if stats:
+		stats.fire_rate_mult += value
+		refresh_cooldown()
+
 func level_up() -> void:
 	super()
 	bubble_count  += 1

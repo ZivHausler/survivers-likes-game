@@ -37,6 +37,16 @@ func evolve() -> void:
 func is_max_level(max_level: int) -> bool:
 	return level >= max_level
 
+## Public wrapper — called by Player.apply_stat_upgrade so external code
+## doesn't touch the private _refresh_cooldown directly.
+func refresh_cooldown() -> void:
+	_refresh_cooldown()
+
+## Virtual no-op. Subclasses override to apply their dedicated passive bonus.
+## value is the per-level effect_value from the passive Upgrade resource.
+func apply_passive(_value: float) -> void:
+	pass
+
 func _refresh_cooldown() -> void:
 	if not _timer:
 		return

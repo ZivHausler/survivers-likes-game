@@ -96,6 +96,11 @@ func evolve() -> void:
 	if not _charm_field.body_entered.is_connected(_on_charm_field_body_entered):
 		_charm_field.body_entered.connect(_on_charm_field_body_entered)
 
+## Passive bonus: extends how long enemies stay charmed.
+## value = passive Upgrade's effect_value (seconds per passive level).
+func apply_passive(value: float) -> void:
+	charm_duration += value
+
 ## Auto-charm handler for the evolved always-on CharmField.
 func _on_charm_field_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemies") and body.has_method("charm"):
