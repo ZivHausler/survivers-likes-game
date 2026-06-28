@@ -1,0 +1,31 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://dg51ebxxt1vyo" path="res://ui/hud.gd" id="1_hud"]
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 250.0
+offset_bottom = 200.0
+
+[node name="TimerLabel" type="Label" parent="VBox"]
+text = "0:00"
+
+[node name="KillsLabel" type="Label" parent="VBox"]
+text = "Kills: 0"
+
+[node name="LevelLabel" type="Label" parent="VBox"]
+text = "Lv 1"
+
+[node name="HPBar" type="ProgressBar" parent="VBox"]
+custom_minimum_size = Vector2(200, 20)
+max_value = 100.0
+value = 100.0
+
+[node name="XPBar" type="ProgressBar" parent="VBox"]
+custom_minimum_size = Vector2(200, 16)
+max_value = 10.0
+value = 0.0
