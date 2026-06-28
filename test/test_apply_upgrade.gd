@@ -9,6 +9,7 @@ class StubWeapon extends Weapon:
 	var evolve_called     := false
 	var passive_called    := false
 	var passive_value     := 0.0
+	var refresh_called    := false
 
 	func _ready() -> void:
 		# Do NOT call super() — we don't want the real timer setup in tests.
@@ -25,7 +26,7 @@ class StubWeapon extends Weapon:
 		passive_value  = value
 
 	func refresh_cooldown() -> void:
-		pass  # no-op in stub
+		refresh_called = true
 
 var _player_scene: PackedScene = null
 
@@ -115,9 +116,12 @@ func test_apply_stat_fire_rate_changes_mult() -> void:
 func test_apply_stat_fire_rate_calls_refresh_on_stub_weapon() -> void:
 	var arr   := _make_player_with_stub()
 	var p     := arr[0] as Player
-	# fire_rate path calls weapon.refresh_cooldown() — stub won't crash
+	var stub  := arr[1] as StubWeapon
+	# fire_rate path must call weapon.refresh_cooldown()
 	p.apply_stat_upgrade(&"fire_rate", 0.2)
 	assert_almost_eq(p.stats.fire_rate_mult, 1.2, 0.001)
+	assert_true(stub.refresh_called,
+		"fire_rate upgrade must trigger weapon.refresh_cooldown()")
 
 # ── GameManager._apply_upgrade routing ───────────────────────────────────────
 
@@ -169,3 +173,67 @@ func test_router_generic_calls_apply_stat_upgrade() -> void:
 
 	assert_almost_eq(p.stats.max_hp, 130.0, 0.001,
 		"GENERIC max_hp upgrade should raise stat via apply_stat_upgrade")
+
+# ── Stacked level-up queue ────────────────────────────────────────────────────
+
+## Stub UpgradeUI: records present() calls; emits chosen() on demand.
+class StubUpgradeUI extends Node:
+	signal chosen(upgrade: Upgrade)
+	var present_count: int = 0
+	func present(_system, _player) -> void:
+		present_count += 1
+	func pick(u: Upgrade) -> void:
+		chosen.emit(u)
+
+func _make_upgrade_system() -> UpgradeSystem:
+	var ch := CharacterData.new()
+	ch.id = &"ziv"; ch.max_signature_level = 5
+	ch.passive_id = &"pas"; ch.evolution_id = &"evo"
+	var sig := _make_upgrade(Upgrade.Kind.SIGNATURE, &"", 0.0, &"sig")
+	var pas := _make_upgrade(Upgrade.Kind.PASSIVE,   &"", 0.0, &"pas")
+	var evo := _make_upgrade(Upgrade.Kind.EVOLUTION, &"", 0.0, &"evo")
+	return UpgradeSystem.new(ch, [], sig, pas, evo)
+
+## Two thresholds crossed in one add_xp() must each get their own choice,
+## both rewards applied in sequence, and the tree ends UNPAUSED.
+func test_stacked_levelups_resolve_in_sequence_and_unpause() -> void:
+	var p  := _make_player(100.0)
+	# GameManager must be in the tree so get_tree().paused works.
+	var gm: GameManager = add_child_autofree(GameManager.new()) as GameManager
+	# _ready() ran on add_child (found no siblings) — wire manually now.
+	gm.player         = p
+	gm.upgrade_system = _make_upgrade_system()
+	var ui: StubUpgradeUI = StubUpgradeUI.new()
+	gm._upgrade_ui = ui
+	ui.chosen.connect(gm._on_upgrade_chosen)
+
+	var u1 := _make_upgrade(Upgrade.Kind.GENERIC, &"move_speed", 10.0, &"g1")
+	var u2 := _make_upgrade(Upgrade.Kind.GENERIC, &"armor",       3.0, &"g2")
+
+	# Simulate add_xp crossing two thresholds: two synchronous emits.
+	gm._on_player_leveled_up(2)   # starts: _choosing=true, paused, present #1
+	gm._on_player_leveled_up(3)   # queued: _pending_levelups = 1
+
+	assert_eq(ui.present_count, 1, "Only one choice should be presented at a time")
+	assert_true(get_tree().paused, "Tree should be paused during level-up choice")
+
+	# Player picks the first upgrade.
+	ui.pick(u1)
+	assert_eq(ui.present_count, 2, "Queued level-up must present its own choice")
+	assert_true(get_tree().paused, "Tree stays paused until all level-ups resolved")
+
+	# Player picks the second upgrade.
+	ui.pick(u2)
+
+	assert_eq(gm._pending_levelups, 0, "No level-ups left pending")
+	assert_false(gm._choosing, "_choosing cleared after last resolution")
+	assert_false(get_tree().paused, "Tree must be unpaused after all level-ups")
+
+	# Both rewards applied (no lost upgrade).
+	assert_almost_eq(p.stats.move_speed, 130.0, 0.001, "u1 (move_speed +10) applied")
+	assert_almost_eq(p.stats.armor,        3.0, 0.001, "u2 (armor +3) applied")
+	assert_eq(gm.upgrade_system.levels.get(&"g1", 0), 1, "u1 recorded in system")
+	assert_eq(gm.upgrade_system.levels.get(&"g2", 0), 1, "u2 recorded in system")
+
+	ui.free()
+	get_tree().paused = false  # safety reset for subsequent tests

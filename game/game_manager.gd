@@ -24,6 +24,14 @@ var _rng: RandomNumberGenerator
 var _xp_gem_scene: PackedScene
 var _upgrade_ui: Node  # UpgradeUI CanvasLayer
 
+# Level-up queue — see docs/notes/game-manager.md "Pending level-up queue".
+# player.add_xp() can cross several thresholds in one call, emitting
+# player_leveled_up synchronously multiple times. We serialise these so each
+# level-up gets its own (freshly evaluated) choice set and the tree only
+# unpauses once every queued level-up has been resolved.
+var _choosing: bool = false
+var _pending_levelups: int = 0
+
 func _ready() -> void:
 	_rng = RandomNumberGenerator.new()
 	_rng.randomize()
@@ -99,7 +107,18 @@ func _on_enemy_killed(position: Vector2, xp_value: int) -> void:
 func _on_player_leveled_up(_level: int) -> void:
 	if upgrade_system == null or _upgrade_ui == null:
 		return
+	# If a level-up is already being presented, queue this one and return —
+	# it will be presented after the current choice resolves.
+	if _choosing:
+		_pending_levelups += 1
+		return
+	_choosing = true
 	get_tree().paused = true
+	_present_next()
+
+## Present a fresh choice set. build_choices is re-evaluated each call so an
+## evolution that becomes available across stacked level-ups is offered.
+func _present_next() -> void:
 	_upgrade_ui.present(upgrade_system, player)
 
 func _on_player_died() -> void:
@@ -131,4 +150,11 @@ func _on_upgrade_chosen(u: Upgrade) -> void:
 	if upgrade_system:
 		upgrade_system.apply(u)
 	_apply_upgrade(u)
-	get_tree().paused = false
+	# Resolve the next queued level-up (if any) before unpausing, so no
+	# level-up loses its reward and the tree only resumes once all are done.
+	if _pending_levelups > 0:
+		_pending_levelups -= 1
+		_present_next()  # stay paused, _choosing stays true
+	else:
+		_choosing = false
+		get_tree().paused = false
