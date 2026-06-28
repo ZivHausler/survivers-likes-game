@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://dqktbxhyf7crr"]
+[gd_scene load_steps=4 format=3 uid="uid://dqktbxhyf7crr"]
 
 [ext_resource type="Script" uid="uid://cmvnqh3xwdj7e" path="res://player/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://fx/screen_shake.gd" id="2_shake"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
 size = Vector2(16, 16)
@@ -21,6 +22,9 @@ visible = false
 scale = Vector2(2, 2)
 
 [node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="ScreenShake" type="Node" parent="Camera2D"]
+script = ExtResource("2_shake")
 
 [node name="Hurtbox" type="Area2D" parent="."]
 

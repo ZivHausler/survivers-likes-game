@@ -68,3 +68,7 @@ func take_damage(amount: float) -> void:
 	if hp <= 0.0:
 		GameEvents.enemy_killed.emit(global_position, data.xp_value)
 		queue_free()
+		return
+	# Visual hit flash — survivor only, after hp math. Does not affect death/emit logic.
+	var vis: CanvasItem = ($Sprite if ($Sprite as Sprite2D).visible else $Body) as CanvasItem
+	HitFlash.flash(vis, 0.08)

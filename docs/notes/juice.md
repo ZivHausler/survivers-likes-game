@@ -19,16 +19,16 @@ game state; it is read-only from the simulation's perspective.
 
 ## Signal connections (all wired in `_ready`)
 
-| Signal | Handler | Effect (Wave C) |
+| Signal | Handler | Effect |
 |---|---|---|
-| `enemy_killed(position, xp_value)` | `_on_enemy_killed` | Death particles at position |
-| `xp_collected(amount)` | `_on_xp_collected` | XP counter flash |
-| `player_leveled_up(level)` | `_on_player_leveled_up` | Level-up fanfare |
-| `player_hp_changed(current, max_hp)` | `_on_player_hp_changed` | Hit vignette / HP flash |
-| `player_died()` | `_on_player_died` | Death-screen transition |
-| `evolution_unlocked(weapon_id)` | `_on_evolution_unlocked` | Evolution sparkle |
+| `enemy_killed(position, xp_value)` | `_on_enemy_killed` | **C1:** DeathPop burst + DamageNumber + small shake |
+| `xp_collected(amount)` | `_on_xp_collected` | stub (Wave D) |
+| `player_leveled_up(level)` | `_on_player_leveled_up` | stub (Wave D) |
+| `player_hp_changed(current, max_hp)` | `_on_player_hp_changed` | **C1:** HitFlash on player + shake on HP decrease |
+| `player_died()` | `_on_player_died` | stub (Wave D) |
+| `evolution_unlocked(weapon_id)` | `_on_evolution_unlocked` | stub (Wave D) |
 
-All handler bodies are **empty stubs** in Wave A/B; Wave C fills them.
+Wave C (Task C1) filled `_on_enemy_killed` and `_on_player_hp_changed`.
 
 ---
 
@@ -45,11 +45,13 @@ Juice.register_player(p: Node2D) -> void
 Store a reference to the player node (used for centred effects in Wave C).
 
 Both refs are guarded with `is_instance_valid` before use.
+Camera shake is forwarded to the `ScreenShake` child of `_camera` (see [[vfx-system]]).
 
 ---
 
-## Adding effects (Wave C guide)
+## Guard contract
 
-1. Identify the relevant handler (e.g. `_on_enemy_killed`).
-2. Instantiate a pre-authored `PackedScene` effect and add it to the scene tree via `get_tree().root.add_child(effect)` or a dedicated effects layer.
-3. Keep the handler idempotent — it must not crash if `_camera` or `_player` are null (call not yet registered or already freed).
+- `_safe_parent()` returns `null` if `_player` is freed/null → handlers return early, zero spawns.
+- `_add_trauma()` no-ops if `_camera` is null/freed or has no `ScreenShake` child.
+- `HitFlash.flash()` no-ops if its `CanvasItem` argument is freed.
+- Enemy hit-flash (`enemy.gd`) only calls `HitFlash.flash` when the enemy **survives** the hit, avoiding any post-`queue_free` access.
