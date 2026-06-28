@@ -118,6 +118,12 @@ is **manual-only**.
 count and unit-vector correctness without triggering `fire()` (which requires a player node
 and live spawn parent).
 
+## Placeholder Visual
+
+`bubble.tscn` now contains a child `ColorRect` (`BubbleVisual`) sized 16 × 16 px (matching the Circle radius of 8 px) tinted blue (Color 0.3, 0.5, 1.0, 0.85). The rect is centered on the bubble origin and is visible for the full lifetime of the projectile — no script changes required since the bubble despawns via `queue_free()` when its pierce count hits zero or its lifetime expires.
+
+This is a placeholder shape; it will be replaced by a sprite in a later milestone.
+
 ## Manual Smoke Tests
 
 - Place Avihay weapon on player; confirm 3 bubbles fire per ~2 s toward the nearest enemy

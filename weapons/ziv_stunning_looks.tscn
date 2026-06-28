@@ -16,7 +16,23 @@ script = ExtResource("1_ziv")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Beam"]
 shape = SubResource("RectangleShape2D_beam")
 
+[node name="BeamVisual" type="ColorRect" parent="Beam"]
+visible = false
+offset_left = -200.0
+offset_top = -8.0
+offset_right = 200.0
+offset_bottom = 8.0
+color = Color(1, 0.3, 0.8, 0.9)
+
 [node name="CharmField" type="Area2D" parent="."]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CharmField"]
 shape = SubResource("CircleShape2D_charm")
+
+[node name="CharmFieldVisual" type="ColorRect" parent="CharmField"]
+visible = false
+offset_left = -150.0
+offset_top = -150.0
+offset_right = 150.0
+offset_bottom = 150.0
+color = Color(1, 0.3, 0.8, 0.12)

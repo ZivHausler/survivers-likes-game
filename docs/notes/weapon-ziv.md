@@ -69,6 +69,23 @@ The rotating beam continuously sweeps through overlapping enemies; the always-on
 
 See [[enemy]] for the full API.
 
+## Placeholder Visuals
+
+Both hitbox areas now carry a child `ColorRect` so attacks are visible at runtime:
+
+| Node | Visual | Color |
+|---|---|---|
+| `Beam/BeamVisual` | ColorRect 400 × 16 px, centered on beam origin | Hot-pink, 90 % opacity |
+| `CharmField/CharmFieldVisual` | ColorRect 300 × 300 px, centered | Translucent pink, 12 % opacity |
+
+**Visibility rules (driven by `ziv_stunning_looks.gd`):**
+
+- `_ready()` hides both visuals so nothing is drawn before the first fire.
+- `fire()` (non-evolved) calls `_flash_beam()`: shows `BeamVisual` for 0.3 s then re-hides it.
+- `evolve()` calls `_beam_visual.show()` and `_charm_field_visual.show()` so both stay permanently visible while the weapon is in evolved state (beam rotates, CharmField is always-on).
+
+These are placeholder shapes — they are intentionally simple rectangles to aid debugging and will be replaced by artist-created sprites in a later milestone.
+
 ## Manual Smoke Tests
 
 - Spawn Ziv + cluster of enemies; confirm beam flashes once every ~3 s and enemies in the beam line lose HP.

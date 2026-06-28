@@ -26,6 +26,8 @@ const _BEAM_ROTATION_SPEED: float = TAU / 3.0
 
 @onready var _beam: Area2D = $Beam
 @onready var _charm_field: Area2D = $CharmField
+@onready var _beam_visual: ColorRect = $Beam/BeamVisual
+@onready var _charm_field_visual: ColorRect = $CharmField/CharmFieldVisual
 
 func _ready() -> void:
 	base_cooldown = 3.0
@@ -37,6 +39,9 @@ func _ready() -> void:
 	# CharmField stays off until evolve() activates it.
 	_charm_field.monitoring   = false
 	_charm_field.monitorable  = false
+	# Visuals start hidden; shown on fire() flash or evolve().
+	_beam_visual.hide()
+	_charm_field_visual.hide()
 
 func _process(dt: float) -> void:
 	if evolved:
@@ -48,6 +53,16 @@ func setup(player: Node, p_stats: StatBlock) -> void:
 func fire() -> void:
 	_deal_beam_damage()
 	_charm_nearby_enemies()
+	if not evolved:
+		_flash_beam()
+
+## Flash the beam visual for 0.3 s (non-evolved mode).
+func _flash_beam() -> void:
+	_beam_visual.show()
+	await get_tree().create_timer(0.3).timeout
+	# Guard: weapon may have been freed or evolved during the await.
+	if is_instance_valid(self) and not evolved:
+		_beam_visual.hide()
 
 func _deal_beam_damage() -> void:
 	var damage := beam_damage * stats.damage_mult
@@ -95,6 +110,10 @@ func evolve() -> void:
 	_charm_field.monitorable = true
 	if not _charm_field.body_entered.is_connected(_on_charm_field_body_entered):
 		_charm_field.body_entered.connect(_on_charm_field_body_entered)
+	# Evolved: beam rotates continuously — keep visual always visible.
+	_beam_visual.show()
+	# CharmField aura is now always active — show its visual.
+	_charm_field_visual.show()
 
 ## Passive bonus: extends how long enemies stay charmed.
 ## value = passive Upgrade's effect_value (seconds per passive level).
