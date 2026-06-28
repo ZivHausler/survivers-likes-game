@@ -17,7 +17,7 @@ links:
 |---|---|
 | `enemies/enemy_data.gd` | `EnemyData` Resource — all per-variant stats |
 | `enemies/enemy.gd` | `Enemy` CharacterBody2D — steering, contact damage, death |
-| `enemies/enemy.tscn` | Scene: `Enemy` root + `Body` ColorRect + `CollisionShape2D` + `ContactArea` Area2D |
+| `enemies/enemy.tscn` | Scene: `Enemy` root + `Body` ColorRect + `Sprite` Sprite2D + `CollisionShape2D` + `ContactArea` Area2D |
 | `enemies/swarmer.tres` | Swarmer variant data |
 | `enemies/tank.tres` | Tank variant data |
 | `enemies/spitter.tres` | Spitter variant data |
@@ -36,6 +36,7 @@ links:
 | `xp_value` | `int` | XP emitted to [[game-events]] on death |
 | `is_ranged` | `bool` | If true, stops at 140 px from target |
 | `radius` | `float` | Collision/contact radius |
+| `texture` | `Texture2D` | Optional sprite texture; `null` → use ColorRect "Body" placeholder |
 
 ### Enemy (CharacterBody2D)
 
@@ -49,6 +50,25 @@ func charm(duration: float) -> void
 - Contact damage: cooldown 0.5 s per hit, calls `target.take_damage(data.contact_damage)`.
 - `_physics_process` guards against `data == null` and invalid target before running.
 - `charm(duration)`: suppresses enemy movement for `duration` seconds. Sets an internal `_charm_timer` (takes the max of current remaining time and the new duration, so charms stack by keeping the longest). While the timer is active, `_physics_process` sets `velocity = Vector2.ZERO` and returns early. Added in task 2C (see [[weapon-ziv]]).
+
+## Sprite / Wobble / Fallback (Task B2)
+
+`enemy.tscn` has a `Sprite2D` child named `"Sprite"` (hidden by default at scene level).
+
+In `setup()`:
+- If `data.texture != null`: assigns it to `$Sprite`, sets a subtle tint blended from `data.color` toward white, shows `$Sprite`, hides `$Body`.
+- Otherwise: keeps `$Body` visible (tinted with `data.color`), keeps `$Sprite` hidden.
+
+**Procedural wobble**: in `_physics_process`, when `$Sprite.visible`, a per-enemy `_wobble_phase` (initialized via `randf() * TAU` in `setup()`) accumulates at 4 rad/s and drives a sine-based squash/stretch on `$Sprite.scale` (±6%). Movement, velocity, and damage logic are untouched.
+
+**Boss visual**: `spawner.gd _spawn_boss` applies `Color(1.0, 0.15, 0.1)` to the boss's `$Sprite.modulate` after the existing ×8 HP and ×3 scale logic.
+
+**Texture choices** (Kenney Monster Builder, CC0):
+| Variant | Body file |
+|---|---|
+| swarmer | `body_greenA.png` |
+| tank | `body_darkB.png` |
+| spitter | `body_blueB.png` |
 
 ## Variants
 

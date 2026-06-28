@@ -85,10 +85,15 @@ func _spawn_boss() -> void:
 	# Duplicate so we can mutate HP without touching the shared resource
 	var boss_data: EnemyData = data.duplicate() as EnemyData
 	boss_data.max_hp *= BOSS_HP_MULT
-	_instance_enemy(boss_data, BOSS_SCALE_MULT)
+	var boss: Enemy = _instance_enemy(boss_data, BOSS_SCALE_MULT)
+	# Boss visual: menacing red tint on the sprite (visual only — HP/scale untouched).
+	if boss != null:
+		var sprite := boss.get_node_or_null("Sprite") as Sprite2D
+		if sprite != null and sprite.visible:
+			sprite.modulate = Color(1.0, 0.15, 0.1, 1.0)
 
 
-func _instance_enemy(data: EnemyData, scale_mult: float) -> void:
+func _instance_enemy(data: EnemyData, scale_mult: float) -> Enemy:
 	var enemy: Enemy = _enemy_scene.instantiate() as Enemy
 	# Add to the same parent so the enemy persists beyond this node's lifetime
 	var parent := get_parent()
@@ -98,6 +103,7 @@ func _instance_enemy(data: EnemyData, scale_mult: float) -> void:
 	enemy.global_position = _random_ring_position()
 	enemy.scale = Vector2.ONE * scale_mult
 	enemy.setup(data, _target)
+	return enemy
 
 
 func _random_ring_position() -> Vector2:

@@ -16,6 +16,16 @@ Tiles from `art/characters/` (Kenney Tiny Dungeon, CC0):
 | Ziv | `art/characters/Tiles/tile_0084.png` | Purple-robed mage |
 | Avihay | `art/characters/Tiles/tile_0108.png` | Green-armored character |
 
+## Enemy body sprite choices (Task B2)
+
+Tiles from `art/enemies/PNG/Default/` (Kenney Monster Builder Pack, CC0):
+
+| Variant | File | Visual description |
+|---|---|---|
+| swarmer | `body_greenA.png` | Small bright-green blob body |
+| tank | `body_darkB.png` | Large dark/charcoal body — reads as a heavy bruiser |
+| spitter | `body_blueB.png` | Medium blue body — distinct from swarmer and tank |
+
 ## CREDITS
 
 GODOT-VFX-LIBRARY by haowg (https://github.com/haowg/GODOT-VFX-LIBRARY) — MIT License.

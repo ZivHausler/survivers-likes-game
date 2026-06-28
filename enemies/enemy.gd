@@ -7,12 +7,27 @@ var hp: float = 0.0
 var _contact_cd: float = 0.0
 ## Remaining charm time in seconds. While > 0, movement is suppressed.
 var _charm_timer: float = 0.0
+## Per-enemy wobble phase offset (radians).
+var _wobble_phase: float = 0.0
 
 func setup(p_data: EnemyData, p_target: Node2D) -> void:
 	data = p_data
 	target = p_target
 	hp = data.max_hp
-	($Body as CanvasItem).modulate = data.color
+	_wobble_phase = randf() * TAU
+
+	var sprite := $Sprite as Sprite2D
+	var body := $Body as CanvasItem
+
+	if data.texture != null:
+		sprite.texture = data.texture
+		sprite.modulate = data.color.lerp(Color.WHITE, 0.5)
+		sprite.visible = true
+		body.visible = false
+	else:
+		body.modulate = data.color
+		sprite.visible = false
+		body.visible = true
 
 ## Suppress enemy movement for `duration` seconds.
 ## Called by ZivStunningLooks. Stacks by taking the maximum remaining time.
@@ -22,6 +37,12 @@ func charm(duration: float) -> void:
 func _physics_process(dt: float) -> void:
 	if data == null:
 		return
+	# Procedural wobble — visual only, never affects movement/velocity.
+	var sprite := $Sprite as Sprite2D
+	if sprite.visible:
+		_wobble_phase += dt * 4.0
+		var squash: float = 1.0 + 0.06 * sin(_wobble_phase)
+		sprite.scale = Vector2(squash, 2.0 - squash) * 0.5
 	# Tick charm timer and suppress movement while charmed.
 	_charm_timer = max(0.0, _charm_timer - dt)
 	if _charm_timer > 0.0:
