@@ -14,6 +14,7 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[character-data]] — `CharacterData` resource: complete friend definition (stats, weapon, passive, evolution)
 - [[weapon-system]] — `Weapon` base class: self-driving timer, lifecycle contract, subclass pattern
 - [[weapon-ziv]] — `ZivStunningLooks`: "Stunning Looks" beam + charm; evolution "Absolutely Fabulous"
+- [[weapon-avihay]] — `AvihayChatSpam`: "Chat Spam" homing bubbles + pierce; evolution "Reply-All Apocalypse"
 - [[upgrade-system]] — `UpgradeSystem`: pool generation, `build_choices`, `apply`, level tracking
 - [[player]] — `Player` (`CharacterBody2D`): WASD movement, HP, XP, leveling, weapon spawn
 - [[enemy]] — `Enemy` (`CharacterBody2D`): steering, contact damage, death; `EnemyData` variants (swarmer, tank, spitter)
