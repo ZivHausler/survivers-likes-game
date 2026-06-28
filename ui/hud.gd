@@ -4,11 +4,12 @@ class_name HUD extends CanvasLayer
 ## process_mode = PROCESS_MODE_ALWAYS so _process runs BOTH during normal play
 ## (live timer/kills/XP) and while the level-up overlay pauses the tree.
 
-@onready var _timer_label:  Label      = $VBox/TimerLabel
-@onready var _kills_label:  Label      = $VBox/KillsLabel
-@onready var _level_label:  Label      = $VBox/LevelLabel
-@onready var _hp_bar:       ProgressBar = $VBox/HPBar
-@onready var _xp_bar:       ProgressBar = $VBox/XPBar
+@onready var _timer_label:   Label       = $VBox/TimerLabel
+@onready var _kills_label:   Label       = $VBox/KillsLabel
+@onready var _level_label:   Label       = $VBox/LevelLabel
+@onready var _hp_bar:        ProgressBar = $VBox/HPBar
+@onready var _xp_bar:        ProgressBar = $VBox/XPBar
+@onready var _evolve_banner: Label       = $EvolveBanner
 
 var _game_manager: GameManager = null
 var _player: Player = null
@@ -17,6 +18,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	GameEvents.player_hp_changed.connect(_on_hp_changed)
 	GameEvents.player_leveled_up.connect(_on_leveled_up)
+	GameEvents.evolution_unlocked.connect(_on_evolution_unlocked)
 
 	# Defer finding siblings so the full scene tree is ready
 	call_deferred("_find_siblings")
@@ -43,3 +45,10 @@ func _on_hp_changed(current: float, max_hp: float) -> void:
 
 func _on_leveled_up(level: int) -> void:
 	_level_label.text = "Lv %d" % level
+
+func _on_evolution_unlocked(_weapon_id: StringName) -> void:
+	_evolve_banner.modulate = Color.WHITE
+	_evolve_banner.visible = true
+	var tween := create_tween()
+	tween.tween_property(_evolve_banner, "modulate:a", 0.0, 2.0).set_delay(0.5)
+	tween.tween_callback(func(): _evolve_banner.visible = false)

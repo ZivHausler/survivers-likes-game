@@ -1,6 +1,18 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" uid="uid://dg51ebxxt1vyo" path="res://ui/hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hpbg"]
+bg_color = Color(0.15, 0.04, 0.04, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hpfill"]
+bg_color = Color(0.85, 0.1, 0.1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpbg"]
+bg_color = Color(0.04, 0.12, 0.18, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfill"]
+bg_color = Color(0.0, 0.9, 0.9, 1)
 
 [node name="HUD" type="CanvasLayer"]
 process_mode = 3
@@ -20,13 +32,32 @@ text = "Kills: 0"
 
 [node name="LevelLabel" type="Label" parent="VBox"]
 text = "Lv 1"
+theme_override_font_sizes/font_size = 22
 
 [node name="HPBar" type="ProgressBar" parent="VBox"]
 custom_minimum_size = Vector2(200, 20)
 max_value = 100.0
 value = 100.0
+theme_override_styles/background = SubResource("StyleBoxFlat_hpbg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hpfill")
 
 [node name="XPBar" type="ProgressBar" parent="VBox"]
 custom_minimum_size = Vector2(200, 16)
 max_value = 10.0
 value = 0.0
+theme_override_styles/background = SubResource("StyleBoxFlat_xpbg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_xpfill")
+
+[node name="EvolveBanner" type="Label" parent="."]
+visible = false
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.3
+anchor_bottom = 0.3
+offset_left = -200.0
+offset_right = 200.0
+offset_top = -40.0
+offset_bottom = 40.0
+text = "EVOLVE!"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 48
