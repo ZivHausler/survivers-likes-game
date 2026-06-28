@@ -40,12 +40,18 @@ func test_compute_position_default_params_match_spec() -> void:
 
 # ── compute_pitch_basis ───────────────────────────────────────────────────────
 
-func test_compute_pitch_basis_matches_from_euler() -> void:
+func test_compute_pitch_basis_minus55_hardcoded_trig() -> void:
+	# Independent numeric ground-truth for X-rotation by -55°.
+	# cos(55°) ≈ 0.5736, sin(55°) ≈ 0.8192  (literals, not re-derived from the SUT)
+	# Y-column of the rotation matrix: (0,  cos55°, -sin55°)
+	# Z-column of the rotation matrix: (0,  sin55°,  cos55°)
 	var basis := GameCamera3D.compute_pitch_basis(-55.0)
-	var expected := Basis.from_euler(Vector3(deg_to_rad(-55.0), 0.0, 0.0))
-	assert_almost_eq(basis.x.x, expected.x.x, 0.001, "Basis.x.x must match euler")
-	assert_almost_eq(basis.y.y, expected.y.y, 0.001, "Basis.y.y must match euler")
-	assert_almost_eq(basis.z.z, expected.z.z, 0.001, "Basis.z.z must match euler")
+	assert_almost_eq(basis.y.x,  0.0,     0.001, "-55° pitch: y.x = 0 (no yaw/roll)")
+	assert_almost_eq(basis.y.y,  0.5736,  0.001, "-55° pitch: y.y = cos(55°) ≈ 0.5736")
+	assert_almost_eq(basis.y.z, -0.8192,  0.001, "-55° pitch: y.z = -sin(55°) ≈ -0.8192")
+	assert_almost_eq(basis.z.x,  0.0,     0.001, "-55° pitch: z.x = 0 (no yaw/roll)")
+	assert_almost_eq(basis.z.y,  0.8192,  0.001, "-55° pitch: z.y = sin(55°) ≈ 0.8192")
+	assert_almost_eq(basis.z.z,  0.5736,  0.001, "-55° pitch: z.z = cos(55°) ≈ 0.5736")
 
 func test_compute_pitch_basis_zero_is_identity() -> void:
 	var basis := GameCamera3D.compute_pitch_basis(0.0)

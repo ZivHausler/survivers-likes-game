@@ -27,4 +27,4 @@ With height=14, distance=10, pitch=−55°:
 
 ## Tests
 
-`test/test_game_camera_3d.gd` — 11 assertions covering XZ tracking, fixed Y, Z+distance offset, and pitch basis correctness.
+`test/test_game_camera_3d.gd` — 10 test functions covering XZ tracking, fixed Y, Z+distance offset, and pitch basis correctness (including hardcoded trig assertions for the −55° default).

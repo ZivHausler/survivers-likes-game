@@ -28,7 +28,7 @@ mesh = SubResource("CapsuleMesh_player")
 shape = SubResource("CapsuleShape3D_player")
 
 [node name="GameCamera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.5736, -0.8192, 0, 0.8192, 0.5736, 0, 14, 10)
+# transform intentionally neutral: _ready() applies position+orientation from exported params
 script = ExtResource("3_cam_script")
 target = NodePath("../PlayerPlaceholder")
 height = 14.0
