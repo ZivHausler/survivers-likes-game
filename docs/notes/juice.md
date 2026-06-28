@@ -49,6 +49,26 @@ Camera shake is forwarded to the `ScreenShake` child of `_camera` (see [[vfx-sys
 
 ---
 
+## Registration wiring (Task D2)
+
+`register_camera` and `register_player` are called from `GameManager._ready()`
+immediately after the Player node is resolved from the scene tree:
+
+```gdscript
+if player:
+    Juice.register_player(player)
+    var cam := player.get_node_or_null("Camera2D") as Camera2D
+    if cam:
+        Juice.register_camera(cam)
+```
+
+Both calls are guarded: if no Player exists in the scene (e.g. character-select
+screen) neither call is made, and Juice's own `is_instance_valid` guards in every
+handler ensure safe operation.  After this wiring, all effects that need a camera
+target (shake) and a player position (XP sparkle) function correctly in the arena.
+
+---
+
 ## Guard contract
 
 - `_safe_parent()` returns `null` if `_player` is freed/null → handlers return early, zero spawns.

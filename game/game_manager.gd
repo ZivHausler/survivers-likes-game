@@ -23,6 +23,7 @@ var kills:   int   = 0
 var _rng: RandomNumberGenerator
 var _xp_gem_scene: PackedScene
 var _upgrade_ui: Node  # UpgradeUI CanvasLayer
+var _background: Sprite2D = null  # Background Sprite2D to follow player
 
 # Level-up queue — see docs/notes/game-manager.md "Pending level-up queue".
 # player.add_xp() can cross several thresholds in one call, emitting
@@ -44,8 +45,16 @@ func _ready() -> void:
 
 	player = parent.get_node_or_null("Player") as Player
 	_upgrade_ui = parent.get_node_or_null("UpgradeUI")
+	_background = parent.get_node_or_null("Background") as Sprite2D
 
 	var spawner := parent.get_node_or_null("Spawner") as Spawner
+
+	# Wire Juice visual-effects layer so shake/sparkle have valid targets
+	if player:
+		Juice.register_player(player)
+		var cam := player.get_node_or_null("Camera2D") as Camera2D
+		if cam:
+			Juice.register_camera(cam)
 
 	# Set up player from RunState
 	var char_data: CharacterData = RunState.selected_character as CharacterData
@@ -84,6 +93,10 @@ func _process(dt: float) -> void:
 	if get_tree().paused:
 		return
 	elapsed += dt
+	# Keep tiled background centred on player so it never runs out.
+	# Snap to tile grid (16 px) to prevent sub-pixel shimmer.
+	if _background != null and is_instance_valid(player):
+		_background.global_position = player.global_position.snapped(Vector2(16.0, 16.0))
 
 func get_elapsed() -> float:
 	return elapsed

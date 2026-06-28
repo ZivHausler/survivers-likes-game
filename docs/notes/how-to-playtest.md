@@ -71,6 +71,64 @@ Run the game with `godot` (interactive) from the repo root.
 
 ---
 
+## V — Visual checklist (Wave D / Task D2)
+
+Verify these on every run. Headless CI cannot see pixels — this section is
+**manual-only** and must be confirmed by a human tester.
+
+**Player & movement**
+- [ ] Player has a sprite (not a plain pink/blue square) and it animates.
+- [ ] Moving left/right flips the sprite horizontally.
+- [ ] While running the sprite bobs up and down slightly (procedural squash-stretch).
+
+**Enemies**
+- [ ] Swarmer enemies are visible sprites that wobble as they chase the player.
+- [ ] Tank enemies are larger, heavier-looking sprites.
+- [ ] Mini-boss (appears ~5 min) is noticeably bigger and tinted red.
+
+**XP orbs**
+- [ ] XP gems are small pulsing gold orbs (scale-tween animation visible).
+
+**Background**
+- [ ] Ground tiles render under the player from the first frame.
+- [ ] As you walk in any direction the tiled ground continues — it does NOT run
+  out or reveal black. (Background now follows the camera each frame.)
+
+**Vignette**
+- [ ] Screen edges are softly darkened; centre is clear.
+
+**Hit feedback (per kill)**
+- [ ] Enemy briefly flashes white/bright on death (hit-flash).
+- [ ] A small particle burst pops at the death position (death pop).
+- [ ] A floating "+N" number rises from the death position (damage number).
+- [ ] The camera shakes slightly on each kill.
+
+**Player damage**
+- [ ] Taking damage briefly flashes the player sprite.
+- [ ] Camera shakes on HP decrease.
+
+**Skill VFX**
+- Ziv — Stunning Looks:
+  - [ ] Beam fires toward the nearest enemy and glows/has a visible line.
+  - [ ] Charm sparkles appear around charmed enemies.
+- Avihay — Chat Spam:
+  - [ ] Bubbles fire toward nearest enemy with a visible trail.
+  - [ ] Bubbles pop with a small burst on contact.
+
+**Leveling**
+- [ ] Gaining a level triggers a soft full-screen flash (EvolutionFlash, low intensity).
+
+**EVOLVE**
+- [ ] Triggering evolution shows a bright full-screen flash.
+- [ ] "EVOLVE!" banner appears in large text in the upper third of the screen.
+
+**HUD readability**
+- [ ] HP bar is clearly red against its dark background.
+- [ ] XP bar is clearly cyan against its dark background.
+- [ ] Both bars are legible at a glance during combat.
+
+---
+
 ## H — Success criteria mapping
 
 | Criterion (spec §10) | Verified by step |

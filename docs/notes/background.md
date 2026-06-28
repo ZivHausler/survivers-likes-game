@@ -51,10 +51,29 @@ void fragment() {
 This produces a radial darkening (transparent center → ~65% opaque black edges).
 `smoothstep(0.4, 1.0, dist)` ensures the centre ~40% of the screen is clear.
 
+## Camera-following (Task D2)
+
+Player movement is unbounded, so a static ±2048 region eventually shows black
+past the edges. `GameManager._process` now repositions the Background Sprite2D
+each frame to follow the player:
+
+```gdscript
+_background.global_position = player.global_position.snapped(Vector2(16.0, 16.0))
+```
+
+Snapping to 16 px (= tile size) prevents sub-pixel shimmer as the sprite moves.
+Because `texture_repeat` is enabled, the tiled region is always centred on the
+player, making the background effectively infinite with zero extra memory.
+
+`_background` is resolved once in `GameManager._ready()` via
+`parent.get_node_or_null("Background")` and guarded with `is_instance_valid`
+before each use. The background does not move while the tree is paused (level-up
+overlay), which is correct — the player can't move then either.
+
 ## Playtest notes
 
-- Ground tile is a solid flat colour; reads as a clean grass/road surface.
+- Ground tile reads as a clean grass/road surface.
 - Vignette is subtle at 0.65 max alpha; adjust the multiplier in the shader to taste.
-- For a scrolling feel, the Background Sprite2D lives in world space and the camera
-  moves normally — the tiled region is large enough for typical play sessions.
-  If the player can travel > 2048 px from origin, extend `region_rect`.
+- Background follows the player each frame — it will never run out no matter how
+  far the player roams. Confirm during manual playtest: move in one direction for
+  several seconds; the tile pattern should continue uninterrupted.
