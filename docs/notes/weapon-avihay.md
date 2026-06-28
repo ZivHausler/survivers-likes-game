@@ -134,6 +134,33 @@ This is a placeholder shape; it will be replaced by a sprite in a later mileston
 - `evolve()`: fire pattern becomes a dense 360° ring of 14 homing bubbles that curve
   toward enemies — "Reply-All Apocalypse".
 
+## VFX Layer (Task C2)
+
+Two pure-visual additions to `Bubble` — no logic changed.
+
+### Travel Trail (`_trail`)
+
+A `CPUParticles2D` created at the end of `setup()` and added as a child of the Bubble
+node. Emits continuously (`one_shot = false`) while the bubble is alive, leaving a light
+blue vapour streak behind it.
+
+| Property | Normal | Evolved (homing) |
+|---|---|---|
+| `amount` | 6 | 12 |
+| `lifetime` | 0.3 s | 0.3 s |
+| `color` | `Color(0.5, 0.7, 1, 0.5)` | same |
+| `spread` | 90° | 90° |
+
+When `setup()` is called with `homing = true` (evolved mode), `_trail.amount` is
+immediately set to 12 for a denser streak.
+
+### Hit Pop (`_spawn_hit_pop`)
+
+When a bubble's pierce count drops to 0, `_spawn_hit_pop()` is called **before**
+`queue_free()`. It instantiates `vfx/death_pop.tscn` at the bubble's `global_position`
+and adds it to the bubble's parent — producing the same warm-orange burst as enemy death.
+The pop auto-frees itself via `SceneTreeTimer` (same as `DeathPop`).
+
 ## Links
 
 - [[weapon-system]] — base class contract, cooldown formula, lifecycle hooks

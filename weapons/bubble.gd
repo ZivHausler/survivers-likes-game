@@ -1,5 +1,7 @@
 # See docs/notes/weapon-avihay.md
 class_name Bubble extends Area2D
+
+const _BubblePopScene: PackedScene = preload("res://vfx/death_pop.tscn")
 ## Area2D projectile fired by AvihayChatSpam.
 ##
 ## Travels along `_direction` each physics frame at `SPEED` px/s.
@@ -19,6 +21,8 @@ var _homing: bool = false
 var _lifetime: float = 0.0
 ## Enemies already hit by this bubble instance — no re-hit allowed.
 var _hit_enemies: Array[Node] = []
+## VFX trail particles (visual-only).
+var _trail: CPUParticles2D = null
 
 ## Initialise the bubble after adding to scene tree.
 ## Call this immediately after add_child(bubble).
@@ -29,6 +33,21 @@ func setup(direction: Vector2, damage: float, pierce: int, homing: bool) -> void
 	_homing    = homing
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
+	# VFX: travel trail (visual-only).
+	_trail = CPUParticles2D.new()
+	_trail.amount                = 6
+	_trail.lifetime              = 0.3
+	_trail.one_shot              = false
+	_trail.emitting              = true
+	_trail.explosiveness         = 0.0
+	_trail.spread                = 90.0
+	_trail.initial_velocity_min  = 10.0
+	_trail.initial_velocity_max  = 30.0
+	_trail.color                 = Color(0.5, 0.7, 1.0, 0.5)
+	add_child(_trail)
+	# Denser trail for evolved (homing) bubbles.
+	if _homing:
+		_trail.amount = 12
 
 func _physics_process(dt: float) -> void:
 	_advance(dt)
@@ -64,7 +83,17 @@ func _on_hit(enemy: Node) -> void:
 		enemy.take_damage(_damage)
 	_pierce -= 1
 	if _pierce <= 0:
+		_spawn_hit_pop()
 		queue_free()
+
+## Spawn a DeathPop-style burst at the bubble's current position.
+func _spawn_hit_pop() -> void:
+	var pop_parent := get_parent()
+	if not is_instance_valid(pop_parent):
+		return
+	var pop: DeathPop = _BubblePopScene.instantiate()
+	pop_parent.add_child(pop)
+	pop.play_at(global_position)
 
 ## Return the nearest enemy node in the scene tree, or null if none.
 func _nearest_enemy() -> Node2D:

@@ -11,6 +11,8 @@ var _last_hp: float = -1.0  ## Tracks previous HP to detect a decrease
 
 const _DamageNumberScene: PackedScene = preload("res://vfx/damage_number.tscn")
 const _DeathPopScene: PackedScene = preload("res://vfx/death_pop.tscn")
+const _EvolutionFlashScene: PackedScene = preload("res://vfx/evolution_flash.tscn")
+const _XpSparkleScene: PackedScene = preload("res://vfx/xp_sparkle.tscn")
 
 func _ready() -> void:
 	GameEvents.enemy_killed.connect(_on_enemy_killed)
@@ -65,10 +67,22 @@ func _on_enemy_killed(position: Vector2, xp_value: int) -> void:
 	_add_trauma(0.25)
 
 func _on_xp_collected(_amount: int) -> void:
-	pass  # Wave D: flash XP counter
+	if not is_instance_valid(_player):
+		return
+	var parent := _safe_parent()
+	if parent == null:
+		return
+	var sparkle: XpSparkle = _XpSparkleScene.instantiate()
+	parent.add_child(sparkle)
+	sparkle.play_at(_player.global_position)
 
 func _on_player_leveled_up(_level: int) -> void:
-	pass  # Wave D: level-up fanfare effect
+	var parent := _safe_parent()
+	if parent == null:
+		return
+	var flash: EvolutionFlash = _EvolutionFlashScene.instantiate()
+	flash.set_intensity(0.4)
+	parent.add_child(flash)
 
 func _on_player_hp_changed(current: float, _max_hp: float) -> void:
 	# Flash player and shake camera only on a HP decrease
@@ -82,4 +96,8 @@ func _on_player_died() -> void:
 	pass  # Wave D: death-screen transition
 
 func _on_evolution_unlocked(_weapon_id: StringName) -> void:
-	pass  # Wave D: evolution sparkle / announcement
+	var parent := _safe_parent()
+	if parent == null:
+		return
+	var flash: EvolutionFlash = _EvolutionFlashScene.instantiate()
+	parent.add_child(flash)

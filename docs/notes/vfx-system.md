@@ -73,6 +73,43 @@ pop.play_at(position)
 
 ---
 
+---
+
+## EvolutionFlash
+
+**Files:** `vfx/evolution_flash.tscn` / `vfx/evolution_flash.gd` | **Class:** `EvolutionFlash`  
+**Base:** `CanvasLayer`
+
+Full-screen additive white flash used for evolution events (intensity 1.0) and level-up
+fanfare (intensity 0.4). Creates a `ColorRect` with `BLEND_MODE_ADD` and a radial
+`CPUParticles2D` burst, then auto-frees via `SceneTreeTimer` after 0.8 s.
+
+```gdscript
+var flash: EvolutionFlash = _EvolutionFlashScene.instantiate()
+flash.set_intensity(0.4)   # omit for full-brightness evolution flash
+parent.add_child(flash)    # auto-frees after ~0.8 s
+```
+
+`set_intensity(v: float)` scales the ColorRect alpha: `0.85 * v`. Default (no call) = 1.0.
+
+---
+
+## XpSparkle
+
+**Files:** `vfx/xp_sparkle.tscn` / `vfx/xp_sparkle.gd` | **Class:** `XpSparkle`  
+**Base:** `CPUParticles2D`
+
+Small golden burst (8 particles, 0.4 s lifetime, one-shot) that fires at the player's
+position when `xp_collected` is emitted. Auto-frees after `lifetime + 0.2 s`.
+
+```gdscript
+var sparkle: XpSparkle = _XpSparkleScene.instantiate()
+parent.add_child(sparkle)
+sparkle.play_at(_player.global_position)
+```
+
+---
+
 ## Decoupling guarantee
 
 All effects are added to `get_tree().current_scene` (obtained from the registered

@@ -92,6 +92,36 @@ These are placeholder shapes — they are intentionally simple rectangles to aid
 - Confirm 2 nearest enemies freeze for 2 s.
 - `level_up()` four times then `evolve()`: beam sweeps continuously; enemies entering the 150 px radius pause immediately.
 
+## VFX Layer (Task C2)
+
+Two `CPUParticles2D` nodes are created in `_ready()` and added as children of their
+respective hitbox Areas. They are **visual-only** — no logic is affected.
+
+### BeamGlow (`_beam_glow`)
+
+Added as a child of `_beam` (Area2D). Fires during the 0.3 s `_flash_beam()` window
+in non-evolved mode (`emitting = true` on show, `false` on hide). In evolved mode
+`evolve()` enables it permanently with `amount = 16` for a denser glow.
+
+| Property | Non-evolved | Evolved |
+|---|---|---|
+| `amount` | 8 | 16 |
+| `lifetime` | 0.3 s | 0.3 s |
+| `color` | `Color(1, 0.8, 1, 0.7)` (pink-white) | same |
+| `emitting` | only during flash window | always on |
+
+### CharmSparkle (`_charm_sparkle`)
+
+Added as a child of `_charm_field` (Area2D). Starts off (`emitting = false`). Enabled
+permanently by `evolve()` to give the always-on CharmField aura visible feedback.
+
+| Property | Evolved |
+|---|---|
+| `amount` | 24 |
+| `lifetime` | 0.8 s |
+| `spread` | 180° |
+| `color` | `Color(1, 0.4, 0.9, 0.6)` (magenta) |
+
 ## Links
 
 - [[weapon-system]] — base class contract, cooldown formula

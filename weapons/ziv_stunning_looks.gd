@@ -29,6 +29,10 @@ const _BEAM_ROTATION_SPEED: float = TAU / 3.0
 @onready var _beam_visual: ColorRect = $Beam/BeamVisual
 @onready var _charm_field_visual: ColorRect = $CharmField/CharmFieldVisual
 
+## VFX particle emitters (visual-only, no gameplay effect).
+var _beam_glow: CPUParticles2D = null
+var _charm_sparkle: CPUParticles2D = null
+
 func _ready() -> void:
 	base_cooldown = 3.0
 	super()
@@ -42,6 +46,30 @@ func _ready() -> void:
 	# Visuals start hidden; shown on fire() flash or evolve().
 	_beam_visual.hide()
 	_charm_field_visual.hide()
+
+	# Beam glow particles (fire window / evolved burst).
+	_beam_glow = CPUParticles2D.new()
+	_beam_glow.one_shot              = false
+	_beam_glow.emitting              = false
+	_beam_glow.amount                = 8
+	_beam_glow.lifetime              = 0.3
+	_beam_glow.spread                = 10.0
+	_beam_glow.initial_velocity_min  = 20.0
+	_beam_glow.initial_velocity_max  = 60.0
+	_beam_glow.color                 = Color(1.0, 0.8, 1.0, 0.7)
+	_beam.add_child(_beam_glow)
+
+	# Charm sparkle particles (evolve persistent aura).
+	_charm_sparkle = CPUParticles2D.new()
+	_charm_sparkle.one_shot             = false
+	_charm_sparkle.emitting             = false
+	_charm_sparkle.amount               = 12
+	_charm_sparkle.lifetime             = 0.8
+	_charm_sparkle.spread               = 180.0
+	_charm_sparkle.initial_velocity_min = 10.0
+	_charm_sparkle.initial_velocity_max = 40.0
+	_charm_sparkle.color                = Color(1.0, 0.4, 0.9, 0.6)
+	_charm_field.add_child(_charm_sparkle)
 
 func _process(dt: float) -> void:
 	if evolved:
@@ -59,10 +87,12 @@ func fire() -> void:
 ## Flash the beam visual for 0.3 s (non-evolved mode).
 func _flash_beam() -> void:
 	_beam_visual.show()
+	_beam_glow.emitting = true
 	await get_tree().create_timer(0.3).timeout
 	# Guard: weapon may have been freed or evolved during the await.
 	if is_instance_valid(self) and not evolved:
 		_beam_visual.hide()
+		_beam_glow.emitting = false
 
 func _deal_beam_damage() -> void:
 	var damage := beam_damage * stats.damage_mult
@@ -114,6 +144,11 @@ func evolve() -> void:
 	_beam_visual.show()
 	# CharmField aura is now always active — show its visual.
 	_charm_field_visual.show()
+	# VFX: denser always-on beam glow + persistent charm aura sparkle.
+	_beam_glow.emitting = true
+	_beam_glow.amount   = 16
+	_charm_sparkle.emitting = true
+	_charm_sparkle.amount   = 24
 
 ## Passive bonus: extends how long enemies stay charmed.
 ## value = passive Upgrade's effect_value (seconds per passive level).
