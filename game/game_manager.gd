@@ -98,11 +98,16 @@ func _on_enemy_killed(position: Vector2, xp_value: int) -> void:
 	if _xp_gem_scene == null or player == null:
 		return
 	var gem: XPGem = _xp_gem_scene.instantiate() as XPGem
+	gem.position = position
+	gem.setup(xp_value, player)
 	var arena := get_parent()
 	if arena:
-		arena.add_child(gem)
-	gem.global_position = position
-	gem.setup(xp_value, player)
+		# Defer the tree insertion: _on_enemy_killed can fire from inside a
+		# physics collision callback (e.g. a bubble's body_entered). Adding an
+		# Area2D during the physics query flush makes Godot reject the gem's
+		# monitoring setup, so its body_entered never fires and XP is never
+		# collected. Deferring moves the insertion to a safe point.
+		arena.add_child.call_deferred(gem)
 
 func _on_player_leveled_up(_level: int) -> void:
 	if upgrade_system == null or _upgrade_ui == null:
