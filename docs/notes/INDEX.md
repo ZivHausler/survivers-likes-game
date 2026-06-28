@@ -9,6 +9,8 @@ Add new notes here as they are created; link by `[[id]]`.
 
 - [[game-events]] — Global signal bus (`GameEvents` autoload)
 - [[run-state]] — Cross-scene run persistence (`RunState` autoload)
+- [[juice]] — `Juice` autoload: decoupled visual-effects layer (connects to GameEvents; stubs filled in Wave C)
+- [[sprite-integration]] — Optional sprite fields on `CharacterData`/`EnemyData` + fallback rule (Wave A/B)
 - [[data-driven-characters]] — How a friend is modelled as `CharacterData` + weapon + passive + evolution
 - [[stat-block]] — `StatBlock` resource: all numeric stats for a character/enemy
 - [[character-data]] — `CharacterData` resource: complete friend definition (stats, weapon, passive, evolution)

@@ -13,3 +13,4 @@ class_name CharacterData extends Resource
 @export var signature_upgrade: Upgrade
 @export var passive_upgrade: Upgrade
 @export var evolution_upgrade: Upgrade
+@export var sprite_frames: SpriteFrames  ## Optional animated sprite; null → use color placeholder

@@ -9,3 +9,4 @@ class_name EnemyData extends Resource
 @export var xp_value: int = 1
 @export var is_ranged: bool = false
 @export var radius: float = 8.0
+@export var texture: Texture2D  ## Optional sprite texture; null → use color circle placeholder
