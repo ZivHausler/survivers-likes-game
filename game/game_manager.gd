@@ -130,6 +130,11 @@ func _on_player_leveled_up(_level: int) -> void:
 	if _choosing:
 		_pending_levelups += 1
 		return
+	# If everything is already maxed there is nothing to pick — never pause on an
+	# empty picker (that softlocks the game). Grant a small bonus and move on.
+	if not upgrade_system.has_available_choices():
+		_grant_max_bonus()
+		return
 	_choosing = true
 	get_tree().paused = true
 	_present_next()
@@ -137,6 +142,12 @@ func _on_player_leveled_up(_level: int) -> void:
 ## Present a fresh choice set. build_choices is re-evaluated each call so an
 ## evolution that becomes available across stacked level-ups is offered.
 func _present_next() -> void:
+	# A pick earlier in this chain may have exhausted every upgrade; never show an
+	# empty picker (softlock). Grant the maxed bonus and resolve the queue instead.
+	if not upgrade_system.has_available_choices():
+		_grant_max_bonus()
+		_resolve_next_or_unpause()
+		return
 	_upgrade_ui.present(upgrade_system, player)
 
 func _on_player_died() -> void:
@@ -168,11 +179,21 @@ func _on_upgrade_chosen(u: Upgrade) -> void:
 	if upgrade_system:
 		upgrade_system.apply(u)
 	_apply_upgrade(u)
-	# Resolve the next queued level-up (if any) before unpausing, so no
-	# level-up loses its reward and the tree only resumes once all are done.
+	_resolve_next_or_unpause()
+
+## Resolve the next queued level-up (if any) before unpausing, so no level-up
+## loses its reward and the tree only resumes once all are done.
+func _resolve_next_or_unpause() -> void:
 	if _pending_levelups > 0:
 		_pending_levelups -= 1
 		_present_next()  # stay paused, _choosing stays true
 	else:
 		_choosing = false
 		get_tree().paused = false
+
+## Courtesy bonus for a level-up gained when every upgrade is already maxed:
+## a small permanent HP boost (also heals), so leveling still rewards and the
+## picker is never shown empty.
+func _grant_max_bonus() -> void:
+	if player and player.has_method("apply_stat_upgrade"):
+		player.apply_stat_upgrade(&"max_hp", 5.0)

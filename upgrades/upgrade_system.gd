@@ -78,6 +78,14 @@ func build_choices(rng: RandomNumberGenerator, count: int = 3) -> Array:
     return result
 
 
+## True if there is at least one upgrade the player could still pick (an
+## available evolution, or any non-maxed signature/passive/generic). When this
+## is false, the level-up picker must NOT be shown — it would be empty and
+## softlock the game.
+func has_available_choices() -> bool:
+    return evolution_available() or not _non_maxed_pool().is_empty()
+
+
 ## Increment the level of upgrade u. If u is an EVOLUTION upgrade, mark evolved
 ## and emit GameEvents.evolution_unlocked with the character's evolution_id.
 func apply(u: Upgrade) -> void:
