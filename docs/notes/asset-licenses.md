@@ -6,6 +6,8 @@
 | `art/characters/` | https://kenney.nl/assets/tiny-dungeon | CC0 1.0 Universal | No |
 | `art/tiles/` | https://kenney.nl/assets/tiny-town | CC0 1.0 Universal | No |
 | `addons/godot_vfx/` | https://github.com/haowg/GODOT-VFX-LIBRARY | MIT | Yes |
+| `art/characters_3d/kenney_blocky_characters/` | https://kenney.nl/assets/blocky-characters | CC0 1.0 Universal | No |
+| `art/enemies_3d/` | MDA Hatchery CP1 (user's Downloads) | ⚠️ Commercial — prototype only | N/A |
 
 ## Character tile choices (Task B1)
 
@@ -33,6 +35,32 @@ From `art/tiles/Tiles/` (Kenney Tiny Town, CC0):
 | Usage | File | Visual description |
 |---|---|---|
 | Arena background ground | `art/tiles/Tiles/tile_0000.png` | Flat grass/ground tile (first tile in pack) |
+
+## 3D Player Characters (Task A.1)
+
+| Asset Folder | Source URL | License | Attribution Required |
+|---|---|---|---|
+| `art/characters_3d/kenney_blocky_characters/` | https://kenney.nl/assets/blocky-characters | CC0 1.0 Universal | No |
+
+**Pack:** Kenney Blocky Characters v2.0 (released 2025-06-10)
+**Approach:** 10 distinct humanoid variants (character-a through character-j), each ~111KB GLB with 27 embedded animations including: `idle`, `walk`, `sprint`, `die`, `attack-melee-right`, `attack-melee-left`, `attack-kick-right`, `attack-kick-left`, `holding-right-shoot`, `holding-left-shoot`, `pick-up`, `interact-right`, `interact-left`, `emote-yes`, `emote-no`, `sit`, `drive`, `static`, and wheelchair variants. Each variant ships with its own texture atlas (`texture-a.png` … `texture-j.png`). Variants are visually distinct by costume/color; recoloring via material override will allow representing up to 10+ player "friends".
+
+## 3D Enemy Monsters (Task A.2)
+
+**Source:** MDA Hatchery CP1 — `battle_monsters.zip` + `battle_monsters.unitypackage` (from user's Downloads)
+
+⚠️ **LICENSE CAVEAT:** MDA Hatchery (battle_monsters), 2016 commercial Unity asset store pack, no bundled license file — used for personal prototype only, rights UNCONFIRMED before any distribution.
+
+**Conversion toolchain:** FBX2glTF v0.9.7 (Facebook/Meta Oculus VR, LLC, BSD-licensed tool) installed via `npm install -g fbx2gltf` into `~/npm-global`. Binary: `~/npm-global/lib/node_modules/fbx2gltf/bin/Darwin/FBX2glTF`. Each animation FBX was converted separately with `--binary` flag to produce GLB. Textures embedded in the original FBX files were preserved in the output GLBs.
+
+| Monster | Role | Files | Animations |
+|---|---|---|---|
+| `art/enemies_3d/bug/` | Swarmer (small/fast) | `bug_mesh.glb`, `bug_idle.glb`, `bug_run.glb`, `bug_die.glb` | idle (48f), run (8f), die_forward (23f) |
+| `art/enemies_3d/undead_serpent/` | Boss (imposing) | `serpent_mesh.glb`, `serpent_idle.glb`, `serpent_move.glb`, `serpent_die.glb`, `serpent_attack.glb` | idle (80f), swim/move (80f), die (48f), bite/attack (32f) |
+| `art/enemies_3d/diatryma/` | Tank (large bird) | `diatryma_mesh.glb`, `diatryma_idle.glb`, `diatryma_run.glb`, `diatryma_die.glb`, `diatryma_attack.glb` | idle (40f), run (16f), die_forward (13f), bite/attack (20f) |
+| `art/enemies_3d/plant_monster/` | Spitter (ranged) | `plant_mesh.glb`, `plant_idle.glb`, `plant_walk.glb`, `plant_die.glb`, `plant_attack.glb` | idle (40f), walk (16f), die_forward (20f), bite/attack (24f) |
+
+Diatryma also has separate PNG textures extracted from the `.unitypackage` at `art/enemies_3d/diatryma/textures/` (diatryma_feathers_TXTR.png, diatryma_feathers_ALPHA.png). Bug, serpent and plant textures are embedded in their mesh GLBs.
 
 ## CREDITS
 
