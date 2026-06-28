@@ -5,3 +5,5 @@ export_presets.cfg
 
 # Superpowers controller scratch — not for version control
 .superpowers/
+
+.claude/
