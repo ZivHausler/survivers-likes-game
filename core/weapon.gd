@@ -38,4 +38,6 @@ func is_max_level(max_level: int) -> bool:
 	return level >= max_level
 
 func _refresh_cooldown() -> void:
+	if not _timer:
+		return
 	_timer.wait_time = max(0.05, base_cooldown / stats.fire_rate_mult)

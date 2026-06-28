@@ -33,8 +33,8 @@ links: [[stat-block]], [[data-driven-characters]], [[weapon-system]]
 var data: CharacterData = preload("res://data/characters/alex.tres")
 var live_stats := data.base_stats.duplicate_stats()
 var weapon := data.weapon_scene.instantiate() as Weapon
-weapon.setup(player, live_stats)
-player.add_child(weapon)
+player.add_child(weapon)           # _ready() runs; _timer created
+weapon.setup(player, live_stats)   # stats assigned; timer started
 ```
 
 ## Links
