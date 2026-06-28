@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3 uid="uid://dqktbxhyf7crr"]
+
+[ext_resource type="Script" uid="uid://cmvnqh3xwdj7e" path="res://player/player.gd" id="1_player"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
+size = Vector2(16, 16)
+
+[node name="Player" type="CharacterBody2D" groups=["player"]]
+script = ExtResource("1_player")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="Hurtbox" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+shape = SubResource("RectangleShape2D_hurtbox")
