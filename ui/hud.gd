@@ -13,6 +13,7 @@ class_name HUD extends CanvasLayer
 
 var _game_manager: GameManager = null
 var _player: Player = null
+var _evolve_tween: Tween = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -47,8 +48,12 @@ func _on_leveled_up(level: int) -> void:
 	_level_label.text = "Lv %d" % level
 
 func _on_evolution_unlocked(_weapon_id: StringName) -> void:
+	# Kill any in-flight fade so a rapid second evolution doesn't leave the old
+	# tween's hide-callback to blink the banner off mid-fade.
+	if _evolve_tween and _evolve_tween.is_valid():
+		_evolve_tween.kill()
 	_evolve_banner.modulate = Color.WHITE
 	_evolve_banner.visible = true
-	var tween := create_tween()
-	tween.tween_property(_evolve_banner, "modulate:a", 0.0, 2.0).set_delay(0.5)
-	tween.tween_callback(func(): _evolve_banner.visible = false)
+	_evolve_tween = create_tween()
+	_evolve_tween.tween_property(_evolve_banner, "modulate:a", 0.0, 2.0).set_delay(0.5)
+	_evolve_tween.tween_callback(func(): _evolve_banner.visible = false)

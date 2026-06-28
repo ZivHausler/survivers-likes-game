@@ -50,6 +50,7 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_xpfill")
 
 [node name="EvolveBanner" type="Label" parent="."]
 visible = false
+mouse_filter = 2
 anchor_left = 0.5
 anchor_right = 0.5
 anchor_top = 0.3
