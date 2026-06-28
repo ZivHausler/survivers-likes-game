@@ -15,12 +15,16 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[weapon-system]] — `Weapon` base class: self-driving timer, lifecycle contract, subclass pattern
 - [[weapon-ziv]] — `ZivStunningLooks`: "Stunning Looks" beam + charm; evolution "Absolutely Fabulous"
 - [[weapon-avihay]] — `AvihayChatSpam`: "Chat Spam" homing bubbles + pierce; evolution "Reply-All Apocalypse"
-- [[upgrade-system]] — `UpgradeSystem`: pool generation, `build_choices`, `apply`, level tracking
-- [[player]] — `Player` (`CharacterBody2D`): WASD movement, HP, XP, leveling, weapon spawn
+- [[upgrade-system]] — `UpgradeSystem`: pool generation, `build_choices`, `apply`, level tracking; Wave 3 router + `effect_kind/effect_value`
+- [[player]] — `Player` (`CharacterBody2D`): WASD movement, HP, XP, leveling, weapon spawn, `apply_stat_upgrade`
 - [[enemy]] — `Enemy` (`CharacterBody2D`): steering, contact damage, death; `EnemyData` variants (swarmer, tank, spitter)
 - [[difficulty-timeline]] — `DifficultyTimeline` (`RefCounted`): spawn interval curve, variant thresholds, 300 s boss windows
 - [[spawner]] — `Spawner` (`Node2D`): ring spawner driven by `DifficultyTimeline`; mini-boss on boss_due
 - [[xp-gem]] — `XPGem` (`Area2D`): magnet pickup that awards XP and emits `xp_collected`
+- [[game-manager]] — `GameManager` (`Node`): run timer, kills, XP gem spawning, level-up pause flow, upgrade-effect router
+- [[upgrade-ui]] — `UpgradeUI` (`CanvasLayer`): level-up overlay with 3 choices; golden EVOLUTION slot
+- [[hud]] — `HUD` (`CanvasLayer`): timer, HP bar, XP bar + level, kill counter
+- [[game-over]] — `GameOver` (`Control`): end-of-run screen with score + retry/select buttons
 
 ## Concepts
 
@@ -34,4 +38,6 @@ Add new notes here as they are created; link by `[[id]]`.
 
 ## Runbooks
 
-_None yet — add operational procedures here as needed._
+- [[how-to-add-a-character]] — Add friend #3..#10: weapon, upgrades, CharacterData, register in select screen
+- [[how-to-add-an-enemy]] — Add a new enemy variant: EnemyData .tres, Spawner registration, DifficultyTimeline
+- [[how-to-playtest]] — Manual playtest checklist: launch → select → play → evolve → die → game over
