@@ -14,6 +14,7 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[character-data]] — `CharacterData` resource: complete friend definition (stats, weapon, passive, evolution)
 - [[weapon-system]] — `Weapon` base class: self-driving timer, lifecycle contract, subclass pattern
 - [[player]] — `Player` (`CharacterBody2D`): WASD movement, HP, XP, leveling, weapon spawn
+- [[enemy]] — `Enemy` (`CharacterBody2D`): steering, contact damage, death; `EnemyData` variants (swarmer, tank, spitter)
 
 ## Concepts
 
