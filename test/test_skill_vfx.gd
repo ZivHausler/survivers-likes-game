@@ -16,24 +16,45 @@ func test_evolution_flash_scene_loads() -> void:
 
 func test_evolution_flash_spawned_and_auto_frees() -> void:
 	## Register a dummy player so Juice._safe_parent() returns a valid node.
+	## _safe_parent() adds the flash to current_scene (or root as fallback),
+	## so we must search the spawn parent's subtree — not just root's direct
+	## children — to actually find the spawned EvolutionFlash.
 	var dummy := Node2D.new()
 	add_child(dummy)
 	Juice.register_player(dummy)
 
-	GameEvents.evolution_unlocked.emit(&"test")
+	## Capture the spawn parent exactly as Juice._safe_parent() computes it.
+	var tree := get_tree()
+	var spawn_parent: Node = tree.current_scene if tree.current_scene != null else tree.root
 
-	## Wait long enough for the flash to auto-free (0.8 s) + margin.
+	GameEvents.evolution_unlocked.emit(&"test")
+	await get_tree().process_frame
+
+	## Locate the freshly-spawned EvolutionFlash in the spawn parent's subtree
+	## and hold a weakref so we can assert it is genuinely gone after auto-free.
+	var flash: EvolutionFlash = _find_evolution_flash(spawn_parent)
+	assert_not_null(flash, "EvolutionFlash must be spawned into the scene on evolution_unlocked")
+	var flash_ref: WeakRef = weakref(flash)
+
+	## Wait past the 0.8 s auto-free window (+ margin).
 	await get_tree().create_timer(1.2).timeout
 
-	## The EvolutionFlash CanvasLayer should have freed itself.
-	## We check by scanning the tree root's children for any EvolutionFlash.
-	var found_flash := false
-	for child in get_tree().root.get_children():
-		if child is EvolutionFlash:
-			found_flash = true
-	assert_false(found_flash, "EvolutionFlash must auto-free after 0.8 s")
+	## The captured node must now be freed. This fails if auto-free is removed.
+	assert_null(flash_ref.get_ref(), "EvolutionFlash must auto-free after 0.8 s")
+	assert_null(_find_evolution_flash(spawn_parent),
+		"No EvolutionFlash should remain in the scene subtree after auto-free")
 
 	dummy.queue_free()
+
+## Depth-first search of `root`'s subtree for the first EvolutionFlash node.
+func _find_evolution_flash(root: Node) -> EvolutionFlash:
+	for child in root.get_children():
+		if child is EvolutionFlash:
+			return child
+		var found := _find_evolution_flash(child)
+		if found != null:
+			return found
+	return null
 
 func test_player_leveled_up_no_player_no_crash() -> void:
 	# No player registered — handler must return early without crashing.

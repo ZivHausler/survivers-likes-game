@@ -112,8 +112,11 @@ in non-evolved mode (`emitting = true` on show, `false` on hide). In evolved mod
 
 ### CharmSparkle (`_charm_sparkle`)
 
-Added as a child of `_charm_field` (Area2D). Starts off (`emitting = false`). Enabled
-permanently by `evolve()` to give the always-on CharmField aura visible feedback.
+Added as a child of `_charm_field` (Area2D). Starts off (`emitting = false`) and is
+**only ever emitted once evolved** — `evolve()` enables it and sets `amount = 24`.
+Because it never emits in the non-evolved state, no pre-evolution `amount` is configured
+in `_ready()` (the CPUParticles2D default is left in place). Gives the always-on
+CharmField aura visible feedback.
 
 | Property | Evolved |
 |---|---|

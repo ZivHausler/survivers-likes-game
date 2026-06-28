@@ -81,8 +81,10 @@ func _on_player_leveled_up(_level: int) -> void:
 	if parent == null:
 		return
 	var flash: EvolutionFlash = _EvolutionFlashScene.instantiate()
-	flash.set_intensity(0.4)
+	# add_child FIRST so the node's _ready() creates _rect; only then does
+	# set_intensity() actually take effect (otherwise it no-ops on the guard).
 	parent.add_child(flash)
+	flash.set_intensity(0.4)
 
 func _on_player_hp_changed(current: float, _max_hp: float) -> void:
 	# Flash player and shake camera only on a HP decrease

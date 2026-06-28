@@ -63,7 +63,8 @@ func _ready() -> void:
 	_charm_sparkle = CPUParticles2D.new()
 	_charm_sparkle.one_shot             = false
 	_charm_sparkle.emitting             = false
-	_charm_sparkle.amount               = 12
+	# amount left at the CPUParticles2D default here: the charm sparkle only
+	# emits once evolved, where evolve() sets amount = 24.
 	_charm_sparkle.lifetime             = 0.8
 	_charm_sparkle.spread               = 180.0
 	_charm_sparkle.initial_velocity_min = 10.0
