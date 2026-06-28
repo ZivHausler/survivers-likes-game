@@ -28,6 +28,8 @@ func _physics_process(dt: float) -> void:
 		_contact_cd = 0.5
 
 func take_damage(amount: float) -> void:
+	if data == null:
+		return
 	hp -= amount
 	if hp <= 0.0:
 		GameEvents.enemy_killed.emit(global_position, data.xp_value)

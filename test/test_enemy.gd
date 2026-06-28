@@ -81,3 +81,14 @@ func test_physics_process_before_setup_does_not_crash() -> void:
 	# If this doesn't crash, the guard works
 	e._physics_process(0.016)
 	assert_true(true, "no crash when _physics_process runs before setup()")
+
+func test_physics_process_with_freed_target_does_not_crash() -> void:
+	var e: Enemy = add_child_autofree(EnemyScene.instantiate()) as Enemy
+	var doomed_target: Node2D = Node2D.new()
+	add_child(doomed_target)
+	e.setup(_make_data(20.0, 3), doomed_target)
+	# free the target so is_instance_valid(target) is false
+	doomed_target.free()
+	# _physics_process must hit the invalid-target early return without crashing
+	e._physics_process(0.016)
+	assert_true(true, "no crash when _physics_process runs with a freed target")
