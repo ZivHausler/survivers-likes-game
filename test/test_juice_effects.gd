@@ -14,6 +14,7 @@ func after_each() -> void:
 	# Reset Juice singleton state to avoid cross-test contamination
 	Juice.register_player(null)
 	Juice.register_camera(null)
+	Juice._last_hp = -1.0
 
 # ── DamageNumber ─────────────────────────────────────────────────────────────
 
