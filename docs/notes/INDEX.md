@@ -37,6 +37,10 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[adr-godot]] — Why Godot 4 was chosen
 - [[adr-data-driven-roster]] — Why characters are data (not code) driven
 
+## Assets
+
+- [[asset-licenses]] — Asset license table: Kenney CC0 packs + MIT VFX library; CREDITS for haowg/GODOT-VFX-LIBRARY
+
 ## Runbooks
 
 - [[how-to-add-a-character]] — Add friend #3..#10: weapon, upgrades, CharacterData, register in select screen
