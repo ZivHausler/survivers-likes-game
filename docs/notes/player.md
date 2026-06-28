@@ -13,7 +13,8 @@ Source: `res://player/player.gd` | Scene: `res://player/player.tscn`
 
 ```
 Player (CharacterBody2D, group "player")
-├── ColorRect  (16×16, centered at origin; tinted from CharacterData.color)
+├── ColorRect       (16×16, centered at origin; tinted from CharacterData.color — fallback only)
+├── Sprite          (AnimatedSprite2D, scale 2×, hidden by default; shown when CharacterData.sprite_frames is set)
 ├── Camera2D
 └── Hurtbox (Area2D)
     └── CollisionShape2D (RectangleShape2D 16×16)
@@ -61,6 +62,25 @@ Speed = `stats.move_speed` (default 120 px/s from [[stat-block]]).
 `CharacterData` with no weapon is safe for testing. When a weapon exists:
 1. `add_child(weapon)` — weapon's `_ready()` creates its timer
 2. `weapon.setup(self, stats)` — timer starts; see [[weapon-system]] for full lifecycle
+
+## Sprite + procedural bob (Task B1)
+
+`setup(data)` checks `data.sprite_frames`:
+- **Set**: assigns to `$Sprite.sprite_frames`, calls `play("idle")`, shows `$Sprite`, hides `ColorRect`.
+- **Null**: sets `ColorRect.color = data.color`, hides `$Sprite`. All existing tests use this path.
+
+`_physics_process` drives a **procedural bob** on `$Sprite` when the sprite is visible:
+- **Moving** (`velocity.length_squared() > 1`): accumulates `_bob_t` and applies `sin(_bob_t)*2px` vertical oscillation plus a slight squash/stretch (±6%/8% on x/y scale). `flip_h` follows `velocity.x` sign.
+- **Idle**: resets `position.y` and `scale` to neutral; `_bob_t` resets to 0.
+
+The bob is purely visual — velocity, collision, and stats are never altered.
+
+Character tiles used (Kenney Tiny Dungeon, CC0):
+- **Ziv**: `art/characters/Tiles/tile_0084.png` — purple-robed mage
+- **Avihay**: `art/characters/Tiles/tile_0108.png` — green-armored character
+
+SpriteFrames resources: `characters/ziv_frames.tres`, `characters/avihay_frames.tres`
+(each has "idle" and "walk" animations, both using the single static tile — no multi-frame strip available).
 
 ## Related
 

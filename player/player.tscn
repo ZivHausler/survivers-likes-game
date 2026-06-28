@@ -16,6 +16,10 @@ offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
 
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+visible = false
+scale = Vector2(2, 2)
+
 [node name="Camera2D" type="Camera2D" parent="."]
 
 [node name="Hurtbox" type="Area2D" parent="."]
