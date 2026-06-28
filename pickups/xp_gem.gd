@@ -10,6 +10,16 @@ var _value: int = 0
 var _player: Node2D = null
 var _collected: bool = false
 
+func _ready() -> void:
+	# Gentle scale pulse so the gem reads as "alive" on screen.
+	# Animates the Area2D scale; CollisionShape2D scales with it (±15% radius change
+	# on a 6 px circle is negligible for gameplay).
+	var tween := create_tween().set_loops()
+	tween.tween_property(self, "scale", Vector2(1.15, 1.15), 0.6) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(self, "scale", Vector2(0.85, 0.85), 0.6) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
 func setup(value: int, player: Node2D) -> void:
 	_value = value
 	_player = player

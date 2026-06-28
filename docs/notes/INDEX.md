@@ -22,7 +22,8 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[enemy]] — `Enemy` (`CharacterBody2D`): steering, contact damage, death; `EnemyData` variants (swarmer, tank, spitter)
 - [[difficulty-timeline]] — `DifficultyTimeline` (`RefCounted`): spawn interval curve, variant thresholds, 300 s boss windows
 - [[spawner]] — `Spawner` (`Node2D`): ring spawner driven by `DifficultyTimeline`; mini-boss on boss_due
-- [[xp-gem]] — `XPGem` (`Area2D`): magnet pickup that awards XP and emits `xp_collected`
+- [[xp-gem]] — `XPGem` (`Area2D`): magnet pickup that awards XP and emits `xp_collected`; pulsing scale Tween added in Task B3
+- [[background]] — Arena ground tile (Sprite2D, texture_repeat) + full-screen vignette shader on CanvasLayer 0
 - [[main-routing]] — `main.tscn` / `main.gd` entry router + `character_select` scene flow
 - [[game-manager]] — `GameManager` (`Node`): run timer, kills, XP gem spawning, level-up pause flow, upgrade-effect router
 - [[upgrade-ui]] — `UpgradeUI` (`CanvasLayer`): level-up overlay with 3 choices; golden EVOLUTION slot

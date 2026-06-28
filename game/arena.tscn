@@ -1,12 +1,32 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="PackedScene" uid="uid://dqktbxhyf7crr" path="res://player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" uid="uid://c8x2n5qwvtame" path="res://spawning/spawner.tscn" id="2_spawner"]
 [ext_resource type="Script" uid="uid://14s8xx7abofh" path="res://game/game_manager.gd" id="3_gm"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="4_hud"]
 [ext_resource type="PackedScene" path="res://upgrades/upgrade_ui.tscn" id="5_ui"]
+[ext_resource type="Texture2D" uid="uid://ds15wbmkmeqki" path="res://art/tiles/Tiles/tile_0000.png" id="6_tile"]
+
+[sub_resource type="Shader" id="Shader_vignette"]
+code = "shader_type canvas_item;
+void fragment() {
+    vec2 uv = UV - vec2(0.5);
+    float dist = length(uv) * 2.0;
+    float v = smoothstep(0.4, 1.0, dist);
+    COLOR = vec4(0.0, 0.0, 0.0, v * 0.65);
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
+shader = SubResource("Shader_vignette")
 
 [node name="Arena" type="Node2D"]
+
+[node name="Background" type="Sprite2D" parent="."]
+texture_repeat = 1
+z_index = -10
+texture = ExtResource("6_tile")
+region_enabled = true
+region_rect = Rect2(-2048, -2048, 4096, 4096)
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 
@@ -14,6 +34,19 @@
 
 [node name="GameManager" type="Node" parent="."]
 script = ExtResource("3_gm")
+
+[node name="Vignette" type="CanvasLayer" parent="."]
+layer = 0
+
+[node name="VignetteRect" type="ColorRect" parent="Vignette"]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("ShaderMaterial_vignette")
 
 [node name="HUD" parent="." instance=ExtResource("4_hud")]
 

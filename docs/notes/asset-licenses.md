@@ -26,6 +26,14 @@ Tiles from `art/enemies/PNG/Default/` (Kenney Monster Builder Pack, CC0):
 | tank | `body_darkB.png` | Large dark/charcoal body — reads as a heavy bruiser |
 | spitter | `body_blueB.png` | Medium blue body — distinct from swarmer and tank |
 
+## Background ground tile choice (Task B3)
+
+From `art/tiles/Tiles/` (Kenney Tiny Town, CC0):
+
+| Usage | File | Visual description |
+|---|---|---|
+| Arena background ground | `art/tiles/Tiles/tile_0000.png` | Flat grass/ground tile (first tile in pack) |
+
 ## CREDITS
 
 GODOT-VFX-LIBRARY by haowg (https://github.com/haowg/GODOT-VFX-LIBRARY) — MIT License.

@@ -59,6 +59,15 @@ On `body_entered` (player body enters the gem's CollisionShape2D):
 Gems are spawned by the game manager when `GameEvents.enemy_killed` fires.
 `setup(xp_value, player)` must be called immediately after instantiation.
 
+## Visual pulse (Task B3)
+
+On `_ready`, a looping `Tween` oscillates `scale` between `(0.85, 0.85)` and `(1.15, 1.15)`
+at 0.6 s per half-cycle using `TRANS_SINE / EASE_IN_OUT`. This makes the gem appear to
+breathe/glow without changing any gameplay logic. The CollisionShape2D scales with the
+Area2D (~±0.9 px on a 6 px radius) — negligible for collection.
+
+The gold `ColorRect` ("Body") is retained; no external sprite asset was required.
+
 ## Testing
 
 `res://test/test_xp_gem.gd` covers collection logic via `_collect()` directly:
