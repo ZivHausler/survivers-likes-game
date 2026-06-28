@@ -116,7 +116,35 @@ ability scene.
   game-over.
 - **Art:** placeholder colored shapes / simple sprites in v1; real art later.
 
-## 8. Testing Approach
+## 8. AI Knowledge Base (Zettelkasten)
+
+The repo maintains a Zettelkasten-style knowledge base so any future session
+(human or AI) can get oriented from a few small linked notes instead of
+re-reading the whole codebase.
+
+- **Location:** `docs/notes/`, with `docs/notes/INDEX.md` as the entry point
+  (a "map of content" listing all notes by category — read this first).
+- **Atomic notes:** one concept per file, with frontmatter
+  (`id`, `title`, `tags`, `links`) and cross-links via `[[note-id]]`. Each note
+  is ~one screen and points at the relevant code (file paths + key scene/node
+  names) — it indexes the source, it does not duplicate it.
+- **Note types:**
+  - *System notes* — one per component: `player`, `weapon-system`, `spawner`,
+    `upgrade-system`, `enemy`, `game-manager`, `xp-gem`.
+  - *Concept notes* — cross-cutting: `evolution-rule`, `difficulty-timeline`,
+    `data-driven-characters`.
+  - *Decision notes* (ADR-style, the *why*): `adr-godot`,
+    `adr-data-driven-roster`.
+  - *Runbook notes* — task recipes: `how-to-add-a-character`,
+    `how-to-add-an-enemy`.
+- **Code back-references:** every GDScript file begins with a one-line header
+  comment pointing to its note (e.g. `# See docs/notes/weapon-system.md`).
+- **The hard rule (enforced in the implementation plan):** every task that adds
+  or changes a component must create or update its note in the same step. A
+  component is not "done" until its note exists and is current. This keeps the
+  knowledge base from rotting.
+
+## 9. Testing Approach
 
 - Manual playtest as the primary check (it's a feel-driven game).
 - Unit-test pure logic where it pays off: upgrade pool generation, the
@@ -125,7 +153,7 @@ ability scene.
   one enemy type + XP/level-up, then layer on upgrades, synergy, second
   character, more enemies, and the mini-boss.
 
-## 9. Success Criteria (v1)
+## 10. Success Criteria (v1)
 
 - Can select Ziv or Avihay and play a full run start to death.
 - Signature ability auto-fires and is visibly different between the two.
@@ -135,3 +163,6 @@ ability scene.
   option, and taking it visibly transforms the ability.
 - Difficulty escalates over time; a mini-boss appears on cadence.
 - Death shows survival time + kill count and allows restart.
+- `docs/notes/` exists with an `INDEX.md` map of content and a current,
+  cross-linked note for every component built in v1; each GDScript file
+  header-comments its note path.
