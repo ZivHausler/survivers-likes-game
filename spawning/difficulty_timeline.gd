@@ -3,12 +3,12 @@ class_name DifficultyTimeline extends RefCounted
 ## Pure difficulty curve — no scene-tree deps, fully unit-testable.
 ##
 ## Interval curve: linear decay clamped to a floor.
-##   spawn_interval(t) = clamp(3.0 - t * 0.01138, INTERVAL_FLOOR, INTERVAL_START)
+##   spawn_interval(t) = clamp(3.0 - t * 0.01146, INTERVAL_FLOOR, INTERVAL_START)
 ##   t=0   → 3.00 s
-##   t=60  → ~2.32 s
+##   t=60  → ~2.31 s
 ##   t=120 → ~1.63 s
-##   t=240 → ~0.27 s  (near floor)
-##   t=240+→ 0.25 s   (floor, held)
+##   t=240 → 0.25 s  (floor reached)
+##   t=240+→ 0.25 s  (floor, held)
 ##
 ## Variant thresholds:
 ##   t <  60  → [swarmer]

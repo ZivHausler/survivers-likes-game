@@ -15,8 +15,11 @@ func test_interval_strictly_decreasing_from_0_to_240() -> void:
 	var i240: float = tl.state_at(240.0).spawn_interval
 	assert_true(i0 > i240, "spawn_interval at t=0 must be greater than at t=240")
 
+func test_interval_starts_at_start_value() -> void:
+	assert_almost_eq(tl.state_at(0.0).spawn_interval, 3.0, 0.001,
+		"spawn_interval at t=0 must equal the start value (3.0s)")
+
 func test_interval_is_clamped_to_floor() -> void:
-	var floor_val: float = tl.state_at(0.0).spawn_interval  # get any reference to confirm floor exists
 	# At a very large t, interval must not go below the documented floor (0.25s)
 	var huge: float = tl.state_at(9999.0).spawn_interval
 	assert_true(huge >= 0.25, "spawn_interval must not go below 0.25s floor")
@@ -71,16 +74,25 @@ func test_mark_boss_spawned_clears_flag_within_same_window() -> void:
 	var after: Dictionary = tl.state_at(305.0)
 	assert_false(after.boss_due, "boss_due must be false after mark_boss_spawned() within the same window")
 
-func test_boss_due_again_at_600s() -> void:
+func test_boss_due_again_at_next_window_sequential_flow() -> void:
+	# Realistic per-frame flow across consecutive windows (no skipped boundaries).
+	# Window 1 (300s): becomes due, gets acknowledged, stays clear.
+	assert_true(tl.state_at(305.0).boss_due, "boss_due true at 305s (window 1)")
 	tl.mark_boss_spawned()
-	# Move to the next 300s window
-	var s: Dictionary = tl.state_at(600.0)
-	assert_true(s.boss_due, "boss_due must be true again at t=600s (second 300s boundary)")
+	assert_false(tl.state_at(310.0).boss_due, "boss_due false after mark within window 1")
+	# Window 2 (600s): crossing the next boundary re-triggers exactly once.
+	assert_true(tl.state_at(605.0).boss_due, "boss_due true at 605s (window 2)")
 
-func test_mark_boss_spawned_at_600_clears_again() -> void:
-	tl.mark_boss_spawned()          # clear first window
-	var before: Dictionary = tl.state_at(600.0)
-	assert_true(before.boss_due)
-	tl.mark_boss_spawned()          # clear second window
-	var after: Dictionary = tl.state_at(600.0)
-	assert_false(after.boss_due, "boss_due must be false after second mark_boss_spawned()")
+func test_consecutive_windows_each_trigger_once() -> void:
+	# Walk windows 1 → 2 → 3 in order; each must trigger exactly once then clear.
+	assert_true(tl.state_at(305.0).boss_due, "window 1 due")
+	tl.mark_boss_spawned()
+	assert_false(tl.state_at(310.0).boss_due, "window 1 cleared")
+
+	assert_true(tl.state_at(605.0).boss_due, "window 2 due")
+	tl.mark_boss_spawned()
+	assert_false(tl.state_at(610.0).boss_due, "window 2 cleared")
+
+	assert_true(tl.state_at(905.0).boss_due, "window 3 due")
+	tl.mark_boss_spawned()
+	assert_false(tl.state_at(910.0).boss_due, "window 3 cleared")

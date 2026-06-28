@@ -91,7 +91,9 @@ func _spawn_boss() -> void:
 func _instance_enemy(data: EnemyData, scale_mult: float) -> void:
 	var enemy: Enemy = _enemy_scene.instantiate() as Enemy
 	# Add to the same parent so the enemy persists beyond this node's lifetime
-	get_parent().add_child(enemy)
+	var parent := get_parent()
+	assert(parent != null, "Spawner must not be the scene root")
+	parent.add_child(enemy)
 	enemy.add_to_group("enemies")
 	enemy.global_position = _random_ring_position()
 	enemy.scale = Vector2.ONE * scale_mult
