@@ -10,3 +10,5 @@ kind = 3
 max_level = 1
 effect_kind = &""
 effect_value = 0.0
+description = "Transcend mere looks. Transform your signature ability into its ultimate form."
+stat_text = "Unlocks Fabulous mode"

@@ -10,3 +10,5 @@ kind = 2
 max_level = 5
 effect_kind = &"armor"
 effect_value = 3.0
+description = "Toughen up. Each point of armor reduces incoming damage."
+stat_text = "+3 Armor"

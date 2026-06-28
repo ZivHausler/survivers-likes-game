@@ -10,3 +10,5 @@ kind = 0
 max_level = 5
 effect_kind = &""
 effect_value = 0.0
+description = "Your signature ability grows more powerful. Stun them with style."
+stat_text = "Signature ability level +1"

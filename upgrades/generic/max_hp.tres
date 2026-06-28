@@ -10,3 +10,5 @@ kind = 2
 max_level = 5
 effect_kind = &"max_hp"
 effect_value = 25.0
+description = "More health, more problems. Also more surviving."
+stat_text = "+25 Max HP"

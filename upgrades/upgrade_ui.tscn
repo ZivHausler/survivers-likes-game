@@ -10,23 +10,131 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -150.0
-offset_right = 300.0
-offset_bottom = 150.0
+offset_left = -480.0
+offset_top = -280.0
+offset_right = 480.0
+offset_bottom = 280.0
 
-[node name="VBox" type="VBoxContainer" parent="Panel"]
+[node name="PanelVBox" type="VBoxContainer" parent="Panel"]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="Panel/VBox"]
+[node name="Title" type="Label" parent="Panel/PanelVBox"]
+layout_mode = 2
 text = "Choose an Upgrade"
 horizontal_alignment = 1
 
-[node name="Button0" type="Button" parent="Panel/VBox"]
-text = "Option 1"
+[node name="CardRow" type="HBoxContainer" parent="Panel/PanelVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
 
-[node name="Button1" type="Button" parent="Panel/VBox"]
-text = "Option 2"
+[node name="Card0" type="PanelContainer" parent="Panel/PanelVBox/CardRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 0
 
-[node name="Button2" type="Button" parent="Panel/VBox"]
-text = "Option 3"
+[node name="CardContent" type="VBoxContainer" parent="Panel/PanelVBox/CardRow/Card0"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="NameLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card0/CardContent"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[node name="IconRect" type="ColorRect" parent="Panel/PanelVBox/CardRow/Card0/CardContent"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 72)
+size_flags_horizontal = 3
+color = Color(0.5, 0.5, 0.5, 1)
+
+[node name="DescLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card0/CardContent"]
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="StatLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card0/CardContent"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[node name="LevelLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card0/CardContent"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[node name="Card1" type="PanelContainer" parent="Panel/PanelVBox/CardRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 0
+
+[node name="CardContent" type="VBoxContainer" parent="Panel/PanelVBox/CardRow/Card1"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="NameLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card1/CardContent"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[node name="IconRect" type="ColorRect" parent="Panel/PanelVBox/CardRow/Card1/CardContent"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 72)
+size_flags_horizontal = 3
+color = Color(0.5, 0.5, 0.5, 1)
+
+[node name="DescLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card1/CardContent"]
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="StatLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card1/CardContent"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[node name="LevelLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card1/CardContent"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[node name="Card2" type="PanelContainer" parent="Panel/PanelVBox/CardRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 0
+
+[node name="CardContent" type="VBoxContainer" parent="Panel/PanelVBox/CardRow/Card2"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="NameLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card2/CardContent"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[node name="IconRect" type="ColorRect" parent="Panel/PanelVBox/CardRow/Card2/CardContent"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 72)
+size_flags_horizontal = 3
+color = Color(0.5, 0.5, 0.5, 1)
+
+[node name="DescLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card2/CardContent"]
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="StatLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card2/CardContent"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[node name="LevelLabel" type="Label" parent="Panel/PanelVBox/CardRow/Card2/CardContent"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1

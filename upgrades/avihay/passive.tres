@@ -10,3 +10,5 @@ kind = 1
 max_level = 5
 effect_kind = &""
 effect_value = 0.2
+description = "Lightning fingers. Each attack has a chance to fire a bonus shot."
+stat_text = "+20% Double Shot Chance"

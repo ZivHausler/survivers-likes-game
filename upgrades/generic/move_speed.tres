@@ -10,3 +10,5 @@ kind = 2
 max_level = 5
 effect_kind = &"move_speed"
 effect_value = 12.0
+description = "Your legs never skip leg day. Move faster across the arena."
+stat_text = "+12 Move Speed"

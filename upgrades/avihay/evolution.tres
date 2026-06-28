@@ -10,3 +10,5 @@ kind = 3
 max_level = 1
 effect_kind = &""
 effect_value = 0.0
+description = "Everyone gets a message. Transform Chat Spam into the ultimate reply-all barrage."
+stat_text = "Unleashes Reply-All Apocalypse"

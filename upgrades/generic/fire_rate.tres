@@ -10,3 +10,5 @@ kind = 2
 max_level = 5
 effect_kind = &"fire_rate"
 effect_value = 0.2
+description = "Squeeze the trigger faster. Enemies don't get a break either."
+stat_text = "+20% Fire Rate"

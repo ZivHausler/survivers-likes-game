@@ -10,3 +10,5 @@ kind = 2
 max_level = 5
 effect_kind = &"pickup_range"
 effect_value = 20.0
+description = "XP gems fly to you from further away. Work smarter, not harder."
+stat_text = "+20 Pickup Range"

@@ -10,3 +10,5 @@ kind = 1
 max_level = 5
 effect_kind = &""
 effect_value = 0.75
+description = "Enemies caught in your gaze stay slowed for longer."
+stat_text = "+75% Slow Duration"

@@ -10,3 +10,5 @@ kind = 0
 max_level = 5
 effect_kind = &""
 effect_value = 0.0
+description = "Flood the chat even harder. Your messages hit more targets."
+stat_text = "Signature ability level +1"
