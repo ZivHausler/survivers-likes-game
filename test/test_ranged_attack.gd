@@ -43,3 +43,49 @@ func test_holding_enemy_fires_within_range() -> void:
 	assert_true(v.length() < 0.01, "at attack_range: hold (zero velocity)")
 	var ra := RangedAttack.new()
 	assert_true(ra._can_fire(attack_range, true, attack_range), "at attack_range: can fire")
+
+## Regression: projectile must spawn at the enemy, not at world origin.
+## With the old code (global_position before call_deferred add_child), the node
+## was not in the tree when global_position was set, so Godot discarded the value
+## and the projectile landed at (0,0,0).  The fix (add_child sync, then set
+## global_position) ensures the node is in the tree before the transform is applied.
+func test_projectile_spawns_at_enemy_not_world_origin() -> void:
+	var spawn_parent := Node3D.new()
+	add_child_autofree(spawn_parent)
+
+	var EnemyScene: PackedScene = load("res://enemies/enemy_3d.tscn")
+	var enemy: Enemy3D = EnemyScene.instantiate()
+	spawn_parent.add_child(enemy)
+
+	var data := EnemyData.new()
+	# defaults cover attack_cooldown (2.0); only speed + damage matter for _launch
+	data.projectile_speed = 10.0
+	data.projectile_damage = 5.0
+	enemy.data = data
+	enemy.global_position = Vector3(5.0, 0.0, 5.0)
+
+	var target := Node3D.new()
+	add_child_autofree(target)
+	target.global_position = Vector3.ZERO
+
+	var ra := RangedAttack.new()
+	ra._launch(enemy, target)
+
+	var proj: EnemyProjectile3D = null
+	for child in spawn_parent.get_children():
+		if child is EnemyProjectile3D:
+			proj = child
+			break
+
+	assert_not_null(proj, "a projectile was added under the spawn_parent")
+	if proj == null:
+		return
+
+	# Old code: projectile ends up at (0,0,0); new code: near the enemy.
+	var dist_from_origin: float = proj.global_position.length()
+	assert_true(dist_from_origin > 1.0,
+		"projectile is NOT at world origin (dist=%.3f)" % dist_from_origin)
+
+	var dist_from_enemy: float = proj.global_position.distance_to(enemy.global_position)
+	assert_true(dist_from_enemy < 2.0,
+		"projectile spawns within 2 units of the enemy (dist=%.3f)" % dist_from_enemy)

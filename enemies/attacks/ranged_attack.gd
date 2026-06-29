@@ -70,8 +70,8 @@ func _launch(enemy: Enemy3D, target: Node3D) -> void:
 	if spawn_parent == null:
 		proj.free()
 		return
+	spawn_parent.add_child(proj)
 	proj.global_position = enemy.global_position + Vector3(0, 1, 0)
-	spawn_parent.add_child.call_deferred(proj)
 	# Re-arm cooldown after the shot actually goes out.
 	_cooldown_left = enemy.data.attack_cooldown
 	GameEvents.skill_hit.emit(&"enemy_ranged_fire", Color.WHITE, enemy.global_position)

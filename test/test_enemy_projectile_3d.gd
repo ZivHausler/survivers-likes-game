@@ -7,6 +7,15 @@ class PlayerStub extends Area3D:
 	func _init() -> void: add_to_group("player")
 	func take_damage(a: float) -> void: taken += a
 
+## Mirrors the real game tree: Player3D (in group "player", has take_damage) with a
+## child Hurtbox Area3D (NOT in group "player") on collision layer 2.
+## This exercises the elif-parent branch of _on_area_entered, which the original
+## PlayerStub test did NOT reach.
+class HurtboxParent extends Node3D:
+	var taken := 0.0
+	func _init() -> void: add_to_group("player")
+	func take_damage(a: float) -> void: taken += a
+
 func before_all() -> void:
 	Scene = load("res://enemies/enemy_projectile_3d.tscn")
 
@@ -35,3 +44,22 @@ func test_hits_player_and_frees() -> void:
 	p._on_area_entered(stub)
 	assert_almost_eq(stub.taken, 7.0, 0.001, "player takes projectile_damage on hurtbox hit")
 	assert_true(p.is_queued_for_deletion(), "projectile frees after hitting the player")
+
+## Covers the real hurtbox path: a non-grouped Area3D child whose PARENT is in group
+## "player" with take_damage.  This is the elif branch in _on_area_entered that was
+## previously untested.
+func test_hits_via_hurtbox_parent_path() -> void:
+	var p: EnemyProjectile3D = add_child_autofree(Scene.instantiate())
+	p.setup(Vector3(1, 0, 0), 10.0, 9.0)
+
+	var player_node := HurtboxParent.new()
+	add_child_autofree(player_node)
+	var hurtbox := Area3D.new()          # NOT in group "player" — just a child Area3D
+	player_node.add_child(hurtbox)
+
+	p._on_area_entered(hurtbox)
+
+	assert_almost_eq(player_node.taken, 9.0, 0.001,
+		"parent player node takes damage via the hurtbox-parent branch")
+	assert_true(p.is_queued_for_deletion(),
+		"projectile frees after hurtbox-parent hit")
