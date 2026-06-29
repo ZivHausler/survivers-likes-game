@@ -32,4 +32,4 @@ passive_upgrade = ExtResource("5_pas")
 evolution_upgrade = ExtResource("6_evo")
 model_scene = ExtResource("7_model")
 model_scale = 1.0
-model_tint = Color(1.0, 0.4, 0.7, 1.0)
+model_tint = Color(1, 1, 1, 1)

@@ -41,6 +41,8 @@ func setup(data: CharacterData) -> void:
 	# Adjust model_scale in the .tres file and the Model node's Y position in the scene for
 	# precise ground contact — these are MANUAL PLAYTEST items.
 	if data.model_scene:
+		if not _model:
+			return
 		if _placeholder:
 			_placeholder.hide()
 		var model_inst := data.model_scene.instantiate()
@@ -55,16 +57,25 @@ func setup(data: CharacterData) -> void:
 	GameEvents.player_hp_changed.emit(hp, stats.max_hp)
 
 ## Recursively set albedo tint on all MeshInstance3D surfaces under node.
-## Replaces materials, so textures are hidden — use sparingly (intended for friends
-## sharing a single base GLB who need a colour to distinguish them).
+## Duplicates each surface's existing material and sets albedo_color so the texture
+## atlas is preserved and just tinted. Falls back to a blank StandardMaterial3D only
+## when no existing material is found for a surface.
+## Only called when model_tint != Color.WHITE (see setup()).
 func _apply_tint(node: Node, tint: Color) -> void:
 	if node is MeshInstance3D:
 		var mi := node as MeshInstance3D
 		if mi.mesh:
-			var mat := StandardMaterial3D.new()
-			mat.albedo_color = tint
-			for i in mi.get_surface_override_material_count():
-				mi.set_surface_override_material(i, mat)
+			for i in mi.mesh.get_surface_count():
+				var existing: Material = mi.get_active_material(i)
+				if existing:
+					var mat: Material = existing.duplicate()
+					if mat is BaseMaterial3D:
+						(mat as BaseMaterial3D).albedo_color = tint
+					mi.set_surface_override_material(i, mat)
+				else:
+					var mat := StandardMaterial3D.new()
+					mat.albedo_color = tint
+					mi.set_surface_override_material(i, mat)
 	for child in node.get_children():
 		_apply_tint(child, tint)
 
