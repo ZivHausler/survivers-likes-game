@@ -185,19 +185,13 @@ func test_physics_process_with_freed_target_does_not_crash() -> void:
 	assert_true(true, "no crash when _physics_process runs with a freed target")
 
 # ── ranged stand-off ──────────────────────────────────────────────────────────
-
-func test_ranged_standoff_gives_zero_speed_when_too_close() -> void:
-	var e: Enemy3D = add_child_autofree(Enemy3DScene.instantiate()) as Enemy3D
-	var target: Node3D = add_child_autofree(Node3D.new()) as Node3D
-	e.setup(_make_data(20.0, 3, true), target)
-	# Place target 3 units away — within RANGED_STANDOFF (6.0)
-	target.global_position = Vector3(3.0, 0.0, 0.0)
-	e._physics_process(0.016)
-	assert_eq(e.velocity, Vector3.ZERO, "ranged enemy within stand-off should not move")
+# NOTE: Ranged movement (kite approach/retreat/hold) is fully covered by
+# test/test_ranged_attack.gd (kite_velocity + _can_fire + cooldown gating).
+# The old inline RANGED_STANDOFF logic no longer applies to is_ranged enemies —
+# they now delegate to RangedAttack.desired_velocity() which kites by attack_range.
 
 func test_ranged_enemy_outside_standoff_moves_toward_target() -> void:
-	# Legacy is_ranged=true now delegates to RangedAttack (stub). Test melee path instead:
-	# a plain melee enemy beyond RANGED_STANDOFF must still chase the target.
+	# A plain melee enemy beyond RANGED_STANDOFF must still chase the target.
 	var e: Enemy3D = add_child_autofree(Enemy3DScene.instantiate()) as Enemy3D
 	var target: Node3D = add_child_autofree(Node3D.new()) as Node3D
 	e.setup(_make_data(20.0, 3, false), target)
