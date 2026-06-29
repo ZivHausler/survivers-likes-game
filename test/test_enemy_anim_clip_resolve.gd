@@ -60,3 +60,17 @@ func test_returns_empty_when_nothing_matches() -> void:
 func test_returns_empty_for_empty_clip_list() -> void:
 	var got := Enemy3D.resolve_clip(_clips([]), _clips(["move", "run", "walk"]))
 	assert_eq(got, "", "empty clip list → ''")
+
+# ── attack/cast gesture clip ────────────────────────────────────────────────────
+
+const ATTACK_CANDS := ["attack", "cast", "shoot", "punch", "headbutt", "bite_front", "throw"]
+
+func test_attack_resolves_punch_for_ghost_demon() -> void:
+	var clips := _clips(["CharacterArmature|Punch", "CharacterArmature|Headbutt", "CharacterArmature|Flying_Idle"])
+	assert_eq(Enemy3D.resolve_clip(clips, _clips(ATTACK_CANDS)), "CharacterArmature|Punch",
+		"punch is the attack gesture for ghost/demon/dragon")
+
+func test_attack_resolves_bite_front_for_wizard() -> void:
+	var clips := _clips(["CharacterArmature|Bite_Front", "CharacterArmature|Idle", "CharacterArmature|Walk"])
+	assert_eq(Enemy3D.resolve_clip(clips, _clips(ATTACK_CANDS)), "CharacterArmature|Bite_Front",
+		"wizard's only attack-like clip is Bite_Front")

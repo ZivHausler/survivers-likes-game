@@ -43,6 +43,11 @@ var _anim_player: AnimationPlayer = null
 ## is the visual safety net. See _resolve_anim_clips() / resolve_clip().
 var _clip_idle: String = ""
 var _clip_move: String = ""
+## Resolved one-shot attack/cast gesture clip ("" if the model has none).
+var _clip_attack: String = ""
+## Seconds remaining of an active attack gesture. While > 0, the per-frame idle/move
+## animation selection is suppressed so the gesture is not immediately overwritten.
+var _attack_anim_left: float = 0.0
 ## Cached reference to the GLB model instance placed under _model pivot.
 var _model_inst: Node3D = null
 ## True when a "move" animation was successfully loaded from a separate anim GLB.
@@ -209,13 +214,18 @@ func _physics_process(dt: float) -> void:
 		var desired := 0.0 if (data.is_ranged and dist < RANGED_STANDOFF) else data.move_speed
 		velocity = steer_velocity(global_position, target.global_position, desired)
 	_apply_movement(dt)
+	_attack_anim_left = max(0.0, _attack_anim_left - dt)
 	var moving: bool = velocity.length_squared() > MOVE_THRESHOLD * MOVE_THRESHOLD
 	# Rotate Model toward movement direction (visual only — collision body stays upright).
 	if _model and moving:
 		_model.rotation.y = face_angle(velocity)
-		_play_anim("move")
-	else:
-		_play_anim("idle")
+	# While a cast/attack gesture is playing, keep it on screen — don't overwrite it with
+	# the per-frame idle/move clip (the gesture is the visible "spell throw" telegraph).
+	if _attack_anim_left <= 0.0:
+		if _model and moving:
+			_play_anim("move")
+		else:
+			_play_anim("idle")
 	# BUG B FALLBACK: procedural alive-motion — always applied when a real model is present.
 	# Gives a vertical bob + forward lean while moving so enemies never look frozen-sliding
 	# even if skeletal retargeting failed. Visual only; never affects steering or contact.
@@ -288,8 +298,21 @@ func _resolve_anim_clips() -> void:
 	var clips := _anim_player.get_animation_list()
 	_clip_idle = resolve_clip(clips, PackedStringArray(["idle", "flying_idle"]))
 	_clip_move = resolve_clip(clips, PackedStringArray(["move", "run", "walk", "fast_flying", "flying"]))
+	# One-shot cast/attack gesture — NOT looped (plays once per shot).
+	_clip_attack = resolve_clip(clips, PackedStringArray(
+			["attack", "cast", "shoot", "punch", "headbutt", "bite_front", "throw"]))
 	_force_loop(_anim_player, _clip_idle)
 	_force_loop(_anim_player, _clip_move)
+
+## Play the one-shot attack/cast gesture (if the model has one) and lock idle/move
+## selection for `duration` seconds so the per-frame logic doesn't immediately overwrite
+## it. Called by RangedAttack at windup start. No-op when the model has no attack clip.
+func play_attack_gesture(duration: float) -> void:
+	if _anim_player == null or _clip_attack.is_empty():
+		return
+	_attack_anim_left = maxf(duration, 0.0)
+	if _anim_player.current_animation != _clip_attack:
+		_anim_player.play(_clip_attack)
 
 ## Force a clip to loop linearly if it currently has no loop. No-op for "" / missing clips.
 static func _force_loop(ap: AnimationPlayer, clip: String) -> void:

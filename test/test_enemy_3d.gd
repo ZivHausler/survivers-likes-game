@@ -253,6 +253,29 @@ func test_model_setup_adds_child_under_model() -> void:
 	assert_true(model_node.get_child_count() > 1,
 			"Model must have the placeholder + at least one instanced model child")
 
+func test_caster_model_resolves_attack_clip_and_plays_gesture() -> void:
+	# Ghost (archer) is a self-contained Quaternius GLB with a Punch/Headbutt attack clip.
+	assert_not_null(Enemy3DScene, "enemy_3d.tscn must exist")
+	var e: Enemy3D = add_child_autofree(Enemy3DScene.instantiate()) as Enemy3D
+	var target: Node3D = add_child_autofree(Node3D.new()) as Node3D
+	var d := _make_data()
+	d.model_scene = load("res://art/enemies_3d/ghost/ghost_mesh.glb") as PackedScene
+	e.setup(d, target)
+	assert_ne(e._clip_attack, "", "caster model must resolve an attack/cast gesture clip")
+	e.play_attack_gesture(0.5)
+	assert_true(e._attack_anim_left > 0.0, "play_attack_gesture arms the gesture lock")
+	if e._anim_player:
+		assert_eq(e._anim_player.current_animation, e._clip_attack,
+			"AnimationPlayer is playing the attack gesture clip")
+
+func test_play_attack_gesture_noops_without_attack_clip() -> void:
+	# Bug mesh has no attack clip → gesture must safely no-op (no crash, no lock).
+	var e: Enemy3D = add_child_autofree(Enemy3DScene.instantiate()) as Enemy3D
+	var target: Node3D = add_child_autofree(Node3D.new()) as Node3D
+	e.setup(_make_data_with_model(), target)
+	e.play_attack_gesture(0.5)
+	assert_eq(e._attack_anim_left, 0.0, "no attack clip → gesture lock stays unarmed")
+
 func test_no_model_scene_keeps_placeholder_visible() -> void:
 	assert_not_null(Enemy3DScene, "enemy_3d.tscn must exist")
 	var e: Enemy3D = add_child_autofree(Enemy3DScene.instantiate()) as Enemy3D

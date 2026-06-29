@@ -28,6 +28,23 @@ func test_scene_loads_and_is_area() -> void:
 	assert_true((p.collision_mask & 8) == 0, "must NOT mask enemy layer 8")
 	p.free()
 
+func test_projectile_has_visible_mesh() -> void:
+	var p: EnemyProjectile3D = Scene.instantiate()
+	var mi := p.get_node_or_null("MeshInstance3D") as MeshInstance3D
+	assert_not_null(mi, "projectile has a MeshInstance3D")
+	assert_not_null(mi.mesh, "MeshInstance3D has a mesh assigned (projectile is visible, not invisible)")
+	p.free()
+
+func test_setup_applies_glowing_color_material() -> void:
+	var p: EnemyProjectile3D = add_child_autofree(Scene.instantiate())
+	p.setup(Vector3(1, 0, 0), 10.0, 5.0, Color(0.2, 0.8, 0.3))
+	var mi := p.get_node("MeshInstance3D") as MeshInstance3D
+	var mat := mi.material_override as StandardMaterial3D
+	assert_not_null(mat, "setup applies a color material override")
+	if mat:
+		assert_true(mat.emission_enabled, "projectile material glows (emission on)")
+		assert_almost_eq(mat.albedo_color.g, 0.8, 0.001, "albedo tinted by the passed enemy color")
+
 func test_advance_moves_along_direction() -> void:
 	var p: EnemyProjectile3D = add_child_autofree(Scene.instantiate())
 	p.setup(Vector3(1, 0, 0), 10.0, 5.0)

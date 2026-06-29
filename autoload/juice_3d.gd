@@ -80,13 +80,11 @@ func _on_xp_collected(_amount: int) -> void:
 	pop.play_at(_player.global_position)
 
 func _on_player_leveled_up(_level: int) -> void:
-	var parent := _safe_parent()
-	if parent == null:
-		return
-	var flash: EvolutionFlash = _EvolutionFlashScene.instantiate()
-	# add_child FIRST so _ready() creates the internal rect; set_intensity after.
-	parent.add_child(flash)
-	flash.set_intensity(0.4)
+	# Intentionally no visual: the white level-up screen flash was removed as
+	# distracting/irrelevant. The EvolutionFlash is reserved for actual evolution
+	# unlocks (see _on_evolution_unlocked). Handler kept (and still connected) so the
+	# wiring contract holds; add level-up juice here later if desired.
+	pass
 
 func _on_player_hp_changed(current: float, _max_hp: float) -> void:
 	# Flash player and shake camera only on HP decrease

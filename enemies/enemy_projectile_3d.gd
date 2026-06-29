@@ -11,16 +11,34 @@ var _direction: Vector3 = Vector3.ZERO
 var _speed: float = 0.0
 var _damage: float = 0.0
 var _age: float = 0.0
+## Glow/albedo color of the orb — set per firing enemy so each caster's shots read distinctly.
+var _color: Color = Color(1.0, 0.5, 0.1)
 
-func setup(direction: Vector3, speed: float, damage: float) -> void:
+func setup(direction: Vector3, speed: float, damage: float, color: Color = Color(1.0, 0.5, 0.1)) -> void:
 	var flat := Vector3(direction.x, 0.0, direction.z)
 	_direction = flat.normalized() if flat.length() > 0.001 else Vector3.FORWARD
 	_speed = speed
 	_damage = damage
+	_color = color
+	_apply_color()
 
 func _ready() -> void:
 	area_entered.connect(_on_area_entered)
 	body_entered.connect(_on_body_entered)
+	_apply_color()
+
+## Give the orb a self-lit, enemy-tinted material so the projectile is clearly visible
+## in flight. No-op if the mesh node is missing (e.g. a stripped test scene).
+func _apply_color() -> void:
+	var mi := get_node_or_null("MeshInstance3D") as MeshInstance3D
+	if mi == null or mi.mesh == null:
+		return
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = _color
+	mat.emission_enabled = true
+	mat.emission = _color
+	mat.emission_energy_multiplier = 3.0
+	mi.material_override = mat
 
 func _physics_process(dt: float) -> void:
 	_age += dt

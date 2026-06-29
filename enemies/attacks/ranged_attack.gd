@@ -47,6 +47,8 @@ func attack_tick(enemy: Enemy3D, target: Node3D, dt: float) -> void:
 	var los_clear := not _los_blocked(enemy, target)
 	if _can_fire(dist, los_clear, enemy.data.attack_range):
 		_windup_left = enemy.data.windup_time   # telegraph, then _launch
+		# Play the visible cast gesture for the length of the windup (best-effort).
+		enemy.play_attack_gesture(enemy.data.windup_time)
 		GameEvents.skill_cast.emit(&"enemy_ranged_windup", Color.WHITE, enemy.global_position)
 
 ## Raycast enemy→player against terrain layer 16. True if a wall/obstacle blocks the shot.
@@ -65,7 +67,7 @@ func _launch(enemy: Enemy3D, target: Node3D) -> void:
 		return
 	var dir := target.global_position - enemy.global_position
 	var proj: EnemyProjectile3D = PROJECTILE.instantiate()
-	proj.setup(dir, enemy.data.projectile_speed, enemy.data.projectile_damage)
+	proj.setup(dir, enemy.data.projectile_speed, enemy.data.projectile_damage, enemy.data.color)
 	var spawn_parent := enemy.get_parent()
 	if spawn_parent == null:
 		proj.free()
