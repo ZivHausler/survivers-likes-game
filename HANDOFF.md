@@ -2,57 +2,39 @@
 
 > Last updated: 2026-06-29. Read this first to resume work.
 
-## 🚧 3D PIVOT IN PROGRESS (plan: docs/superpowers/plans/2026-06-29-3d-pivot-and-feature-expansion.md)
-The 2D→3D conversion + 8-item feature expansion is **underway** (subagent-driven, review-gated; ledger in `.superpowers/sdd/progress.md`). Decisions locked: tilted perspective `Camera3D` @ -55° on the XZ plane; players = Kenney Blocky Characters (CC0); enemies = user's MDA Downloads monster pack (FBX→glTF via FBX2glTF; ⚠️ license unconfirmed). Plan phases: 1 core 3D · A assets · 2 model integration · 3 four-skills + invuln + orb-colors · 4 per-skill synergy · 4.5 skill VFX · 5 all 10 friends · 6 integration.
-**World scale:** 1 unit ≈ 16 px (rescale spatial constants /16, logic identical). 2D scenes/tests kept intact (Option B) until a final cleanup task — deferred until after user playtest confirms the 3D build.
-
-**Done:**
-- **Phase 1 (3D core) COMPLETE:** 1.1 world/camera (perspective Camera3D @ -55°, XZ plane) · 1.2 Player3D · 1.3 Enemy3D (`enemy_killed_3d`, layer 8) · 1.4a Weapon3D + Ziv/Avihay 3D weapons + Bubble3D · 1.4b Spawner3D + XPGem3D + GameManager3D (playable loop) · 1.5 full run-flow (upgrade cards, HUD, game-over, character_select_3d; HUD/game_over made dimension-agnostic) · 1.6 Juice3D (shake/hit-flash/damage-numbers/death-pops).
-- **Phase 2 (models) COMPLETE:** 2.1 player = Kenney Blocky chars (Ziv=character-a, Avihay=character-b), idle/walk/facing, texture-preserving tint. 2.2 enemies = real monsters (bug/plant/diatryma, serpent boss). ⚠️ enemy anims are STATIC rest-pose (mesh GLBs lack embedded AnimationPlayer — needs editor retarget); model scale/orientation NEED PLAYTEST TUNING (FBX cm-scale).
-- **Phase 3 (in progress):** 3.1 SkillSystem (4 skills/char; level0=unowned, acquire@0→1, per-skill passive + synergy golden when skill lvl5 + passive≥1 — **item 5 done in logic**) · 3.2 Player3D multi-weapon + GameManager3D on SkillSystem + system-agnostic card UI (Ziv/Avihay migrated to skills arrays) · 3.6 **item 6** 2s post-levelup invuln · 3.7 **item 7** XP-orb tier colors + xp-grows-over-time. 3.3 (Ziv/Avihay's 3 extra skills each — **item 3**) running.
-- Suite: 594/594 (will rise as 3.3 merges).
-
-**Items status:** #1 (3D) ✅ · #2 (models) ✅ (tuning pending) · #3 (4 skills) framework ✅, authoring in progress · #5 (synergy) ✅ logic · #6 (invuln) ✅ · #7 (orb colors) ✅ · #4 (8 more chars) + #8 (skill VFX) pending.
-
-**Next:** merge 3.3 → Phase 4.5 skill VFX framework → Phase 5 author 8 remaining friends → Phase 6 integration + (deferred) 2D-deletion cleanup. **USER PLAYTEST recommended now** to tune model scales/orientation.
-
 ## What this is
-A **Godot 4.7 (GDScript) 2D horde-survivor game** ("Vampire Survivors"–style): move-only control, auto-firing signature ability, enemies swarm, XP gems → level-up → pick 1-of-3 upgrades, with a synergy/evolution system (signature maxed + dedicated passive owned → golden EVOLVE). Each playable character is based on one of the owner's real friends.
+A **Godot 4.7 (GDScript) 3D horde-survivor** ("Vampire Survivors"–style) with a **tilted top-down view**: move-only control, auto-firing skills, monsters swarm, XP orbs → level-up → pick 1-of-3 upgrade cards, with a per-skill synergy/evolution system. Each playable character is one of the owner's real friends. **The 2D→3D pivot + the full 8-item feature expansion are COMPLETE.**
 
-- **Repo:** `~/friends-swarm` — **branch `feature/v1-vertical-slice`** (everything lives here; `main` is the empty initial commit, nothing merged yet).
-- **Engine:** Godot 4.7 stable, installed at `/Applications/Godot.app`, symlinked as `godot` on PATH.
-- **Run it:** `godot --path ~/friends-swarm` (opens a window). Headless boot check: `godot --headless --quit`.
-- **Tests:** `godot --headless --import && godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://test -gexit` → currently **220/220 green**. GUT addon vendored under `addons/gut/`.
+- **Repo:** `~/friends-swarm` — branch **`feature/v1-vertical-slice`**.
+- **Run it:** `godot --path ~/friends-swarm` → boots to **character select (3D)** → pick 1 of 10 friends → 3D run. Headless boot: `godot --headless --quit`.
+- **Tests:** `godot --headless --import && godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://test -gexit` → **879/879 green**. (⚠️ GUT 9.7.0 **silently skips** any test file using `assert_le`/`assert_ge` — always use `assert_true(x <= y)`; watch that the test count rises as expected.)
 
-## Architecture (important)
-- **Data-driven characters:** a friend = a `CharacterData` resource (`core/character_data.gd`) → weapon scene + base `StatBlock` + signature/passive/evolution `Upgrade` resources. Adding a character = mostly authoring data (see `docs/notes/how-to-add-a-character.md`).
-- **Decoupled event bus:** systems talk through the `GameEvents` autoload (signals), never directly. `RunState` autoload carries the selected character + last-run score across scenes.
-- **Pure logic is unit-tested; scenes/visuals are manual-playtest.** Pure `RefCounted` classes (`UpgradeSystem`, `DifficultyTimeline`, the XP curve in `player.gd`) have real GUT tests. Scene/physics/visual behavior is verified by the human running the game.
-- **Visuals are a separate, decoupled layer** (`Juice` autoload + per-scene sprite swaps) that listens to `GameEvents` and dresses up the logic — so the logic tests stay green regardless of art.
-- **Knowledge base (Zettelkasten):** `docs/notes/` — one atomic note per component, `INDEX.md` is the map, plus ADRs + runbooks. Every `.gd` file's first line is `# See docs/notes/<id>.md`. **Keep notes current as you change code.**
-- **Specs & plans:** `docs/superpowers/specs/` and `docs/superpowers/plans/`. **Progress ledger:** `.superpowers/sdd/progress.md` (gitignored) tracks every task + commit range + review verdict.
+## The 8 delivered items
+1. **3D conversion** — gameplay on the XZ plane; fixed perspective `Camera3D` at −55° tilt (height 14 / pullback 10), follows the player; `core/game_camera_3d.gd` (+ shake via `add_trauma`).
+2. **Real models** — players = Kenney Blocky Characters (CC0), enemies = the user's MDA Downloads monster pack converted FBX→glTF. ⚠️ enemy anims are **static rest-pose** (mesh GLBs carry no embedded AnimationPlayer; clip retarget is a TODO). Model scale/orientation are **playtest-tunable** (`model_scale`/`model_y_offset` on each CharacterData/EnemyData).
+3. **4 skills per character** — `Player3D.weapons` (multi-weapon); `SkillSystem` (`core/skill_system.gd`): a skill's **level 0 = unowned**, acquire at 0→1 via a card, level 1→5. Each character: 1 signature (owned at start) + 3 acquirable.
+4. **All 10 friends** — Ziv, Avihay, Avinoam, Matan, Ido, Yuval, Natali, Barak, Yinon, Yoav. Each = `characters/<name>_3d.tres` with a 4-element `skills` array; selectable in `ui/character_select_3d` (data-driven over `CHARACTER_PATHS`).
+5. **Per-skill synergy** — each skill has a matching passive + a synergy; the synergy enters the card pool (golden) once that skill is maxed (lvl 5) AND its passive ≥ 1. Folded into `SkillSystem`.
+6. **2s post-levelup invulnerability** — `Player3D.set_invulnerable()`/`is_invulnerable()` (i-frame guard in `take_damage`, model blink); granted by `GameManager3D` when the level-up queue resolves and play resumes.
+7. **Exp-orb colors** — `XPGem3D.tier_color(value)` (5 tiers blue→magenta); normal-enemy XP grows over the run (`Spawner3D.xp_time_mult`).
+8. **Skill VFX** — decoupled `SkillVFX` autoload reacting to additive `GameEvents.skill_cast`/`skill_hit` (emitted uniformly by `Weapon3D._fire_internal` + archetypes/signatures); colored GPUParticles3D bursts. General juice (shake/hit-flash/damage-numbers/death-pops) via `Juice3D`.
 
-## What's built so far
-1. **v1 vertical slice:** core run loop, Player (move/HP/XP/level), 3 enemy variants + steering + contact damage, Spawner + difficulty timeline, XP gems + magnet, **Ziv** (charm beam) & **Avihay** (chat-spam bubbles) abilities with evolutions, full upgrade + synergy/evolution system, GameManager run flow, UpgradeUI, HUD, Game Over, character select, arena + main scenes.
-2. **Visual overhaul (CC0 art, decoupled):** Kenney CC0 sprites (Tiny Dungeon characters, Monster Builder enemies, Tiny Town tiles) + MIT VFX lib; player + enemy sprites with procedural wobble, tiled camera-following background + vignette, screen shake / hit-flash / death pops / damage numbers / skill VFX / evolution + level-up fanfare, styled HP/XP bars + EVOLVE banner. Asset licenses tracked in `docs/notes/asset-licenses.md` (all CC0/MIT).
-3. **Iteration 2 (gameplay + cards):**
-   - XP scales with enemy strength; **mini-boss drops 50 XP**.
-   - **Skill cap = 5** (guarded by tests).
-   - **Steeper XP curve:** `xp_to_next(lvl) = 5 + lvl*3 + lvl*lvl*2`.
-   - **Difficulty ramp:** enemy `hp_mult = 1 + t/120`, `enemy_scale = 1 + (t/600)*0.5`, **mini-boss every 180s**, **BIG BOSS at 10:00** (HP ×40×ramp, scale ×5, 200 XP, purple).
-   - **Skill cards UI:** level-up picker is now 3 cards (name · placeholder icon · description · stat gain · "NEW"/"Lv X/max"; EVOLUTION golden). `Upgrade` gained `description`/`stat_text`/`icon`; all 11 upgrade `.tres` authored.
-   - **Softlock fix:** maxing every upgrade no longer shows an empty picker / freezes — `UpgradeSystem.has_available_choices()` + a small +HP bonus on maxed level-ups.
-   - **XP-collection fix (was critical):** the Player `CharacterBody2D` had **no body `CollisionShape2D`** (only a Hurtbox Area2D), so the gem's `body_entered` never fired — orbs magneted on but never collected. Added the body shape (layer 1, mask 0). Also tuned: player sprite 3×, enemies scaled to match, vignette softened, base `pickup_range` 48→80.
+## Architecture (3D)
+- **Data-driven characters:** a friend = `CharacterData` (`core/character_data.gd`) → world-scale `StatBlock` + model + `skills: Array[SkillData]`. A `SkillData` (`core/skill_data.gd`) = weapon scene + 3 upgrades (SKILL/PASSIVE/SYNERGY) + is_signature.
+- **Skills:** `Weapon3D` base (`core/weapon_3d.gd`, Timer-driven auto-fire). Bespoke signatures: Ziv beam+charm, Avihay bubbles. Two reusable archetypes: `OrbitWeapon3D` (orbiting hitboxes) and `NovaWeapon3D` (XZ AoE pulse, optional charm/heal/DoT via subclass overrides — e.g. Ido DoT, Natali heal). The 8 new friends' skills are themed archetype subclasses.
+- **Run flow:** `GameManager3D` builds a `SkillSystem` from the chosen `CharacterData`, acquires the signature, spawns enemies (`Spawner3D`), routes kill→XP gem, drives the level-up card flow (queue + softlock guard) via the reused `UpgradeUI` (system-agnostic, SYNERGY golden), HUD, and game-over.
+- **Decoupled visuals:** `Juice3D` (game juice) + `SkillVFX` (skill cast/hit) autoloads react to `GameEvents` — logic/tests stay green regardless of visuals. World scale: **1 unit ≈ 16 px**.
+- **Physics layers:** player body layer 1, player hurtbox layer 2, bubble layer 3 (mask), enemies layer 4 (collision_layer=8), XP gem mask=1 (player only).
+- **Knowledge base:** `docs/notes/` (one note per component, `INDEX.md` is the map). Every `.gd`'s first line is `# See docs/notes/<id>.md`. Plan: `docs/superpowers/plans/2026-06-29-3d-pivot-and-feature-expansion.md`. Progress ledger: `.superpowers/sdd/progress.md` (gitignored).
 
-## OPEN DECISIONS / what's next
-1. **🔴 3D PIVOT — UNRESOLVED (highest priority to decide).** The user said **"I want our game to be 3D."** This is a **major rebuild**: every scene/physics/render node (Player, Enemy, weapons, Spawner, XPGem, Juice/VFX, camera) becomes 3D (`CharacterBody3D`, `Area3D`, 3D physics, 3D models, `Camera3D`). **What carries over unchanged:** all pure logic (`UpgradeSystem`, `DifficultyTimeline`, XP curve, `GameEvents`, `RunState`, `CharacterData`/`Upgrade` data) and the UI overlay (HUD, cards). A brainstorming session was **started but interrupted** — resume by scoping: camera (top-down vs over-shoulder), player model source, and how much to rebuild first. The user has a **3D monster pack** at `~/Downloads/MDA_Hatchery_CP1` (`battle_monsters.zip` = 187 animated **FBX** models: dragonewt, mini-wyvern, undead serpent, plant monster, bug, fish, sloth, horns, needles, diatryma; **no license file bundled — confirm rights**). These are 3D models — directly usable in a 3D game, NOT in the current 2D game.
-2. **8 remaining friend-characters** — user asked to add them. Only **Ziv** (#1) and **Avihay** (#4) are built. Still to do (designs sketched in `docs/superpowers/specs/2026-06-28-friends-swarm-design.md`): **Avinoam** (divine smite), **Matan** (irritation aura / enrage enemies), **Ido** (toxic trail DoT), **Yuval** (soundwave stun), **Natali** (laughter heal/support), **Barak** (dog summon + vanish), **Yinon** (rocket artillery), **Yoav** (Wolt-scooter strafe). Follow `docs/notes/how-to-add-a-character.md`. **Hold until the 2D-vs-3D decision is made** (abilities would be rebuilt in 3D).
-3. **Visuals still crude** (repeated user complaint). CC0 Kenney "Tiny"/Monster-Builder are minimalist blobs. Options discussed: a richer cohesive 2D pack (**Ninja Adventure**, CC0, animated chars+monsters+tilesets+icons — git-cloneable from the creator's GitHub) OR the 3D pivot. Skill-card **icons are placeholder colored badges** pending this decision.
+## How work was run (process)
+Subagent-driven, review-gated: each task = implementer subagent → reviewer subagent (spec + quality) → fix loop, suite kept green, atomic commits. Phase 5 (8 characters) + several features fanned out across parallel git-worktree agents, merged sequentially. **The user runs the actual game for visual/feel verification** (headless can't see pixels).
 
-## Known minor gaps (non-blocking)
-- T2 has no test asserting the shared enemy `.tres` is unmutated after spawn HP/scale scaling (the code *is* safe — it `duplicate()`s before mutating — but the invariant isn't test-guarded).
-- Benign runtime warning: `player.tscn` references `player.gd` by a stale UID (Godot falls back to the text path; harmless — scrub by re-saving in the editor).
-- `Upgrade.icon` field exists but `upgrade_ui.gd` always uses the placeholder badge (icons not wired until art arrives).
+## ⚠️ Open / deferred (next session)
+1. **2D code still present** — the old 2D scenes/scripts/tests were kept intact as a fallback during the pivot (Option B). A **cleanup task to delete 2D** (`game/main.tscn`, 2D player/enemy/weapons/spawner/gem, `game/game_manager.gd`, `ui/character_select.tscn`, 2D-only tests, `autoload/Juice` 2D) is **deferred until the user confirms the 3D build in a playtest**. `project.godot` main scene is already `character_select_3d`.
+2. **Enemy animations are static** — mesh GLBs lack embedded AnimationPlayers; wire idle/move/die by retargeting the separate `*_idle/_run/_die.glb` clips onto each mesh's skeleton (needs the Godot editor to verify track paths). Players DO animate (idle/walk).
+3. **Playtest tuning** — enemy `model_scale`/`model_y_offset` (converted FBX may import large/offset; bosses compound body-scale × model-scale), camera-shake magnitude, skill balance (e.g. Ido DoT cd 1.0 at high damage_mult), orb-color readability, VFX visibility/perf with many enemies.
+4. **Accumulated Minor review notes** (non-blocking) are listed per-task in `.superpowers/sdd/progress.md` — triage before any release.
+5. **Asset license** — the MDA monster pack is a 2016 commercial Unity asset with **no bundled license**: fine for a personal prototype, rights UNCONFIRMED before distribution (`docs/notes/asset-licenses.md`). Player models (Kenney) + VFX lib are CC0/MIT.
 
-## How work is run here (process)
-Subagent-driven, review-gated: each task = a fresh implementer subagent → a reviewer subagent (spec + quality) → fix loop → next, keeping the suite green. The orchestrator (main session) stays light and tracks `.superpowers/sdd/progress.md`. **The user runs the actual game for visual/feel verification** (headless can't see pixels — this is how the two collision bugs and the "ugly" feedback surfaced). When resuming: read this file, then `.superpowers/sdd/progress.md`, then `git log --oneline`, then `docs/notes/INDEX.md`.
+When resuming: read this file, then `.superpowers/sdd/progress.md`, `git log --oneline`, `docs/notes/INDEX.md`.
