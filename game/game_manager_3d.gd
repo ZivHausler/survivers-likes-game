@@ -44,14 +44,12 @@ var _choosing: bool = false
 var _pending_levelups: int = 0
 
 
-## Assemble a run's skill list: the character's exclusive ultimate first, then the
-## type-filtered shared pool. Pure (no scene access) so it is unit-testable.
-static func assemble_run_skills(ultimate: SkillData, pool: Array, types: Array) -> Array:
-	var out: Array = []
-	if ultimate != null:
-		out.append(ultimate)
-	out.append_array(SkillPool.filter(pool, types))
-	return out
+## Assemble a run's skill list: the type-filtered shared pool only.
+## The ultimate is NOT included here — it is granted into the dedicated manual
+## SPACE slot via grant_ultimate(), never the upgrade pool.
+## Pure (no scene access) so it is unit-testable.
+static func assemble_run_skills(pool: Array, types: Array) -> Array:
+	return SkillPool.filter(pool, types)
 
 
 func _ready() -> void:
@@ -88,18 +86,14 @@ func start() -> void:
 			generic_pool.append(u)
 
 	if char_data and char_data.ultimate != null and not char_data.types.is_empty():
-		# Type-gated pool path: ultimate + filtered shared pool.
-		var run_skills := assemble_run_skills(char_data.ultimate, SkillPool.all(), char_data.types)
+		# Type-gated pool path: type-filtered shared pool only (no ultimate).
+		# The ultimate is granted into the manual SPACE slot below — it is never
+		# part of the upgrade pool and is not auto-acquired here.
+		var run_skills := assemble_run_skills(SkillPool.all(), char_data.types)
 		skill_system = SkillSystem.new(run_skills, generic_pool)
 		_skill_by_id.clear()
 		for s in run_skills:
 			_skill_by_id[s.id] = s
-		# Acquire the signature (ultimate) weapon immediately.
-		if _player:
-			for s in run_skills:
-				if s.is_signature:
-					_player.acquire_skill(s.id, s.weapon_scene)
-					break
 	elif char_data and not char_data.skills.is_empty():
 		# Legacy per-character roster path (still used until migration completes).
 		skill_system = SkillSystem.new(char_data.skills, generic_pool)

@@ -119,7 +119,7 @@ func _on_boss_died() -> void:
 ## Pure — does not access @onready nodes; safe to call from tests with stub players.
 func collect_cooldowns(player) -> Array:
 	var out: Array = []
-	if player == null:
+	if player == null or not is_instance_valid(player):
 		return out
 	var weapons = player.get("weapons")
 	if weapons is Dictionary:

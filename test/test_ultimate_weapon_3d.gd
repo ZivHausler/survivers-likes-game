@@ -42,3 +42,11 @@ func test_fraction_midway() -> void:
 	u.activate()
 	u.tick(5.0)                # half of 10s
 	assert_almost_eq(u.cooldown_fraction(), 0.5, 0.0001)
+
+func test_no_auto_fire_over_time() -> void:
+	# Advance time 20 ticks without ever calling activate().
+	# _do_ult must never be invoked — there is no auto-fire path.
+	var u := _make()
+	for _i in range(20):
+		u.tick(1.0)
+	assert_eq(u.fired, 0, "tick without activate never calls _do_ult")
