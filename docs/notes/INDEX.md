@@ -11,6 +11,9 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[arena-3d]] — `arena_3d.tscn`: 3D ground plane (200×200), DirectionalLight3D, WorldEnvironment; gameplay plane = XZ
 - [[player-3d]] — `Player3D` (`CharacterBody3D`): WASD on XZ, HP/XP/level/stat logic ported verbatim from 2D Player; weapon stays null until 3D weapons exist
 - [[enemy-3d]] — `Enemy3D` (`CharacterBody3D`): steering/charm/contact-damage/death ported verbatim from 2D Enemy; emits `enemy_killed_3d(Vector3,int)` for Task 1.4 gem spawner
+- [[weapon-system-3d]] — `Weapon3D` base class: Node3D port of Weapon; same timer/cooldown/level/evolve contract; 1 unit ≈ 16 px
+- [[weapon-ziv-3d]] — `ZivStunningLooks3D`: 3D beam (Area3D BoxShape) + XZ charm sorting; evolve = Y-rotation + always-on CharmField
+- [[weapon-avihay-3d]] — `AvihayChatSpam3D` + `Bubble3D`: XZ directional bubble spread, pierce, homing on evolve; SPEED=14 units/s
 
 ## Systems
 
