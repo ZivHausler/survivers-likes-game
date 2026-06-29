@@ -165,6 +165,9 @@ func _apply_tint(node: Node, tint: Color) -> void:
 func _physics_process(dt: float) -> void:
 	if not stats:
 		return
+	# Base passive health regeneration (per-character; 0 = none). Only while alive and hurt.
+	if stats.hp_regen > 0.0 and hp > 0.0 and hp < stats.max_hp:
+		heal(stats.hp_regen * dt)
 	# Invulnerability i-frame countdown + model blink.
 	var was_invuln := _invuln_timer > 0.0
 	_invuln_timer = max(0.0, _invuln_timer - dt)

@@ -22,13 +22,13 @@ const SPAWN_RING_RADIUS: float = 25.0       # 400 px / 16
 const WORLD_SCALE:       float = 1.0 / 16.0 # 1 world unit ≈ 16 px
 
 const BOSS_HP_MULT:    float = 8.0
-const BOSS_SCALE_MULT: float = 3.0
+const BOSS_SCALE_MULT: float = 2.0
 const BOSS_XP_VALUE:   int   = 50
 ## Model scale for the serpent in mini-boss form (playtest-tunable).
 const BOSS_MODEL_SCALE: float = 1.5
 
 const BIG_BOSS_HP_MULT:    float = 40.0
-const BIG_BOSS_SCALE_MULT: float = 5.0
+const BIG_BOSS_SCALE_MULT: float = 3.0
 const BIG_BOSS_XP_VALUE:   int   = 200
 ## Model scale for the serpent in big-boss form (playtest-tunable).
 const BIG_BOSS_MODEL_SCALE: float = 2.0
@@ -184,8 +184,8 @@ func _spawn_boss(hp_mult: float) -> void:
 	# Give boss the imposing serpent model instead of the diatryma tank model.
 	boss_data.model_scene = load(SERPENT_SCENE_PATH) as PackedScene
 	# COMPOUND SCALE NOTE: model_scale (BOSS_MODEL_SCALE = 1.5) sets the Model pivot
-	# scale inside Enemy3D.setup(). The body scale (BOSS_SCALE_MULT = 3×) is applied
-	# separately in _instance_enemy(). Combined visual size = 3 × 1.5 = 4.5× base.
+	# scale inside Enemy3D.setup(). The body scale (BOSS_SCALE_MULT = 2×) is applied
+	# separately in _instance_enemy(). Combined visual size = 2 × 1.5 = 3.0× base.
 	# Tune BOSS_MODEL_SCALE (mesh proportions) vs BOSS_SCALE_MULT (whole-body size).
 	boss_data.model_scale = BOSS_MODEL_SCALE
 	var boss: Enemy3D = _instance_enemy(boss_data, BOSS_SCALE_MULT)
@@ -208,8 +208,8 @@ func _spawn_big_boss(hp_mult: float) -> void:
 	# Give big boss the imposing serpent model at a larger scale.
 	big_data.model_scene = load(SERPENT_SCENE_PATH) as PackedScene
 	# COMPOUND SCALE NOTE: model_scale (BIG_BOSS_MODEL_SCALE = 2.0) sets the Model pivot
-	# scale inside Enemy3D.setup(). The body scale (BIG_BOSS_SCALE_MULT = 5×) is applied
-	# separately in _instance_enemy(). Combined visual size = 5 × 2.0 = 10× base.
+	# scale inside Enemy3D.setup(). The body scale (BIG_BOSS_SCALE_MULT = 3×) is applied
+	# separately in _instance_enemy(). Combined visual size = 3 × 2.0 = 6.0× base.
 	# Tune BIG_BOSS_MODEL_SCALE (mesh proportions) vs BIG_BOSS_SCALE_MULT (whole-body size).
 	big_data.model_scale = BIG_BOSS_MODEL_SCALE
 	var boss: Enemy3D = _instance_enemy(big_data, BIG_BOSS_SCALE_MULT)

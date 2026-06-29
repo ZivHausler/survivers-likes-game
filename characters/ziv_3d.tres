@@ -21,6 +21,7 @@ pickup_range = 5.0
 damage_mult = 1.0
 fire_rate_mult = 1.0
 armor = 0.0
+hp_regen = 1.0
 
 [resource]
 script = ExtResource("1_char_data")
@@ -39,4 +40,4 @@ model_scene = ExtResource("7_model")
 model_scale = 1.0
 model_tint = Color(1, 1, 1, 1)
 model_texture = ExtResource("12_texture")
-skills = Array[Resource]([ExtResource("8_ziv_charm"), ExtResource("9_mirror_shards"), ExtResource("10_selfie_flash"), ExtResource("11_adoring_aura")])
+skills = Array[Resource]([ExtResource("9_mirror_shards"), ExtResource("8_ziv_charm"), ExtResource("10_selfie_flash"), ExtResource("11_adoring_aura")])

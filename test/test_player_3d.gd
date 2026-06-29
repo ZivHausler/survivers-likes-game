@@ -123,6 +123,42 @@ func test_take_damage_emits_player_died_on_overkill() -> void:
 	p.take_damage(999.0)
 	assert_signal_emitted(GameEvents, "player_died")
 
+# ── hp_regen ─────────────────────────────────────────────────────────────────
+
+func test_hp_regen_heals_over_time() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.stats.hp_regen = 10.0
+	p.take_damage(50.0)               # hp 100 → 50
+	p._physics_process(1.0)           # +10/s × 1s → 60
+	assert_almost_eq(p.hp, 60.0, 0.001)
+
+func test_hp_regen_does_not_overheal_past_max() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.stats.hp_regen = 10.0
+	p.take_damage(5.0)                # hp 100 → 95
+	p._physics_process(2.0)           # +20 would overshoot; clamps to 100
+	assert_almost_eq(p.hp, 100.0, 0.001)
+
+func test_hp_regen_zero_is_a_noop() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.stats.hp_regen = 0.0
+	p.take_damage(30.0)              # hp 100 → 70
+	p._physics_process(5.0)
+	assert_almost_eq(p.hp, 70.0, 0.001)
+
+func test_hp_regen_does_not_revive_dead_player() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.stats.hp_regen = 10.0
+	p.take_damage(100.0)             # hp → 0
+	p._physics_process(1.0)
+	assert_true(p.hp <= 0.0, "regen must not heal a player at/below 0 hp")
+
+func test_all_characters_define_positive_hp_regen() -> void:
+	for id in ["ziv", "avihay", "avinoam", "barak", "ido", "matan", "natali", "yinon", "yoav", "yuval"]:
+		var cd: CharacterData = load("res://characters/%s_3d.tres" % id)
+		assert_not_null(cd, "%s_3d.tres must load" % id)
+		assert_true(cd.base_stats.hp_regen > 0.0, "%s must define a base hp_regen > 0" % id)
+
 # ── get_pickup_range ─────────────────────────────────────────────────────────
 
 func test_get_pickup_range_matches_stat() -> void:

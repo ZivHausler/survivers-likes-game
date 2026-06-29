@@ -4,7 +4,7 @@ class_name HealthBar3D extends Node3D
 ## LEFT edge via a pivot node, so set_ratio() shrinks it from the right. Visual only —
 ## never touches collision, navigation, or contact damage.
 
-const WIDTH := 1.0      ## Bar width in world units (at unit scale; see _process facing).
+const WIDTH := 1.8      ## Bar width in world units (at unit scale; see _process facing).
 const HEIGHT := 0.16    ## Bar height in world units.
 const FILL_EPSILON := 0.002  ## Fill quad sits slightly in front of the background quad.
 

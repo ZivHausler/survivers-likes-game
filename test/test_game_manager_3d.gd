@@ -475,8 +475,8 @@ func test_skill_system_has_available_choices_at_start() -> void:
 func test_signature_acquired_in_player_weapons_at_start() -> void:
 	var root   := _make_run_scene()
 	var player := root.get_node("Player") as Player3D
-	assert_true(player.has_skill(&"ziv_charm"),
-		"Player must have ziv_charm weapon in weapons dict after GameManager start()")
+	assert_true(player.has_skill(&"ziv_mirror_shards"),
+		"Player must have ziv_mirror_shards (signature) weapon in weapons dict after GameManager start()")
 
 # ---------------------------------------------------------------------------
 # SkillSystem routing via _route_skill_upgrade
