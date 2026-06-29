@@ -1,9 +1,9 @@
-# See docs/notes/game-camera-3d.md
+## Tilted top-down perspective camera for the 3D arena with mouse-wheel zoom.
 class_name GameCamera3D extends Camera3D
-## Tilted top-down perspective camera for the 3D arena.
 ## Follows a target on XZ only; camera Y = `height` (constant) and pitch stay fixed.
 ## Supports trauma-based screen shake via add_trauma(). Pure static shake helpers are
 ## unit-testable: shake_offset(0, t) always returns Vector3.ZERO.
+## Mouse wheel zooms the camera in/out by scaling height and distance.
 
 @export var target: Node3D
 @export var height: float = 14.0
@@ -11,11 +11,19 @@ class_name GameCamera3D extends Camera3D
 ## Distance pulled back along +Z from the target (so the tilt reads correctly).
 @export var distance: float = 10.0
 @export var follow_speed: float = 10.0
+## Current zoom multiplier applied to height and distance; 1.0 = default.
+@export var zoom: float = 1.0
 
 ## Peak world-unit offset magnitude at trauma = 1.0.
 const SHAKE_MAX_OFFSET: float = 0.5
 ## Trauma units shed per second.
 const SHAKE_DECAY: float = 1.5
+## Minimum zoom multiplier (zoomed all the way in).
+const ZOOM_MIN: float = 0.45
+## Maximum zoom multiplier (zoomed all the way out).
+const ZOOM_MAX: float = 2.2
+## Zoom change per mouse-wheel notch.
+const ZOOM_STEP: float = 0.12
 
 var _trauma: float = 0.0
 ## Tracks the smooth-follow base position separately so shake offset is layered on top
@@ -28,14 +36,14 @@ var _snapped: bool = false
 func _ready() -> void:
 	basis = compute_pitch_basis(pitch_degrees)
 	if target:
-		_base_position = compute_position(target.global_position, height, distance)
+		_base_position = compute_position(target.global_position, height * zoom, distance * zoom)
 		global_position = _base_position
 		_snapped = true
 
 func _physics_process(delta: float) -> void:
 	if not target:
 		return
-	var desired := compute_position(target.global_position, height, distance)
+	var desired := compute_position(target.global_position, height * zoom, distance * zoom)
 	# Snap on the first frame the target is valid (avoids lerping from origin when
 	# target is assigned after _ready, e.g. by GameManager3D).
 	if not _snapped:
@@ -47,6 +55,15 @@ func _physics_process(delta: float) -> void:
 	global_position = _base_position + shake_offset(_trauma, Time.get_ticks_msec() * 0.001)
 	# Keep pitch locked in case something else mutates the basis.
 	basis = compute_pitch_basis(pitch_degrees)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.pressed:
+			if mb.button_index == MOUSE_BUTTON_WHEEL_UP:
+				zoom = clamp_zoom(zoom - ZOOM_STEP)
+			elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				zoom = clamp_zoom(zoom + ZOOM_STEP)
 
 ## Add shake energy (accumulates, clamped to [0, 1]).
 func add_trauma(amount: float) -> void:
@@ -76,3 +93,7 @@ static func compute_position(target_pos: Vector3, height: float, distance: float
 ## Return a Basis that is a pure X-axis rotation by pitch_deg degrees.
 static func compute_pitch_basis(pitch_deg: float) -> Basis:
 	return Basis.from_euler(Vector3(deg_to_rad(pitch_deg), 0.0, 0.0))
+
+## Pure static helper — clamp a zoom value to [ZOOM_MIN, ZOOM_MAX].
+static func clamp_zoom(z: float) -> float:
+	return clampf(z, ZOOM_MIN, ZOOM_MAX)
