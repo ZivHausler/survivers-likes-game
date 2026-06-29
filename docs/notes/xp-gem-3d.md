@@ -39,7 +39,25 @@ Pure function — returns the XZ position delta for one frame.
 
 ## Visual
 
-Small emissive gold sphere (SphereMesh r=0.2). Material set in `_ready()` via `StandardMaterial3D`. Gentle scale-pulse tween for "alive" feel.
+Small emissive sphere (SphereMesh r=0.2). Gentle scale-pulse tween for "alive" feel (runs in `_ready()`). Material color is set in `setup()` via `tier_color(_value)` so the orb visually signals its XP tier.
+
+## tier_color static helper
+
+```gdscript
+static func tier_color(value: int) -> Color
+```
+
+Maps an XP value to one of five distinct tier colors. Higher value = hotter/rarer color.
+
+| Range | Color | Name |
+|---|---|---|
+| 1–2 | `Color(0.3, 0.6, 1.0)` | blue — easiest/earliest enemies |
+| 3–5 | `Color(0.3, 1.0, 0.4)` | green |
+| 6–15 | `Color(1.0, 0.9, 0.2)` | yellow |
+| 16–49 | `Color(1.0, 0.55, 0.1)` | orange |
+| 50+ | `Color(1.0, 0.2, 0.6)` | magenta — bosses / late-game |
+
+A fresh `StandardMaterial3D` with `emission_enabled = true` is created per gem in `setup()` so no shared resource is ever mutated.
 
 ## See also
 

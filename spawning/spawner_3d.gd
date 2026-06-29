@@ -80,6 +80,13 @@ static func big_boss_enemy_data(base: EnemyData, hp_mult: float) -> EnemyData:
 	return d
 
 
+## XP time multiplier: scales normal-enemy XP with elapsed run time so later waves
+## award higher-tier orbs naturally. Returns 1.0 at t=0, +1.0 every 120 s (+100% per 2 min).
+## Kept modest — boss XP (50/200) always dominates at all stages.
+static func xp_time_mult(elapsed: float) -> float:
+	return 1.0 + elapsed / 120.0
+
+
 ## Recursively apply a texture-preserving albedo tint to all MeshInstance3D nodes under `node`.
 ## Duplicates each surface's active material before setting albedo_color so the original
 ## GLB material is never mutated. Falls back to a blank StandardMaterial3D when the
@@ -161,7 +168,11 @@ func _spawn_normal(allowed: Array, hp_mult: float, scale_mult: float) -> void:
 	var data: EnemyData = _variants.get(id)
 	if data == null:
 		return
+	var base_xp: int = data.xp_value  # read before duplicating; shared .tres is never touched
 	var scaled_data: EnemyData = scale_enemy_data(data, hp_mult)
+	# Scale XP with run time so later normal enemies award higher-tier orbs.
+	# xp_time_mult returns ≥ 1.0 so xp_value never drops below the base.
+	scaled_data.xp_value = maxi(base_xp, int(round(float(base_xp) * xp_time_mult(_elapsed))))
 	_instance_enemy(scaled_data, scale_mult)
 
 

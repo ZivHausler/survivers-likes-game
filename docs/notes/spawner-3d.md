@@ -20,8 +20,22 @@
 | `boss_enemy_data(base, hp_mult) -> EnemyData` | Mini-boss: ×8 HP, XP=50, speed /16 |
 | `big_boss_enemy_data(base, hp_mult) -> EnemyData` | Big-boss: ×40 HP, XP=200, speed /16 |
 | `apply_model_tint(node, tint)` | Texture-preserving tint: recurses MeshInstance3D children, duplicates each active material, sets `albedo_color` |
+| `xp_time_mult(elapsed) -> float` | XP growth factor: `1.0 + elapsed/120.0` (+100% per 2 min) |
 
 All factory helpers **duplicate()** the source resource — the shared `.tres` is never mutated.
+
+## XP growth over run time
+
+`_spawn_normal` scales the duplicated enemy's `xp_value` by `xp_time_mult(_elapsed)`:
+
+```gdscript
+scaled_data.xp_value = maxi(base_xp, int(round(float(base_xp) * xp_time_mult(_elapsed))))
+```
+
+- At `t=0 s`: multiplier = 1.0 — enemy awards its base XP (e.g. swarmer = 1 XP → blue orb).
+- At `t=120 s`: multiplier = 2.0 — swarmer awards 2 XP (still blue, but approaching green boundary).
+- At `t=240 s`: multiplier = 3.0 — swarmer awards 3 XP → **green orb** appears naturally.
+- Boss/big-boss XP stays fixed at 50/200 (already in the top tier).
 
 ## Boss model (Phase 2)
 
