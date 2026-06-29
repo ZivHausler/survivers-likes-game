@@ -127,11 +127,14 @@ func _rebuild_orbiters() -> void:
 		col.shape = sphere
 		area.add_child(col)
 		# Visible emissive sphere so players can see the orbiters circling.
+		# Raised to torso height (y=1.0 local) so it does not clip into the ground;
+		# the Area3D collision stays at Y=0 for reliable hit detection.
 		var mi: MeshInstance3D = MeshInstance3D.new()
 		var sphere_mesh := SphereMesh.new()
 		sphere_mesh.radius = 0.4
 		sphere_mesh.height  = 0.8
 		mi.mesh = sphere_mesh
+		mi.position = Vector3(0.0, 1.0, 0.0)
 		# Fresh material per orbiter — never share a resource across instances.
 		var mat := StandardMaterial3D.new()
 		mat.albedo_color = vfx_color

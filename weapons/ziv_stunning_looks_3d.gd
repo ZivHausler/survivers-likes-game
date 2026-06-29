@@ -29,6 +29,9 @@ const _BEAM_ROTATION_SPEED: float = TAU / 3.0
 @onready var _beam: Area3D = $Beam
 @onready var _charm_field: Area3D = $CharmField
 
+## Cached reference to the beam's visual mesh so fire() can pulse it.
+var _beam_mesh: MeshInstance3D = null
+
 func _ready() -> void:
 	base_cooldown = 3.0
 	vfx_id = &"ziv_stunning_looks"
@@ -47,26 +50,30 @@ func _ready() -> void:
 ## are clearly visible in the dark arena.  Materials are created fresh here —
 ## no shared-resource mutation.
 func _setup_visuals() -> void:
-	# Beam: a box matching the BoxShape3D (1.5 × 0.5 × 8.0), offset to centre on z=-4.
+	# Beam: a box matching the BoxShape3D (1.5 × 0.5 × 8.0), offset to centre on z=-4
+	# and raised to torso height (y=1.0) so it does not clip into the ground.
 	var beam_mesh_inst := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = Vector3(1.5, 0.5, 8.0)
 	beam_mesh_inst.mesh = box
-	beam_mesh_inst.position = Vector3(0.0, 0.0, -4.0)
+	beam_mesh_inst.position = Vector3(0.0, 1.0, -4.0)
 	var beam_mat := StandardMaterial3D.new()
-	beam_mat.albedo_color = Color(vfx_color.r, vfx_color.g, vfx_color.b, 0.6)
+	beam_mat.albedo_color = Color(vfx_color.r, vfx_color.g, vfx_color.b, 0.9)
 	beam_mat.emission_enabled = true
 	beam_mat.emission = vfx_color
-	beam_mat.emission_energy_multiplier = 2.0
+	beam_mat.emission_energy_multiplier = 4.0
 	beam_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	beam_mesh_inst.material_override = beam_mat
 	_beam.add_child(beam_mesh_inst)
+	_beam_mesh = beam_mesh_inst
 	# CharmField: a large semi-transparent sphere indicating the charm radius.
+	# Centred at torso height (y=1.0) so it reads correctly above the ground.
 	var charm_mesh_inst := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
 	sphere.radius = charm_radius
 	sphere.height  = charm_radius * 2.0
 	charm_mesh_inst.mesh = sphere
+	charm_mesh_inst.position = Vector3(0.0, 1.0, 0.0)
 	var charm_mat := StandardMaterial3D.new()
 	charm_mat.albedo_color = Color(vfx_color.r, vfx_color.g, vfx_color.b, 0.12)
 	charm_mat.emission_enabled = true
@@ -84,8 +91,55 @@ func setup(player: Node, p_stats: StatBlock) -> void:
 	super(player, p_stats)
 
 func fire() -> void:
+	# Non-evolved: aim the beam at the nearest enemy before dealing damage.
+	if not evolved:
+		var nearest := _nearest_enemy_xz()
+		if nearest:
+			_beam.rotation.y = aim_angle_to(global_position, nearest.global_position)
+	_pulse_beam()
 	_deal_beam_damage()
 	_charm_nearby_enemies()
+
+## Return the Y rotation (radians) required to make the beam's local -Z axis face `to`
+## from `from` on the XZ plane.  Pure — no scene access, fully unit-testable.
+static func aim_angle_to(from: Vector3, to: Vector3) -> float:
+	var dx := to.x - from.x
+	var dz := to.z - from.z
+	return atan2(-dx, -dz)
+
+## Return the nearest "enemies"-group Node3D by XZ distance, or null if none.
+func _nearest_enemy_xz() -> Node3D:
+	if not is_inside_tree():
+		return null
+	var all_enemies := get_tree().get_nodes_in_group("enemies")
+	var nearest: Node3D = null
+	var best_d2 := INF
+	var my_pos := global_position
+	for e in all_enemies:
+		var en := e as Node3D
+		if not is_instance_valid(en):
+			continue
+		var dx := en.global_position.x - my_pos.x
+		var dz := en.global_position.z - my_pos.z
+		var d2 := dx * dx + dz * dz
+		if d2 < best_d2:
+			best_d2 = d2
+			nearest = en
+	return nearest
+
+## Flash the beam bright on fire, then tween back to the resting energy.
+## Gives clear visual feedback that the ability has triggered.
+func _pulse_beam() -> void:
+	if _beam_mesh == null or not is_instance_valid(_beam_mesh):
+		return
+	var mat := _beam_mesh.material_override as StandardMaterial3D
+	if mat == null:
+		return
+	mat.emission_energy_multiplier = 12.0
+	if not is_inside_tree():
+		return
+	var tw := create_tween()
+	tw.tween_property(mat, "emission_energy_multiplier", 4.0, 0.18)
 
 func _deal_beam_damage() -> void:
 	var damage := beam_damage * stats.damage_mult

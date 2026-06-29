@@ -257,3 +257,20 @@ func test_group_call_scene_loads() -> void:
 func test_mass_dm_scene_loads() -> void:
 	var scene := load("res://weapons/avihay_mass_dm_3d.tscn")
 	assert_not_null(scene, "avihay_mass_dm_3d.tscn must load")
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Orbiter visual height — mesh must sit above the ground
+# ═════════════════════════════════════════════════════════════════════════════
+
+func test_orbiter_visual_mesh_local_y_is_positive() -> void:
+	var w := _make_orbit_weapon()
+	assert_true(w._orbiters.size() > 0, "must have at least one orbiter to test")
+	var orbiter: Area3D = w._orbiters[0]
+	var mi: MeshInstance3D = null
+	for child in orbiter.get_children():
+		if child is MeshInstance3D:
+			mi = child as MeshInstance3D
+			break
+	assert_not_null(mi, "orbiter Area3D must contain a MeshInstance3D child")
+	assert_gt(mi.position.y, 0.0,
+		"orbiter visual mesh must have a positive local Y offset (torso height)")

@@ -250,3 +250,49 @@ func test_initial_charm_radius() -> void:
 func test_base_cooldown_is_3() -> void:
 	var w := _make_weapon()
 	assert_almost_eq(w.base_cooldown, 3.0, 0.001, "base_cooldown must be 3.0")
+
+# ═════════════════════════════════════════════════════════════════════════════
+# aim_angle_to — pure geometry helper
+# ═════════════════════════════════════════════════════════════════════════════
+
+func test_aim_angle_to_target_directly_in_front() -> void:
+	# Target at (0, 0, -5) — directly along the beam's natural -Z direction.
+	# Expected rotation.y = 0 so beam already faces that way.
+	var angle := ZivStunningLooks3D.aim_angle_to(Vector3.ZERO, Vector3(0.0, 0.0, -5.0))
+	assert_almost_eq(angle, 0.0, 0.01,
+		"target on -Z axis must require zero beam rotation")
+
+func test_aim_angle_to_target_to_the_right() -> void:
+	# Target at (+X, 0, 0) — beam must rotate -PI/2 so its -Z points toward +X.
+	var angle := ZivStunningLooks3D.aim_angle_to(Vector3.ZERO, Vector3(5.0, 0.0, 0.0))
+	assert_almost_eq(angle, -PI / 2.0, 0.01,
+		"target on +X axis must require beam rotation of -PI/2")
+
+func test_aim_angle_to_non_zero_origin() -> void:
+	# Same relative direction from two different origins → same angle.
+	var a1 := ZivStunningLooks3D.aim_angle_to(Vector3.ZERO, Vector3(0.0, 0.0, -3.0))
+	var a2 := ZivStunningLooks3D.aim_angle_to(Vector3(10.0, 0.0, 10.0), Vector3(10.0, 0.0, 7.0))
+	assert_almost_eq(a1, a2, 0.01,
+		"aim_angle_to must depend only on relative XZ direction, not absolute position")
+
+func test_aim_angle_to_same_position_no_crash() -> void:
+	# When from == to there is no meaningful direction; the key contract is no crash
+	# and a finite result (the game never places an enemy at the weapon's exact origin).
+	var angle := ZivStunningLooks3D.aim_angle_to(Vector3.ZERO, Vector3.ZERO)
+	assert_true(is_finite(angle),
+		"aim_angle_to with identical from/to must return a finite value without crashing")
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Beam mesh height — visual must sit above the ground
+# ═════════════════════════════════════════════════════════════════════════════
+
+func test_beam_mesh_local_y_is_positive() -> void:
+	var w := _make_weapon()
+	var beam_mi: MeshInstance3D = null
+	for child in w._beam.get_children():
+		if child is MeshInstance3D:
+			beam_mi = child as MeshInstance3D
+			break
+	assert_not_null(beam_mi, "Beam Area3D must contain a MeshInstance3D child")
+	assert_gt(beam_mi.position.y, 0.0,
+		"Beam visual mesh must have a positive local Y offset (torso height)")

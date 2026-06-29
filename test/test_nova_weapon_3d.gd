@@ -278,3 +278,17 @@ func test_adoring_aura_scene_loads() -> void:
 func test_voice_blast_scene_loads() -> void:
 	var scene := load("res://weapons/avihay_voice_blast_3d.tscn")
 	assert_not_null(scene, "avihay_voice_blast_3d.tscn must load")
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Nova telegraph height — must spawn above ground level
+# ═════════════════════════════════════════════════════════════════════════════
+
+func test_nova_telegraph_spawns_at_positive_y() -> void:
+	var w := _make_nova_weapon()
+	w.global_position = Vector3.ZERO
+
+	var holder: Node3D = w._spawn_telegraph() as Node3D
+	assert_not_null(holder, "_spawn_telegraph must return a Node3D holder")
+	assert_gt(holder.global_position.y, 0.0,
+		"nova telegraph must spawn at positive Y (torso height, not floor level)")
+	holder.queue_free()

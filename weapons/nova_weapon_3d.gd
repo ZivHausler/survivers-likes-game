@@ -69,10 +69,11 @@ func _spawn_telegraph() -> Node3D:
 		return null
 	var tree := get_tree()
 	var parent: Node = tree.current_scene if tree.current_scene != null else tree.root
-	# Container node positioned at weapon origin.
+	# Container node positioned at torso height above the weapon origin so the
+	# expanding ring reads clearly above the ground rather than clipping into it.
 	var holder := Node3D.new()
 	parent.add_child(holder)
-	holder.global_position = global_position
+	holder.global_position = global_position + Vector3(0.0, 1.0, 0.0)
 	# Sphere mesh visual.
 	var mi := MeshInstance3D.new()
 	var sphere := SphereMesh.new()

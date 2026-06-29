@@ -37,6 +37,9 @@ func _setup_visual() -> void:
 	sphere.radius = 0.5
 	sphere.height  = 1.0
 	mi.mesh = sphere
+	# Raise the visual to torso height so the bubble doesn't clip into the ground.
+	# The Area3D collision and movement logic remain at Y=0.
+	mi.position = Vector3(0.0, 1.0, 0.0)
 	# Fresh material per bubble instance — never share a resource.
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = vfx_color

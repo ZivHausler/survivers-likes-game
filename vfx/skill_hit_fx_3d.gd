@@ -4,7 +4,8 @@ class_name SkillHitFx3D extends GPUParticles3D
 ## Usage: instantiate skill_hit_fx_3d.tscn, add to scene, call play_at(pos, color).
 
 func play_at(pos: Vector3, color: Color) -> void:
-	global_position = pos
+	# Nudge up by 0.5 so sparks appear at mid-body height rather than floor level.
+	global_position = pos + Vector3(0.0, 0.5, 0.0)
 	# Duplicate the shared process material so we can set a unique color per instance.
 	var pmat: ParticleProcessMaterial = process_material.duplicate()
 	pmat.color = color
