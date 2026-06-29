@@ -67,6 +67,11 @@ func _ready() -> void:
 	var parent := get_parent()
 	if parent == null:
 		return
+	# Activate a navigation map so enemy NavigationAgent3D RVO avoidance actually
+	# simulates (the world's default map is INACTIVE until a region exists, which
+	# makes velocity_computed return zero — enemies' own desired-velocity fallback
+	# covers that, but this lets avoidance steering work in the rendered game).
+	_activate_navigation(parent)
 	var obstacles := Node3D.new()
 	obstacles.name = "Obstacles"
 
@@ -125,6 +130,24 @@ func _extract_tree_variant(tree_instance: Node3D) -> Node3D:
 	chosen.transform = Transform3D.IDENTITY  # re-seat at obstacle origin
 	tree_instance.free()  # discards the other variants still attached
 	return chosen
+
+## Add a flat NavigationRegion3D covering the playfield so the navigation map is
+## ACTIVE. NavigationAgent3D avoidance (RVO) only produces a non-zero safe velocity
+## on an active map; without a region the world's default map stays inactive and the
+## avoidance callback returns zero. A single flat quad (no baking needed) is enough
+## to activate the map; pathfinding navmesh detail is not required for pure avoidance.
+func _activate_navigation(parent: Node) -> void:
+	var region := NavigationRegion3D.new()
+	region.name = "ArenaNavRegion"
+	var navmesh := NavigationMesh.new()
+	var e := 100.0  # matches the 200x200 ground plane half-extent
+	navmesh.set_vertices(PackedVector3Array([
+		Vector3(-e, 0.0, -e), Vector3(e, 0.0, -e), Vector3(e, 0.0, e), Vector3(-e, 0.0, e),
+	]))
+	navmesh.add_polygon(PackedInt32Array([0, 1, 2, 3]))
+	region.navigation_mesh = navmesh
+	# Deferred: the parent is busy adding children during scene entry.
+	parent.add_child.call_deferred(region)
 
 ## Primitive stand-in used only when a prop model fails to load.
 func _fallback_mesh(footprint_radius: float, height: float) -> Mesh:

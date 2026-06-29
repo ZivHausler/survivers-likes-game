@@ -67,6 +67,18 @@ The `tree_model_scale` export (default `0.35`) controls the scale of the extract
 the raw mesh is ~18 units tall and the player capsule is ~2 units, so `0.35` gives ~6 units.
 Rocks continue to use the existing `model_scale` export.
 
+## Navigation Map Activation
+
+`_ready()` also calls `_activate_navigation(parent)`, which adds a flat
+`NavigationRegion3D` (`ArenaNavRegion`, a single 200×200 quad navmesh, no baking) to
+the arena. This is required because enemy `NavigationAgent3D` RVO avoidance only
+produces a non-zero `safe_velocity` when its navigation map is **active**, and the
+world's default map stays inactive until a region exists. Without it, every enemy's
+`velocity_computed` returned zero and the swarm froze (the enemy-side
+`AVOID_EPSILON_SQ` fallback in `enemy-3d.md` is the second line of defense). Pure
+avoidance needs only an active map — pathfinding-quality navmesh detail is not
+required.
+
 ## Tests
 
 `test/test_arena_scatter.gd` validates:

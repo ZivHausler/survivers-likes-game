@@ -80,3 +80,34 @@ func test_setup_raises_agent_max_speed_to_move_speed() -> void:
 	assert_not_null(agent, "NavigationAgent3D must exist")
 	assert_almost_eq(agent.max_speed, 20.0, 0.001,
 		"max_speed must be raised to data.move_speed when it exceeds the default")
+
+## FREEZE REGRESSION — RVO returns a zero safe_velocity when its nav map is not
+## simulating avoidance (no active NavigationRegion, and always in headless). The
+## callback must NOT then zero out a real desired velocity, or enemies freeze.
+func test_velocity_computed_falls_back_to_desired_when_safe_zero() -> void:
+	var e := _make_enemy()
+	e.velocity = Vector3(5.0, 0.0, 0.0)   # desired velocity, as _physics_process sets it
+	e._on_velocity_computed(Vector3.ZERO) # RVO yields nothing
+	assert_almost_eq(e.velocity.x, 5.0, 0.001,
+		"a ~zero safe velocity must NOT overwrite a real desired velocity (no freeze)")
+
+## A meaningful (non-zero) safe velocity from RVO is still adopted (avoidance steers).
+func test_velocity_computed_uses_nonzero_safe() -> void:
+	var e := _make_enemy()
+	e.velocity = Vector3(5.0, 0.0, 0.0)
+	e._on_velocity_computed(Vector3(0.0, 0.0, 4.0))
+	assert_almost_eq(e.velocity.z, 4.0, 0.001, "a real safe velocity is adopted")
+	assert_almost_eq(e.velocity.x, 0.0, 0.001, "avoided velocity replaces desired")
+
+## END-TO-END FREEZE GUARD — an in-tree enemy must actually CHANGE POSITION toward
+## its target over several physics frames. This is the test that catches the
+## "spawns but never moves" regression (headless RVO never emits a non-zero
+## velocity, so movement relies on the desired-velocity fallback).
+func test_enemy_actually_moves_over_physics_frames() -> void:
+	var e := _make_enemy()  # at origin, target at (10,0,0), move_speed 5
+	var start_x := e.global_position.x
+	for _i in range(15):
+		await get_tree().physics_frame
+	assert_true(e.global_position.x - start_x > 0.5,
+		"enemy must move toward target across frames, not freeze (moved %f)"
+		% (e.global_position.x - start_x))

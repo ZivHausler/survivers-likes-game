@@ -15,6 +15,11 @@ const RANGED_STANDOFF := 6.0
 const CONTACT_RANGE := 1.5
 ## Velocity length below which we play "idle" rather than "move".
 const MOVE_THRESHOLD := 0.05
+## Squared-speed floor below which an RVO `velocity_computed` result is treated as
+## "avoidance produced nothing" — the enemy then falls back to its desired velocity
+## so it never freezes when the NavigationServer isn't simulating avoidance
+## (no active nav map, or headless). See _on_velocity_computed.
+const AVOID_EPSILON_SQ := 0.01
 
 ## Bob frequency in Hz — how many bounces per second at full move speed.
 const BOB_FREQ_HZ := 2.0
@@ -148,7 +153,15 @@ func _on_velocity_computed(safe_velocity: Vector3) -> void:
 	if data == null:
 		return
 	_avoidance_active = true
-	velocity = safe_velocity
+	# Defense in depth: RVO only yields a non-zero safe velocity when its navigation
+	# map is active AND avoidance actually simulates (it does not in headless, and
+	# would not without a NavigationRegion activating the map). If RVO returns ~zero
+	# while this frame's DESIRED velocity (already assigned to `velocity` in
+	# _physics_process) is real, keep the desired velocity so the enemy never freezes;
+	# otherwise adopt the avoided velocity. Result: RVO steering when it works, plain
+	# collision-slide toward the target when it doesn't.
+	if not (safe_velocity.length_squared() < AVOID_EPSILON_SQ and velocity.length_squared() >= AVOID_EPSILON_SQ):
+		velocity = safe_velocity
 	move_and_slide()
 
 func _physics_process(dt: float) -> void:

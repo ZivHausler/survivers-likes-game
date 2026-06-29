@@ -102,6 +102,17 @@ both working:
 Never remove the synchronous `velocity = ...` assignments in `_physics_process`;
 `test_enemy_3d.gd` and `test_enemy_3d_avoidance.gd` lock this in.
 
+**No-freeze fallback (zero safe-velocity guard).** Godot's RVO only produces a
+non-zero `safe_velocity` when its navigation map is *active* and the avoidance
+simulation runs — which requires a `NavigationRegion3D` in the scene (the arena adds
+one: see `arena-scatter.md`) and never happens in headless. If `velocity_computed`
+returns a ~zero velocity (below `AVOID_EPSILON_SQ`) while the desired velocity is
+real, `_on_velocity_computed` *keeps the desired velocity* instead of zeroing it, so
+enemies never freeze; a meaningful safe velocity is still adopted (avoidance steers).
+This was a freeze regression: without the guard, an inactive nav map zeroed every
+enemy's velocity. `test_enemy_3d_avoidance.gd` covers both the unit guard and an
+end-to-end "enemy actually moves over physics frames" check.
+
 ### First-frame warmup fallback (FIX 1)
 
 The NavigationServer takes one or more frames to join a newly spawned agent to a
