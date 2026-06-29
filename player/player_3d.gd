@@ -5,7 +5,7 @@ class_name Player3D extends CharacterBody3D
 ## Weapons and enemies are wired in later tasks; weapon stays null until then.
 
 var stats: StatBlock
-var weapon: Weapon
+var weapon: Node3D = null
 var level: int = 1
 var xp: int = 0
 var hp: float = 0.0
@@ -18,7 +18,7 @@ func setup(data: CharacterData) -> void:
 	if data.weapon_scene:
 		var inst := data.weapon_scene.instantiate()
 		if inst is Node3D:
-			weapon = inst as Weapon
+			weapon = inst
 			add_child(weapon)
 			weapon.setup(self, stats)
 		else:
