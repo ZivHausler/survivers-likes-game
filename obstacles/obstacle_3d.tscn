@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://b0obst3d0prop1"]
+
+[ext_resource type="Script" path="res://obstacles/obstacle_3d.gd" id="1_obst"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_footprint"]
+radius = 1.0
+height = 4.0
+
+[node name="Obstacle3D" type="StaticBody3D"]
+collision_layer = 16
+collision_mask = 0
+script = ExtResource("1_obst")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CylinderShape3D_footprint")
+
+[node name="NavigationObstacle3D" type="NavigationObstacle3D" parent="."]
+radius = 1.0
