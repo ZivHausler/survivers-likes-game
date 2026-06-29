@@ -17,7 +17,8 @@ See [[adr-godot]] for why the Godot node/signal model was chosen.
 
 | Signal | Parameters | Who emits | Who listens |
 |--------|-----------|-----------|-------------|
-| `enemy_killed` | `position: Vector2, xp_value: int` | Enemy death handler | XP system, score HUD |
+| `enemy_killed` | `position: Vector2, xp_value: int` | Enemy death handler (2D) | XP system, score HUD |
+| `enemy_killed_3d` | `position: Vector3, xp_value: int` | Enemy3D death handler (3D) | XP gem spawner (Task 1.4) |
 | `xp_collected` | `amount: int` | XP orb on body_entered | Level-up system |
 | `player_leveled_up` | `level: int` | Level-up system | HUD, evolution check |
 | `player_hp_changed` | `current: float, max_hp: float` | Player HP component | HP bar HUD |

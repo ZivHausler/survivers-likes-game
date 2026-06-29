@@ -10,6 +10,7 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[game-camera-3d]] — `GameCamera3D`: tilted perspective Camera3D, follows target on XZ; pure static helpers for unit testing
 - [[arena-3d]] — `arena_3d.tscn`: 3D ground plane (200×200), DirectionalLight3D, WorldEnvironment; gameplay plane = XZ
 - [[player-3d]] — `Player3D` (`CharacterBody3D`): WASD on XZ, HP/XP/level/stat logic ported verbatim from 2D Player; weapon stays null until 3D weapons exist
+- [[enemy-3d]] — `Enemy3D` (`CharacterBody3D`): steering/charm/contact-damage/death ported verbatim from 2D Enemy; emits `enemy_killed_3d(Vector3,int)` for Task 1.4 gem spawner
 
 ## Systems
 
