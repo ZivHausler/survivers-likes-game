@@ -24,6 +24,8 @@ var weapons: Dictionary = {}
 var weapon: Node3D = null
 ## Dedicated ultimate slot (manual, SPACE). Separate from the weapon pool.
 var ultimate: UltimateWeapon3D = null
+## Acquired passive upgrades: skill_id → level (count of times applied). For the HUD.
+var passives: Dictionary = {}
 var level: int = 1
 var xp: int = 0
 var hp: float = 0.0
@@ -88,6 +90,7 @@ func level_skill(skill_id: StringName) -> void:
 
 ## Apply the passive bonus value to the weapon for skill_id. No-op if not owned.
 func apply_skill_passive(skill_id: StringName, value: float) -> void:
+	passives[skill_id] = int(passives.get(skill_id, 0)) + 1
 	if weapons.has(skill_id):
 		weapons[skill_id].apply_passive(value)
 

@@ -19,9 +19,15 @@ var _game_manager: Node = null  # duck-typed: GameManager (2D) or GameManager3D
 var _player: Node = null        # duck-typed: Player (2D) or Player3D
 var _evolve_tween: Tween = null
 
-# Cooldown HUD — created in _ready so tests can instantiate the script without a scene tree.
-var _cooldowns_box: HBoxContainer = null
-# Maps skill index -> ProgressBar so we can update each frame.
+# --- Three-zone cooldown HUD (created in _ready; no @onready so tests can load without scene) ---
+# Left zone: passives (HBoxContainer, PRESET_BOTTOM_LEFT)
+var _passives_box: HBoxContainer = null
+var _passive_panels: Array = []
+var _passive_last_count: int = 0
+# Center zone: ultimate radial (RadialCooldown, anchored bottom-center)
+var _ult_radial: RadialCooldown = null
+# Right zone: weapon cooldown bars (HBoxContainer, PRESET_BOTTOM_RIGHT)
+var _weapons_box: HBoxContainer = null
 var _cd_bars: Array[ProgressBar] = []
 var _cd_last_count: int = 0
 
@@ -34,16 +40,39 @@ func _ready() -> void:
 	GameEvents.boss_hp_changed.connect(_on_boss_hp_changed)
 	GameEvents.boss_died.connect(_on_boss_died)
 
-	# Cooldown indicator container — bottom-left, above the VBox.
-	_cooldowns_box = HBoxContainer.new()
-	_cooldowns_box.name = "CooldownsBox"
-	_cooldowns_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	_cooldowns_box.offset_bottom = -8.0
-	_cooldowns_box.offset_top   = -72.0
-	_cooldowns_box.offset_left  = 8.0
-	_cooldowns_box.offset_right = 400.0
-	_cooldowns_box.add_theme_constant_override("separation", 6)
-	add_child(_cooldowns_box)
+	# Left zone: passives.
+	_passives_box = HBoxContainer.new()
+	_passives_box.name = "PassivesBox"
+	_passives_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	_passives_box.offset_bottom = -8.0
+	_passives_box.offset_top   = -56.0
+	_passives_box.offset_left  = 8.0
+	_passives_box.offset_right = 300.0
+	_passives_box.add_theme_constant_override("separation", 4)
+	add_child(_passives_box)
+
+	# Center zone: radial ultimate indicator.
+	_ult_radial = RadialCooldown.new()
+	_ult_radial.name = "UltRadial"
+	_ult_radial.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_ult_radial.custom_minimum_size = Vector2(64, 64)
+	_ult_radial.offset_left  = -32.0
+	_ult_radial.offset_right =  32.0
+	_ult_radial.offset_top   = -72.0
+	_ult_radial.offset_bottom = -8.0
+	_ult_radial.visible = false
+	add_child(_ult_radial)
+
+	# Right zone: weapon cooldown bars.
+	_weapons_box = HBoxContainer.new()
+	_weapons_box.name = "WeaponsBox"
+	_weapons_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	_weapons_box.offset_bottom = -8.0
+	_weapons_box.offset_top   = -72.0
+	_weapons_box.offset_left  = -300.0
+	_weapons_box.offset_right = -8.0
+	_weapons_box.add_theme_constant_override("separation", 6)
+	add_child(_weapons_box)
 
 	# Defer finding siblings so the full scene tree is ready
 	call_deferred("_find_siblings")
@@ -132,18 +161,38 @@ func collect_cooldowns(player) -> Array:
 		out.append({ "id": &"ultimate", "fraction": ult.cooldown_fraction(), "is_ultimate": true })
 	return out
 
-## Sync the cooldown bar strip with the current player's skill states.
+## Acquired passives for the left HUD zone. Pure (stub-friendly).
+func collect_passives(player) -> Array:
+	var out: Array = []
+	if player == null or not is_instance_valid(player):
+		return out
+	var p = player.get("passives")
+	if p is Dictionary:
+		for id in p:
+			out.append({ "id": id, "level": int(p[id]) })
+	return out
+
+## Sync the three cooldown zones with the current player's skill states.
 func _update_cooldown_bars() -> void:
-	if _cooldowns_box == null:
+	if _weapons_box == null:
 		return
-	var entries: Array = collect_cooldowns(_player)
-	# Rebuild indicator nodes if count changed.
-	if entries.size() != _cd_last_count:
-		for child in _cooldowns_box.get_children():
+	var all_entries: Array = collect_cooldowns(_player)
+
+	# Split into weapon entries and ultimate entry.
+	var weapon_entries: Array = []
+	var ult_entry = null
+	for e in all_entries:
+		if e["is_ultimate"]:
+			ult_entry = e
+		else:
+			weapon_entries.append(e)
+
+	# --- Right zone: weapon bars ---
+	if weapon_entries.size() != _cd_last_count:
+		for child in _weapons_box.get_children():
 			child.queue_free()
 		_cd_bars.clear()
-		for i in entries.size():
-			var is_ult: bool = entries[i]["is_ultimate"]
+		for i in weapon_entries.size():
 			var panel := Panel.new()
 			panel.custom_minimum_size = Vector2(40, 40)
 			var style := StyleBoxFlat.new()
@@ -154,19 +203,15 @@ func _update_cooldown_bars() -> void:
 			bar.name = "Bar"
 			bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			bar.max_value = 1.0
-			bar.value = entries[i]["fraction"]
+			bar.value = weapon_entries[i]["fraction"]
 			bar.show_percentage = false
 			var bg_style := StyleBoxFlat.new()
 			bg_style.bg_color = Color(0.08, 0.08, 0.08, 0.0)
 			bar.add_theme_stylebox_override("background", bg_style)
 			var fill_style := StyleBoxFlat.new()
-			if is_ult:
-				fill_style.bg_color = Color(0.9, 0.6, 0.0, 0.9)  # gold tint for ultimate
-			else:
-				fill_style.bg_color = Color(0.2, 0.7, 1.0, 0.85)  # cyan for regular skills
+			fill_style.bg_color = Color(0.2, 0.7, 1.0, 0.85)  # cyan for weapons
 			bar.add_theme_stylebox_override("fill", fill_style)
 			panel.add_child(bar)
-			# "READY" label overlay when fraction >= 1.0
 			var lbl := Label.new()
 			lbl.name = "ReadyLabel"
 			lbl.text = "RDY"
@@ -177,16 +222,59 @@ func _update_cooldown_bars() -> void:
 			lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			lbl.visible = false
 			panel.add_child(lbl)
-			_cooldowns_box.add_child(panel)
+			_weapons_box.add_child(panel)
 			_cd_bars.append(bar)
-		_cd_last_count = entries.size()
-	# Update bar values each frame.
-	for i in entries.size():
+		_cd_last_count = weapon_entries.size()
+	for i in weapon_entries.size():
 		if i >= _cd_bars.size():
 			break
-		var frac: float = entries[i]["fraction"]
+		var frac: float = weapon_entries[i]["fraction"]
 		_cd_bars[i].value = frac
-		# Toggle READY label.
 		var ready_lbl: Label = _cd_bars[i].get_parent().get_node_or_null("ReadyLabel")
 		if ready_lbl:
 			ready_lbl.visible = frac >= 1.0
+
+	# --- Center zone: ultimate radial ---
+	if _ult_radial != null:
+		if ult_entry != null:
+			_ult_radial.visible = true
+			_ult_radial.set_fraction(ult_entry["fraction"])
+		else:
+			_ult_radial.visible = false
+
+	# --- Left zone: passives ---
+	if _passives_box != null:
+		var passive_entries: Array = collect_passives(_player)
+		if passive_entries.size() != _passive_last_count:
+			for child in _passives_box.get_children():
+				child.queue_free()
+			_passive_panels.clear()
+			for e in passive_entries:
+				var panel := Panel.new()
+				panel.custom_minimum_size = Vector2(36, 36)
+				var style := StyleBoxFlat.new()
+				style.bg_color = Color(0.1, 0.08, 0.15, 0.85)
+				style.set_corner_radius_all(4)
+				panel.add_theme_stylebox_override("panel", style)
+				var lbl := Label.new()
+				lbl.text = str(e["id"]).substr(0, 3).to_upper()
+				lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+				lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+				lbl.add_theme_font_size_override("font_size", 8)
+				lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				panel.add_child(lbl)
+				var lvl_lbl := Label.new()
+				lvl_lbl.name = "LevelLabel"
+				lvl_lbl.text = "x%d" % e["level"]
+				lvl_lbl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+				lvl_lbl.offset_top    = -14.0
+				lvl_lbl.offset_bottom =  0.0
+				lvl_lbl.offset_left   = -20.0
+				lvl_lbl.offset_right  =  0.0
+				lvl_lbl.add_theme_font_size_override("font_size", 8)
+				lvl_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				panel.add_child(lvl_lbl)
+				_passives_box.add_child(panel)
+				_passive_panels.append(panel)
+			_passive_last_count = passive_entries.size()
