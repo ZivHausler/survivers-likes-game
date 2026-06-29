@@ -14,6 +14,9 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[weapon-system-3d]] — `Weapon3D` base class: Node3D port of Weapon; same timer/cooldown/level/evolve contract; 1 unit ≈ 16 px
 - [[weapon-ziv-3d]] — `ZivStunningLooks3D`: 3D beam (Area3D BoxShape) + XZ charm sorting; evolve = Y-rotation + always-on CharmField
 - [[weapon-avihay-3d]] — `AvihayChatSpam3D` + `Bubble3D`: XZ directional bubble spread, pierce, homing on evolve; SPEED=14 units/s
+- [[spawner-3d]] — `Spawner3D` (`Node3D`): ring spawner driven by DifficultyTimeline; 3D world scale (25 unit ring, speed /16); pure static helpers for testability
+- [[xp-gem-3d]] — `XPGem3D` (`Area3D`): magnet pickup (XZ plane) that awards XP; emissive gold sphere; `magnet_step` static helper
+- [[game-manager-3d]] — `GameManager3D` (`Node`): minimal 3D run loop — world-scale setup, Spawner3D wiring, XPGem3D spawning on kill
 
 ## Systems
 

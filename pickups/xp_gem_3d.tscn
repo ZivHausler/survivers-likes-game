@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://pickups/xp_gem_3d.gd" id="1_xpgem3d"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_gem"]
+radius = 0.4
+
+[sub_resource type="SphereMesh" id="SphereMesh_gem"]
+radius = 0.2
+height = 0.4
+
+[node name="XPGem3D" type="Area3D" groups=["pickups"]]
+collision_layer = 0
+collision_mask = 1
+monitoring = true
+script = ExtResource("1_xpgem3d")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_gem")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_gem")

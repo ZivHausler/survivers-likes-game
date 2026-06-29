@@ -1,9 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://cht7r4j9w6n5bm"]
+[gd_scene load_steps=7 format=3 uid="uid://cht7r4j9w6n5bm"]
 
 [ext_resource type="PackedScene" uid="uid://bq6n3f8p5xm2kw" path="res://arena/arena_3d.tscn" id="1_arena"]
 [ext_resource type="Script" uid="uid://cn9wt5vr3jz6px" path="res://game/main_3d.gd" id="2_main_script"]
 [ext_resource type="Script" uid="uid://bmfp8k2nx7ry4q" path="res://core/game_camera_3d.gd" id="3_cam_script"]
 [ext_resource type="PackedScene" uid="uid://dp3x7k9mn2qw1r" path="res://player/player_3d.tscn" id="4_player3d"]
+[ext_resource type="Script" path="res://game/game_manager_3d.gd" id="5_gm3d"]
+[ext_resource type="Script" path="res://spawning/spawner_3d.gd" id="6_spawner3d"]
 
 [node name="Main3D" type="Node3D"]
 script = ExtResource("2_main_script")
@@ -22,3 +24,9 @@ follow_speed = 10.0
 
 [node name="HudLayer" type="CanvasLayer" parent="."]
 layer = 10
+
+[node name="GameManager3D" type="Node" parent="."]
+script = ExtResource("5_gm3d")
+
+[node name="Spawner3D" type="Node3D" parent="."]
+script = ExtResource("6_spawner3d")
