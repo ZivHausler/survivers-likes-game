@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=8 format=3]
+
+[ext_resource type="Script" uid="uid://oeuj1jqprh5d" path="res://core/character_data.gd" id="1_char_data"]
+[ext_resource type="Script" uid="uid://0rwxad1au28r" path="res://core/stat_block.gd" id="2_stat_block"]
+[ext_resource type="PackedScene" path="res://weapons/ziv_stunning_looks_3d.tscn" id="3_weapon"]
+[ext_resource type="Resource" path="res://upgrades/ziv/signature.tres" id="4_sig"]
+[ext_resource type="Resource" path="res://upgrades/ziv/passive.tres" id="5_pas"]
+[ext_resource type="Resource" path="res://upgrades/ziv/evolution.tres" id="6_evo"]
+
+[sub_resource type="Resource" id="Resource_stats"]
+script = ExtResource("2_stat_block")
+max_hp = 100.0
+move_speed = 7.5
+pickup_range = 5.0
+damage_mult = 1.0
+fire_rate_mult = 1.0
+armor = 0.0
+
+[resource]
+script = ExtResource("1_char_data")
+id = &"ziv"
+display_name = "Ziv"
+color = Color(1.0, 0.4, 0.7, 1.0)
+base_stats = SubResource("Resource_stats")
+weapon_scene = ExtResource("3_weapon")
+passive_id = &"ziv_passive"
+evolution_id = &"ziv_evolution"
+max_signature_level = 5
+signature_upgrade = ExtResource("4_sig")
+passive_upgrade = ExtResource("5_pas")
+evolution_upgrade = ExtResource("6_evo")

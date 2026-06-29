@@ -1,56 +1,53 @@
-# GameManager3D
+# game-manager-3d
 
-`game/game_manager_3d.gd` — `class_name GameManager3D extends Node`
+`GameManager3D` (`Node`) — the 3D run loop, parallel to 2D `GameManager`.
 
-Minimal run controller for the 3D vertical slice. Lives as a child of `main_3d.tscn`.
+Lives as a `Node` child inside `main_3d.tscn`. Resolves siblings from parent.
 
-## Responsibilities (Task 1.4b)
+## Run setup
 
-- Builds world-scaled `CharacterData` + `StatBlock` and calls `player.setup(data)`.
-- Instantiates and connects `Spawner3D`.
-- Listens to `GameEvents.enemy_killed_3d` → spawns `XPGem3D` at the kill position.
-- Maintains `elapsed` timer and `kills` counter.
+1. Reads `RunState.selected_character` (set by `CharacterSelect3D`). Falls back to `ziv_3d.tres` if null.
+2. Calls `player.setup(char_data)` — instantiates the 3D weapon.
+3. Calls `spawner.setup(player)` — starts enemy waves.
+4. Builds `UpgradeSystem` from `char_data` + 5 generic upgrades.
 
-## NOT in scope (Task 1.5)
+## Level-up pause flow (ported verbatim from 2D GameManager)
 
-- Upgrade UI / level-up pause flow
-- Game-over routing
-- HUD integration
+On `GameEvents.player_leveled_up`:
+- If `_choosing` is already true (mid-pick), queue: `_pending_levelups += 1`.
+- If `has_available_choices()` is false, call `_grant_max_bonus()` (+5 max_hp) and return.
+- Otherwise: `_choosing = true`, `get_tree().paused = true`, call `_present_next()`.
 
-## World-scale stats
+`_present_next()` — re-checks `has_available_choices()` (evolution may unlock mid-chain),
+then calls `_upgrade_ui.present(upgrade_system, player)`.
 
-| Stat | Value | Derivation |
-|---|---|---|
-| `move_speed` | 7.5 | 120 px / 16 |
-| `pickup_range` | 5.0 | 80 px / 16 |
-| `max_hp` | 100.0 | unchanged |
+`_on_upgrade_chosen(u)` — applies upgrade, calls `_resolve_next_or_unpause()`.
 
-Weapon: `ZivStunningLooks3D` (`res://weapons/ziv_stunning_looks_3d.tscn`).
+`_resolve_next_or_unpause()` — if `_pending_levelups > 0`, decrement and call `_present_next()`
+(stays paused); otherwise `_choosing = false`, unpause.
 
-## Scene wiring
+## Upgrade routing (_apply_upgrade)
 
-GameManager3D finds siblings by name from its parent (Main3D):
-- `"Player"` → Player3D
-- `"Spawner3D"` → Spawner3D
+| Kind        | Effect                                    |
+|-------------|-------------------------------------------|
+| SIGNATURE   | `player.weapon.level_up()`                |
+| EVOLUTION   | `player.weapon.evolve()`                  |
+| PASSIVE     | `player.weapon.apply_passive(effect_value)` |
+| GENERIC     | `player.apply_stat_upgrade(effect_kind, effect_value)` |
 
-Gems are added to `get_parent()` via `add_child.call_deferred()` (safe from physics callbacks).
+## Death
 
-## Setup flow
+On `GameEvents.player_died`: stores `RunState.last_run = {time, kills}`, unpauses,
+`change_scene_to_file("res://ui/game_over.tscn")`.
 
-```
-main_3d.tscn boots
-  └─ GameManager3D._ready()
-       └─ start()
-            ├─ find Player3D + Spawner3D from parent
-            ├─ build CharacterData (world-scaled stats + ziv_stunning_looks_3d weapon)
-            ├─ player.setup(cd)   → instantiates weapon, starts auto-fire timer
-            ├─ spawner.setup(player) → activates DifficultyTimeline-driven ring spawner
-            └─ connect GameEvents.enemy_killed_3d → _on_enemy_killed
-```
+## Node names resolved from parent
 
-## See also
+| Name         | Type         | Purpose                   |
+|--------------|--------------|---------------------------|
+| `Player`     | `Player3D`   | Player actor              |
+| `Spawner3D`  | duck-typed   | Enemy spawner             |
+| `UpgradeUI`  | `UpgradeUI`  | Level-up card overlay     |
 
-- [[game-manager]] — 2D original (upgrade UI, game-over in scope there)
-- [[spawner-3d]] — Spawner3D
-- [[xp-gem-3d]] — XPGem3D pickup
-- [[player-3d]] — Player3D.setup() contract
+## Juice
+
+Calls `Juice.register_player(player)` if the method exists (3D Juice is Task 1.6).

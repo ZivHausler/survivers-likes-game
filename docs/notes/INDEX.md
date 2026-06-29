@@ -16,7 +16,8 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[weapon-avihay-3d]] — `AvihayChatSpam3D` + `Bubble3D`: XZ directional bubble spread, pierce, homing on evolve; SPEED=14 units/s
 - [[spawner-3d]] — `Spawner3D` (`Node3D`): ring spawner driven by DifficultyTimeline; 3D world scale (25 unit ring, speed /16); pure static helpers for testability
 - [[xp-gem-3d]] — `XPGem3D` (`Area3D`): magnet pickup (XZ plane) that awards XP; emissive gold sphere; `magnet_step` static helper
-- [[game-manager-3d]] — `GameManager3D` (`Node`): minimal 3D run loop — world-scale setup, Spawner3D wiring, XPGem3D spawning on kill
+- [[game-manager-3d]] — `GameManager3D` (`Node`): full 3D run loop — CharacterData setup, UpgradeSystem, level-up queue (pause/cards/unpause), _apply_upgrade routing, death → game_over; mirrors 2D GameManager verbatim
+- [[character-select-3d]] — `CharacterSelect3D` (`Control`): 3D entry screen; lists ziv_3d.tres / avihay_3d.tres; sets RunState then → main_3d.tscn; boots at project start
 
 ## Systems
 
