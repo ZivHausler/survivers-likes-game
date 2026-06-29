@@ -87,6 +87,25 @@ Three new enemy variants are now registered in the spawner and gated by difficul
 - `spawning/difficulty_timeline.gd` — `ARCHER_THRESHOLD`/`DASHER_THRESHOLD`/`MAGICIAN_THRESHOLD` consts + three `variants.append` calls in `state_at()`.
 - Tests: `test_enemy_attack_data`, `test_enemy_projectile_3d`, `test_enemy_attack_wiring`, `test_ranged_attack`, `test_dash_attack`, `test_enemy_variant_gating`. Docs: `docs/notes/enemy-attacks.md`, `docs/notes/enemy-projectile-3d.md`.
 
+## Type-based weapon system — FOUNDATION (NEW this session, on `main`)
+
+A **TemTem-style type-gated weapon pool** ported from *LoL Swarm* is designed, planned, and has its **foundation merged to `main`** (the data + wiring machinery only — no weapon content yet). It is **dormant**: nothing in-game changes until a character sets `types`/`ultimate`.
+
+- **Design intent:** **10 "Natural" weapons** (every character can roll) + **10 type-gated weapons** (~50/50 split) + **10 exclusive per-friend ultimates** (big cooldown, offensive or defensive). Each friend has **1–2 types** and is offered `Natural ∪ their-type` weapons. Types: `charm/social/holy/pack/toxic/pest/joy/bomber/rush/sound` + `natural`. Friend→type→weapon→ultimate tables (incl. Matan's "Buzzkill" self-buff/team-debuff ult) live in the spec.
+- **Spec:** `docs/superpowers/specs/2026-06-29-type-based-weapon-system-design.md`. **Plan:** `docs/superpowers/plans/2026-06-29-type-weapon-system-foundation.md`.
+- **Foundation delivered — suite 1064/1064 on `main`:**
+  - `SkillData.type: StringName` (default `&"natural"`); `CharacterData.types: Array[StringName]` + `CharacterData.ultimate: SkillData` (all additive/back-compat).
+  - `core/skill_pool.gd` — `SkillPool.filter(pool, types)` (pure: `natural ∪ matching`), `all()` (empty registry — content plans populate it), `for_types()`.
+  - `SkillSystem` **weapon-slot cap** (3rd ctor arg, default **6**; signature ultimate exempt; suppresses NEW non-signature weapons once at cap).
+  - `GameManager3D.assemble_run_skills(ultimate, pool, types)` + a NEW first branch in `start()` (`[ultimate] + SkillPool.filter(SkillPool.all(), types)`) firing only when `ultimate != null AND types` non-empty; legacy per-character `skills` path kept as the `elif`.
+  - Built via subagent-driven TDD in an isolated worktree; per-task + whole-branch (opus) reviewed; merged conflict-free (zero file overlap with the concurrent enemy work).
+- **Authoring contract for the content plans** (foundation can't enforce these yet — from the final review):
+  - every pool weapon `.tres`: `skill_upgrade.skill_id == SkillData.id` AND non-null `weapon_scene`;
+  - every ultimate: `is_signature == true` AND non-null `weapon_scene` (else it isn't granted **and** wrongly counts against the cap);
+  - migration: a character with only ONE of `{types, ultimate}` set silently falls to the legacy path — add a warn/assert.
+- **Playtest spike — branch `demo/uwu-avihay`** (off `main`, not merged): built a **UwU Blaster ("Pew Pew")** Natural weapon — a fast **7-round burst on a 4 s cooldown**, aim locked once per burst, reuses `Bubble3D` — and temporarily set it as Avihay's signature to see the system run. **Avihay has since been reverted to Chat Spam** on that branch; the UwU Blaster files remain there (unwired) for reuse as the real Natural-pool weapon. `main` was never touched by the demo.
+- **NEXT:** the content plans, in order — 10 Natural weapons → 10 type weapons → 10 ultimates (+ co-op `players`-group plumbing for the team-effect ults) → character `types`/`ultimate` wiring + migration → balance pass.
+
 ## ⚠️ Open / deferred (next session)
 1. **2D code still present** — the old 2D scenes/scripts/tests were kept intact as a fallback during the pivot (Option B). A **cleanup task to delete 2D** (`game/main.tscn`, 2D player/enemy/weapons/spawner/gem, `game/game_manager.gd`, `ui/character_select.tscn`, 2D-only tests, `autoload/Juice` 2D) is **deferred until the user confirms the 3D build in a playtest**. `project.godot` main scene is already `character_select_3d`.
 2. **Enemy skeletal animation UNCONFIRMED** — mesh GLBs lack embedded AnimationPlayers. A procedural bob/lean now keeps enemies visually alive while moving (works). A skeletal retarget (loading the separate `*_run/_walk.glb` clips onto each mesh's skeleton) is attempted in `Enemy3D` but **not verified to actually move bones** (needs the Godot editor / a real playtest to confirm track paths match). If bones don't move, finish the retarget in-editor. Players DO animate (idle/walk).
