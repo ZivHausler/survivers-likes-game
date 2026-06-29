@@ -19,6 +19,12 @@ var _game_manager: Node = null  # duck-typed: GameManager (2D) or GameManager3D
 var _player: Node = null        # duck-typed: Player (2D) or Player3D
 var _evolve_tween: Tween = null
 
+# Cooldown HUD — created in _ready so tests can instantiate the script without a scene tree.
+var _cooldowns_box: HBoxContainer = null
+# Maps skill index -> ProgressBar so we can update each frame.
+var _cd_bars: Array[ProgressBar] = []
+var _cd_last_count: int = 0
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	GameEvents.player_hp_changed.connect(_on_hp_changed)
@@ -27,6 +33,17 @@ func _ready() -> void:
 	GameEvents.boss_spawned.connect(_on_boss_spawned)
 	GameEvents.boss_hp_changed.connect(_on_boss_hp_changed)
 	GameEvents.boss_died.connect(_on_boss_died)
+
+	# Cooldown indicator container — bottom-left, above the VBox.
+	_cooldowns_box = HBoxContainer.new()
+	_cooldowns_box.name = "CooldownsBox"
+	_cooldowns_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	_cooldowns_box.offset_bottom = -8.0
+	_cooldowns_box.offset_top   = -72.0
+	_cooldowns_box.offset_left  = 8.0
+	_cooldowns_box.offset_right = 400.0
+	_cooldowns_box.add_theme_constant_override("separation", 6)
+	add_child(_cooldowns_box)
 
 	# Defer finding siblings so the full scene tree is ready
 	call_deferred("_find_siblings")
@@ -54,7 +71,7 @@ func _process(_dt: float) -> void:
 	if _game_manager and is_instance_valid(_game_manager):
 		if _game_manager.has_method("get_elapsed"):
 			var secs := int(_game_manager.get_elapsed())
-			_timer_label.text = "%d:%02d" % [secs / 60, secs % 60]
+			_timer_label.text = "%d:%02d" % [int(secs / 60.0), secs % 60]
 		if _game_manager.has_method("get_kills"):
 			_kills_label.text = "Kills: %d" % _game_manager.get_kills()
 	if _player and is_instance_valid(_player):
@@ -62,6 +79,7 @@ func _process(_dt: float) -> void:
 			_xp_bar.max_value = _player.xp_to_next(_player.get("level"))
 		if "xp" in _player:
 			_xp_bar.value = _player.get("xp")
+	_update_cooldown_bars()
 
 func _on_hp_changed(current: float, max_hp: float) -> void:
 	_hp_bar.max_value = max_hp
@@ -95,3 +113,80 @@ func _on_boss_hp_changed(current: float, max_hp: float) -> void:
 
 func _on_boss_died() -> void:
 	_boss_bar.visible = false
+
+## Gather one cooldown entry per active skill: weapons first, ultimate last.
+## Each entry: { "id": StringName, "fraction": float, "is_ultimate": bool }.
+## Pure — does not access @onready nodes; safe to call from tests with stub players.
+func collect_cooldowns(player) -> Array:
+	var out: Array = []
+	if player == null:
+		return out
+	var weapons = player.get("weapons")
+	if weapons is Dictionary:
+		for id in weapons:
+			var w = weapons[id]
+			if w and w.has_method("cooldown_fraction"):
+				out.append({ "id": id, "fraction": w.cooldown_fraction(), "is_ultimate": false })
+	var ult = player.get("ultimate")
+	if ult and ult.has_method("cooldown_fraction"):
+		out.append({ "id": &"ultimate", "fraction": ult.cooldown_fraction(), "is_ultimate": true })
+	return out
+
+## Sync the cooldown bar strip with the current player's skill states.
+func _update_cooldown_bars() -> void:
+	if _cooldowns_box == null:
+		return
+	var entries: Array = collect_cooldowns(_player)
+	# Rebuild indicator nodes if count changed.
+	if entries.size() != _cd_last_count:
+		for child in _cooldowns_box.get_children():
+			child.queue_free()
+		_cd_bars.clear()
+		for i in entries.size():
+			var is_ult: bool = entries[i]["is_ultimate"]
+			var panel := Panel.new()
+			panel.custom_minimum_size = Vector2(40, 40)
+			var style := StyleBoxFlat.new()
+			style.bg_color = Color(0.08, 0.08, 0.08, 0.85)
+			style.set_corner_radius_all(4)
+			panel.add_theme_stylebox_override("panel", style)
+			var bar := ProgressBar.new()
+			bar.name = "Bar"
+			bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			bar.max_value = 1.0
+			bar.value = entries[i]["fraction"]
+			bar.show_percentage = false
+			var bg_style := StyleBoxFlat.new()
+			bg_style.bg_color = Color(0.08, 0.08, 0.08, 0.0)
+			bar.add_theme_stylebox_override("background", bg_style)
+			var fill_style := StyleBoxFlat.new()
+			if is_ult:
+				fill_style.bg_color = Color(0.9, 0.6, 0.0, 0.9)  # gold tint for ultimate
+			else:
+				fill_style.bg_color = Color(0.2, 0.7, 1.0, 0.85)  # cyan for regular skills
+			bar.add_theme_stylebox_override("fill", fill_style)
+			panel.add_child(bar)
+			# "READY" label overlay when fraction >= 1.0
+			var lbl := Label.new()
+			lbl.name = "ReadyLabel"
+			lbl.text = "RDY"
+			lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			lbl.add_theme_font_size_override("font_size", 10)
+			lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			lbl.visible = false
+			panel.add_child(lbl)
+			_cooldowns_box.add_child(panel)
+			_cd_bars.append(bar)
+		_cd_last_count = entries.size()
+	# Update bar values each frame.
+	for i in entries.size():
+		if i >= _cd_bars.size():
+			break
+		var frac: float = entries[i]["fraction"]
+		_cd_bars[i].value = frac
+		# Toggle READY label.
+		var ready_lbl: Label = _cd_bars[i].get_parent().get_node_or_null("ReadyLabel")
+		if ready_lbl:
+			ready_lbl.visible = frac >= 1.0
