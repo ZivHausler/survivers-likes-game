@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"ziv_selfie_flash_synergy"
+display_name = "SYNERGY: Paparazzi Storm"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "Every enemy becomes a tabloid star. Your flash erupts into a massive blinding supernova."
+stat_text = "Massive radius boost"
+skill_id = &"ziv_selfie_flash"

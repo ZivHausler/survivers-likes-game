@@ -19,6 +19,12 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[game-manager-3d]] — `GameManager3D` (`Node`): full 3D run loop — CharacterData setup, SkillSystem (or legacy UpgradeSystem), level-up queue, routing via `_route_skill_upgrade` (SKILL/PASSIVE/SYNERGY/GENERIC) or `_apply_upgrade` (legacy), death → game_over
 - [[character-select-3d]] — `CharacterSelect3D` (`Control`): 3D entry screen; lists ziv_3d.tres / avihay_3d.tres; sets RunState then → main_3d.tscn; boots at project start
 
+## Task 3.3 — Extra Skills (4 per character)
+
+- [[weapon-orbit-3d]] — `OrbitWeapon3D`: reusable rotating-orbiter archetype; N Area3D hitboxes; pure `orbiter_offsets()` helper; subclasses: ZivMirrorShards3D, AvihayGroupCall3D, AvihayMassDM3D
+- [[weapon-nova-3d]] — `NovaWeapon3D`: reusable AoE pulse archetype; damage + optional charm; pure `affected_enemies()` helper; subclasses: ZivSelfieFlash3D, ZivAdoringAura3D, AvihayVoiceBlast3D
+- [[skills-overview-3-3]] — Full roster: Ziv (Mirror Shards, Selfie Flash, Adoring Aura) + Avihay (Group Call, Voice Blast, Mass DM); upgrade file locations; manual-playtest checklist
+
 ## Systems
 
 - [[game-events]] — Global signal bus (`GameEvents` autoload)
