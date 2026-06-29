@@ -240,6 +240,35 @@ func test_setup_without_model_anim_player_stays_null() -> void:
 	player.setup(_make_char_data())  # no model_scene
 	assert_null(player._anim_player, "_anim_player must stay null when model_scene is unset")
 
+func test_setup_with_model_texture_applies_albedo_texture_to_mesh_surfaces() -> void:
+	## After setup() with a CharacterData that has model_texture set (Ziv = texture-a.png),
+	## every MeshInstance3D surface override material inside the instanced model must have
+	## albedo_texture != null. This catches the pure-white render bug where GLBs had no
+	## albedo_texture and the skin atlas was never wired up.
+	var cd := _make_char_data_with_model()
+	cd.model_texture = load("res://art/characters_3d/kenney_blocky_characters/textures/texture-a.png")
+	assert_not_null(cd.model_texture, "texture-a.png must be loadable")
+	var player: Player3D = add_child_autofree(Player3DScene.instantiate())
+	player.setup(cd)
+	# Walk the Model subtree and verify at least one MeshInstance3D surface override material
+	# has albedo_texture set — proves _apply_texture() ran.
+	var model_node := player.get_node("Model") as Node3D
+	var found_textured_surface := false
+	var queue: Array = [model_node]
+	while queue.size() > 0:
+		var n: Node = queue.pop_front()
+		if n is MeshInstance3D:
+			var mi := n as MeshInstance3D
+			if mi.mesh:
+				for i in mi.mesh.get_surface_count():
+					var mat: Material = mi.get_surface_override_material(i)
+					if mat is StandardMaterial3D:
+						if (mat as StandardMaterial3D).albedo_texture != null:
+							found_textured_surface = true
+		for child in n.get_children():
+			queue.push_back(child)
+	assert_true(found_textured_surface, "At least one MeshInstance3D surface must have albedo_texture set after setup() with model_texture")
+
 # ── multi-weapon (SkillSystem wiring) ────────────────────────────────────────
 
 ## Stub weapon: records calls, implements Weapon3D's public interface as Node3D.

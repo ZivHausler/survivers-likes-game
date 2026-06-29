@@ -106,6 +106,8 @@ func setup(data: CharacterData) -> void:
 		var model_inst := data.model_scene.instantiate()
 		_model.add_child(model_inst)
 		_model.scale = Vector3.ONE * data.model_scale
+		if data.model_texture:
+			_apply_texture(model_inst, data.model_texture)
 		if data.model_tint != Color.WHITE:
 			_apply_tint(model_inst, data.model_tint)
 		_anim_player = model_inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
@@ -113,6 +115,29 @@ func setup(data: CharacterData) -> void:
 			_anim_player.play("idle")
 
 	GameEvents.player_hp_changed.emit(hp, stats.max_hp)
+
+## Recursively set albedo_texture on all MeshInstance3D surfaces under node.
+## Duplicates each surface's active material and sets albedo_texture so the skin atlas
+## is applied. Falls back to a new StandardMaterial3D when no existing material is found.
+## albedo_color is left WHITE so the texture shows true colors; texture_filter NEAREST
+## suits the low-poly Kenney atlas. Called from setup() when data.model_texture is set.
+func _apply_texture(node: Node, tex: Texture2D) -> void:
+	if node is MeshInstance3D:
+		var mi := node as MeshInstance3D
+		if mi.mesh:
+			for i in mi.mesh.get_surface_count():
+				var existing: Material = mi.get_active_material(i)
+				var mat: StandardMaterial3D
+				if existing is StandardMaterial3D:
+					mat = (existing as StandardMaterial3D).duplicate() as StandardMaterial3D
+				else:
+					mat = StandardMaterial3D.new()
+					mat.albedo_color = Color.WHITE
+				mat.albedo_texture = tex
+				mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+				mi.set_surface_override_material(i, mat)
+	for child in node.get_children():
+		_apply_texture(child, tex)
 
 ## Recursively set albedo tint on all MeshInstance3D surfaces under node.
 ## Duplicates each surface's existing material and sets albedo_color so the texture

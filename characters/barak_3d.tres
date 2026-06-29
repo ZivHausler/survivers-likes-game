@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CharacterData" load_steps=13 format=3]
+[gd_resource type="Resource" script_class="CharacterData" load_steps=14 format=3]
 
 [ext_resource type="Script" uid="uid://oeuj1jqprh5d" path="res://core/character_data.gd" id="1_char_data"]
 [ext_resource type="Script" uid="uid://0rwxad1au28r" path="res://core/stat_block.gd" id="2_stat_block"]
@@ -11,6 +11,7 @@
 [ext_resource type="Resource" path="res://characters/skills/barak_pack_tactics.tres" id="9_pack_tactics"]
 [ext_resource type="Resource" path="res://characters/skills/barak_howl.tres" id="10_howl"]
 [ext_resource type="Resource" path="res://characters/skills/barak_fetch.tres" id="11_fetch"]
+[ext_resource type="Texture2D" uid="uid://cxhdd1rpudri2" path="res://art/characters_3d/kenney_blocky_characters/textures/texture-h.png" id="12_texture"]
 
 [sub_resource type="Resource" id="Resource_stats"]
 script = ExtResource("2_stat_block")
@@ -37,4 +38,5 @@ evolution_upgrade = ExtResource("6_evo")
 model_scene = ExtResource("7_model")
 model_scale = 1.0
 model_tint = Color(1, 1, 1, 1)
+model_texture = ExtResource("12_texture")
 skills = Array[Resource]([ExtResource("8_barak_loyal_hounds"), ExtResource("9_pack_tactics"), ExtResource("10_howl"), ExtResource("11_fetch")])

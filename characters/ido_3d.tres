@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CharacterData" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="CharacterData" load_steps=11 format=3]
 
 [ext_resource type="Script" uid="uid://oeuj1jqprh5d" path="res://core/character_data.gd" id="1_char_data"]
 [ext_resource type="Script" uid="uid://0rwxad1au28r" path="res://core/stat_block.gd" id="2_stat_block"]
@@ -8,6 +8,7 @@
 [ext_resource type="Resource" path="res://characters/skills/ido_miasma.tres" id="6_miasma"]
 [ext_resource type="Resource" path="res://characters/skills/ido_corrosion.tres" id="7_corrosion"]
 [ext_resource type="PackedScene" path="res://weapons/ido_toxic_cloud_3d.tscn" id="8_weapon"]
+[ext_resource type="Texture2D" uid="uid://br0yhwck2dj1q" path="res://art/characters_3d/kenney_blocky_characters/textures/texture-e.png" id="9_texture"]
 
 [sub_resource type="Resource" id="Resource_stats"]
 script = ExtResource("2_stat_block")
@@ -28,4 +29,5 @@ weapon_scene = ExtResource("8_weapon")
 model_scene = ExtResource("3_model")
 model_scale = 1.0
 model_tint = Color(1, 1, 1, 1)
+model_texture = ExtResource("9_texture")
 skills = Array[Resource]([ExtResource("4_toxic_cloud"), ExtResource("5_venom_orbs"), ExtResource("6_miasma"), ExtResource("7_corrosion")])
