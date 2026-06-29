@@ -48,8 +48,10 @@ func fire() -> void:
 	var damage := bubble_damage * stats.damage_mult
 	for dir in _get_fire_directions():
 		var bubble: Bubble3D = _bubble_scene.instantiate()
-		bubble.global_position = _player_ref.global_position
+		# Add to tree FIRST so global_position assignment is valid (node must be in
+		# the scene tree before global_position can be set on a Node3D).
 		spawn_parent.add_child(bubble)
+		bubble.global_position = _player_ref.global_position
 		bubble.setup(dir, damage, bubble_pierce, _homing_mode)
 
 ## Return the list of XZ fire directions for this activation.

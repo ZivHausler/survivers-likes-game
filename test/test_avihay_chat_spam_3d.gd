@@ -390,3 +390,62 @@ func test_nearest_enemy_direction_points_toward_enemy() -> void:
 		"direction should point toward enemy along +Z")
 	assert_almost_eq(dir.x, 0.0, 0.01,
 		"direction x should be 0 when enemy is straight ahead in Z")
+
+# ═════════════════════════════════════════════════════════════════════════════
+# AvihayChatSpam3D — fire() add_child ordering (Bug 2 regression tests)
+# Bubbles must be added to tree before global_position is set; otherwise
+# Node3D raises "!is_inside_tree()" and the bubble ends up at origin.
+# ═════════════════════════════════════════════════════════════════════════════
+
+## _make_weapon() adds the player via add_child_autofree, so player IS in the
+## scene tree. spawn_parent = player.get_parent() = the GutTest root.
+## fire() must add bubbles under spawn_parent without errors.
+
+func test_fire_adds_bubbles_to_spawn_parent() -> void:
+	var w := _make_weapon()
+	var player := w._player_ref as Node3D
+	var spawn_parent := player.get_parent()
+	assert_not_null(spawn_parent, "player must have a parent (spawn_parent) for fire() to work")
+	var before_count := spawn_parent.get_child_count()
+	w.fire()
+	var after_count := spawn_parent.get_child_count()
+	assert_gt(after_count, before_count,
+		"fire() must add at least one bubble child under spawn_parent")
+
+func test_fire_bubble_is_inside_tree_after_fire() -> void:
+	var w := _make_weapon()
+	var spawn_parent := (w._player_ref as Node3D).get_parent()
+	w.fire()
+	var found := false
+	for child in spawn_parent.get_children():
+		if child is Bubble3D:
+			found = true
+			assert_true(child.is_inside_tree(),
+				"Bubble3D must be inside tree after fire() — add_child must precede global_position")
+			break
+	assert_true(found, "fire() must spawn at least one Bubble3D")
+
+func test_fire_bubble_position_matches_player_position() -> void:
+	# Build a proper Node3D scene root so global_position inherits correctly.
+	var scene_root := Node3D.new()
+	add_child_autofree(scene_root)
+	var player := Node3D.new()
+	scene_root.add_child(player)
+	player.global_position = Vector3(4.0, 0.0, 7.0)
+
+	var w: AvihayChatSpam3D = _WeaponScene.instantiate() as AvihayChatSpam3D
+	scene_root.add_child(w)
+	w.setup(player, _make_stats())
+
+	w.fire()
+
+	var found := false
+	for child in scene_root.get_children():
+		if child is Bubble3D:
+			found = true
+			assert_almost_eq(child.global_position.x, player.global_position.x, 0.01,
+				"bubble x must match player x after fire()")
+			assert_almost_eq(child.global_position.z, player.global_position.z, 0.01,
+				"bubble z must match player z after fire()")
+			break
+	assert_true(found, "fire() must spawn at least one Bubble3D when player is in a Node3D tree")

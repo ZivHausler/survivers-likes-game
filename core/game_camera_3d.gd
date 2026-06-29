@@ -21,17 +21,26 @@ var _trauma: float = 0.0
 ## Tracks the smooth-follow base position separately so shake offset is layered on top
 ## without feeding back into the lerp next frame.
 var _base_position: Vector3 = Vector3.ZERO
+## True once we've snapped to the target at least once; prevents lerping from origin
+## when target is assigned after _ready() (e.g. assigned by GameManager3D in code).
+var _snapped: bool = false
 
 func _ready() -> void:
 	basis = compute_pitch_basis(pitch_degrees)
 	if target:
 		_base_position = compute_position(target.global_position, height, distance)
 		global_position = _base_position
+		_snapped = true
 
 func _physics_process(delta: float) -> void:
 	if not target:
 		return
 	var desired := compute_position(target.global_position, height, distance)
+	# Snap on the first frame the target is valid (avoids lerping from origin when
+	# target is assigned after _ready, e.g. by GameManager3D).
+	if not _snapped:
+		_snapped = true
+		_base_position = desired
 	_base_position = _base_position.lerp(desired, clampf(follow_speed * delta, 0.0, 1.0))
 	# Decay trauma and apply shake offset layered on top of the base follow position.
 	_trauma = decay_trauma(_trauma, delta)

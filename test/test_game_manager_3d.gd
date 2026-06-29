@@ -699,3 +699,52 @@ func test_invuln_not_granted_while_pending_levelups_remain() -> void:
 		"set_invulnerable must be called after the last queued level-up resolves")
 
 	get_tree().paused = false  # safety reset
+
+# ---------------------------------------------------------------------------
+# Camera target wiring (Bug 1 regression tests)
+# ---------------------------------------------------------------------------
+
+## Build a run scene that includes a GameCamera3D sibling, so GameManager3D.start()
+## can assign cam.target = player in code (the exported NodePath does not resolve).
+func _make_run_scene_with_camera() -> Node3D:
+	var root := Node3D.new()
+	add_child_autofree(root)
+
+	var player: Player3D = Player3DScene.instantiate() as Player3D
+	player.name = "Player"
+	root.add_child(player)
+
+	var spawner := StubSpawner3D.new()
+	spawner.name = "Spawner3D"
+	root.add_child(spawner)
+
+	var cam := GameCamera3D.new()
+	cam.name = "GameCamera3D"
+	root.add_child(cam)
+
+	var manager := GameManager3D.new()
+	manager.name = "GameManager3D"
+	root.add_child(manager)  # triggers _ready() → start()
+	return root
+
+func test_camera_target_is_non_null_after_start() -> void:
+	var root := _make_run_scene_with_camera()
+	var cam := root.get_node("GameCamera3D") as GameCamera3D
+	assert_not_null(cam.target,
+		"GameCamera3D.target must be non-null after GameManager3D.start()")
+
+func test_camera_target_is_the_player() -> void:
+	var root   := _make_run_scene_with_camera()
+	var cam    := root.get_node("GameCamera3D") as GameCamera3D
+	var player := root.get_node("Player") as Player3D
+	assert_eq(cam.target, player,
+		"GameCamera3D.target must be the Player3D node assigned by GameManager3D")
+
+func test_camera_y_leaves_origin_after_physics_step() -> void:
+	var root := _make_run_scene_with_camera()
+	var cam  := root.get_node("GameCamera3D") as GameCamera3D
+	# Invoke _physics_process directly — Camera3D may not run physics frames
+	# automatically in headless mode; direct invocation is equivalent and reliable.
+	cam._physics_process(0.016)
+	assert_almost_eq(cam.global_position.y, cam.height, 0.1,
+		"Camera global_position.y must equal height after first physics step, not stay at origin")

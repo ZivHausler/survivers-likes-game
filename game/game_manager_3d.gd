@@ -115,6 +115,11 @@ func start() -> void:
 	var cam: GameCamera3D = parent.get_node_or_null("GameCamera3D") as GameCamera3D
 	if cam:
 		Juice3D.register_camera(cam)
+		# Assign the player as the camera target in code — the exported NodePath in
+		# the .tscn does not resolve at runtime (Node3D export stays null).
+		# This is the authoritative assignment; the .tscn value is ignored.
+		if _player:
+			cam.target = _player
 
 
 func _process(dt: float) -> void:
