@@ -66,6 +66,16 @@ From `art/tiles/Tiles/` (Kenney Tiny Town, CC0):
 
 Diatryma also has separate PNG textures extracted from the `.unitypackage` at `art/enemies_3d/diatryma/textures/` (diatryma_feathers_TXTR.png, diatryma_feathers_ALPHA.png). Bug, serpent and plant textures are embedded in their mesh GLBs.
 
+## Ranged & Dasher Enemy Variants — CC0 Placeholder Models (Task 6)
+
+| Variant | Model file | License | Notes |
+|---|---|---|---|
+| `enemies/archer.tres` | `art/characters_3d/kenney_blocky_characters/models/character-h.glb` | CC0 1.0 Universal (Kenney Blocky Characters) | **Placeholder** — tinted green; pending bespoke archer model |
+| `enemies/magician.tres` | `art/characters_3d/kenney_blocky_characters/models/character-i.glb` | CC0 1.0 Universal (Kenney Blocky Characters) | **Placeholder** — tinted purple; pending bespoke magician model |
+| `enemies/dasher.tres` | `art/enemies_3d/bug/bug_mesh.glb` | ⚠️ Commercial — prototype only (MDA Hatchery CP1) | Reuses bug mesh from swarmer; tinted red-orange; rights UNCONFIRMED before distribution |
+
+**Decision rationale:** Reliable headless download of bespoke rigged archer/magician GLBs was not feasible at authoring time. The spec pre-approved reuse of existing CC0 Kenney Blocky Characters variants (character-h/character-i) as placeholder humanoid models with distinct color tints. The dasher reuses the bug mesh (same as swarmer) with a red-orange tint to distinguish it visually. These placeholders should be replaced with purpose-made or licensed models before any distribution beyond personal prototype.
+
 ## CREDITS
 
 GODOT-VFX-LIBRARY by haowg (https://github.com/haowg/GODOT-VFX-LIBRARY) — MIT License.
