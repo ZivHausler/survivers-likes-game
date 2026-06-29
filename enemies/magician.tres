@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
 
 [ext_resource type="Script" uid="uid://c2myc8ie504wg" path="res://enemies/enemy_data.gd" id="1_enemy_data"]
-[ext_resource type="PackedScene" uid="uid://duyes8s72f6wk" path="res://art/characters_3d/kenney_blocky_characters/models/character-i.glb" id="2_char_i"]
+[ext_resource type="PackedScene" uid="uid://c4eulsoo2p24m" path="res://art/enemies_3d/wizard/wizard_mesh.glb" id="2_wizard"]
 
 [resource]
 script = ExtResource("1_enemy_data")
@@ -19,6 +19,6 @@ windup_time = 0.6
 projectile_speed = 12.0
 projectile_damage = 12.0
 radius = 8.0
-model_scene = ExtResource("2_char_i")
+model_scene = ExtResource("2_wizard")
 model_scale = 1.0
 model_y_offset = 0.0

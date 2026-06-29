@@ -38,6 +38,11 @@ var _contact_cd: float = 0.0
 var _charm_timer: float = 0.0
 ## Cached AnimationPlayer from the instanced model (or a created one); null if unavailable.
 var _anim_player: AnimationPlayer = null
+## Real clip names resolved once in setup() for the logical "idle"/"move" states.
+## Empty string means "no matching clip" → _play_anim no-ops and the procedural bob
+## is the visual safety net. See _resolve_anim_clips() / resolve_clip().
+var _clip_idle: String = ""
+var _clip_move: String = ""
 ## Cached reference to the GLB model instance placed under _model pivot.
 var _model_inst: Node3D = null
 ## True when a "move" animation was successfully loaded from a separate anim GLB.
@@ -100,6 +105,9 @@ func setup(p_data: EnemyData, p_target: Node3D) -> void:
 		# BUG B FIX: attempt skeletal animation from a separate anim-only GLB.
 		# Falls back gracefully if the file is absent or track paths do not retarget.
 		_anim_loaded = _try_load_anim(model_inst, data)
+		# Resolve logical idle/move states to real clip names (supports both the legacy
+		# injected-"move" convention and self-contained Quaternius GLBs).
+		_resolve_anim_clips()
 		# Best-effort idle: play immediately if clip present.
 		_play_anim("idle")
 	else:
@@ -246,17 +254,81 @@ func take_damage(amount: float) -> void:
 	# Non-lethal hit: flash the enemy mesh white for 0.08 s.
 	HitFlash3D.flash(self, 0.08)
 
-## Attempt to play a named animation clip; silently no-ops if AnimationPlayer or clip absent.
-## FBX→GLB animation clips are imported as "Take 001"; enemies load separate animation GLBs
-## so this will usually no-op (rest-pose static) unless the mesh GLB has embedded clips.
+## Play a logical animation state ("idle" / "move"); silently no-ops if the
+## AnimationPlayer or a matching clip is absent (procedural bob covers it).
+## The logical name is mapped to the real clip resolved in _resolve_anim_clips()
+## so this works for both separate-anim-GLB models and self-contained Quaternius
+## GLBs ("CharacterArmature|Idle" etc.). Any other name is played verbatim.
 func _play_anim(anim_name: String) -> void:
 	if not _anim_player:
 		return
-	if not _anim_player.has_animation(anim_name):
+	var clip := anim_name
+	if anim_name == "idle":
+		clip = _clip_idle
+	elif anim_name == "move":
+		clip = _clip_move
+	if clip.is_empty() or not _anim_player.has_animation(clip):
 		return
-	if _anim_player.current_animation == anim_name:
+	if _anim_player.current_animation == clip:
 		return
-	_anim_player.play(anim_name)
+	_anim_player.play(clip)
+
+## Map the logical "idle"/"move" states onto real AnimationPlayer clip names once,
+## so _play_anim() never scans the clip list per frame. Handles two model conventions:
+##  1. Legacy: _try_load_anim injects a literal "move" clip; "idle" may be embedded.
+##  2. Self-contained GLBs (CC0 Quaternius monsters) whose clips are named
+##     "CharacterArmature|Idle", "Walk"/"Run", "Flying_Idle"/"Fast_Flying", etc.
+## Resolved locomotion/idle clips are forced to loop so they don't freeze after one
+## cycle (imported GLB clips often default to LOOP_NONE).
+func _resolve_anim_clips() -> void:
+	_clip_idle = ""
+	_clip_move = ""
+	if _anim_player == null:
+		return
+	var clips := _anim_player.get_animation_list()
+	_clip_idle = resolve_clip(clips, PackedStringArray(["idle", "flying_idle"]))
+	_clip_move = resolve_clip(clips, PackedStringArray(["move", "run", "walk", "fast_flying", "flying"]))
+	_force_loop(_anim_player, _clip_idle)
+	_force_loop(_anim_player, _clip_move)
+
+## Force a clip to loop linearly if it currently has no loop. No-op for "" / missing clips.
+static func _force_loop(ap: AnimationPlayer, clip: String) -> void:
+	if ap == null or clip.is_empty() or not ap.has_animation(clip):
+		return
+	var a := ap.get_animation(clip)
+	if a and a.loop_mode == Animation.LOOP_NONE:
+		a.loop_mode = Animation.LOOP_LINEAR
+
+## Resolve a logical animation state to an actual clip name from `clips`.
+## `candidates` is ordered most-preferred first. Matching priority:
+##   1. exact (case-insensitive)
+##   2. leaf node name — the part after the last "|" or "/" (Quaternius "Armature|Clip")
+##   3. substring (case-insensitive)
+## Returns "" when nothing matches. Pure/static — unit-testable without a scene tree.
+static func resolve_clip(clips: PackedStringArray, candidates: PackedStringArray) -> String:
+	# Pass 1: exact case-insensitive match.
+	for cand in candidates:
+		for c in clips:
+			if c.to_lower() == cand.to_lower():
+				return c
+	# Pass 2: leaf node (after the last "|" or "/") equals the candidate.
+	for cand in candidates:
+		for c in clips:
+			var leaf := c
+			var bar := leaf.rfind("|")
+			if bar >= 0:
+				leaf = leaf.substr(bar + 1)
+			var slash := leaf.rfind("/")
+			if slash >= 0:
+				leaf = leaf.substr(slash + 1)
+			if leaf.to_lower() == cand.to_lower():
+				return c
+	# Pass 3: substring.
+	for cand in candidates:
+		for c in clips:
+			if cand.to_lower() in c.to_lower():
+				return c
+	return ""
 
 ## Procedural alive-motion: vertical bob + forward lean while moving.
 ## Applied to the _model pivot (visual-only; never touches velocity or collision shape).

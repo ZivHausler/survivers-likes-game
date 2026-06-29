@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
 
 [ext_resource type="Script" uid="uid://c2myc8ie504wg" path="res://enemies/enemy_data.gd" id="1_enemy_data"]
-[ext_resource type="PackedScene" uid="uid://dyhmrxu8eu1vp" path="res://art/characters_3d/kenney_blocky_characters/models/character-h.glb" id="2_char_h"]
+[ext_resource type="PackedScene" uid="uid://cwe5q1esdfqnv" path="res://art/enemies_3d/ghost/ghost_mesh.glb" id="2_ghost"]
 
 [resource]
 script = ExtResource("1_enemy_data")
@@ -19,6 +19,6 @@ windup_time = 0.4
 projectile_speed = 18.0
 projectile_damage = 7.0
 radius = 8.0
-model_scene = ExtResource("2_char_h")
+model_scene = ExtResource("2_ghost")
 model_scale = 1.0
 model_y_offset = 0.0

@@ -127,7 +127,7 @@ func test_shared_tank_tres_not_mutated_by_big_boss_enemy_data() -> void:
 	assert_almost_eq(tank.max_hp, original_hp, 0.001,
 			"tank.tres max_hp must be unchanged after big_boss_enemy_data()")
 
-# ── boss model_scene — serpent assignment ─────────────────────────────────────
+# ── boss model_scene — demon (mini) / dragon (big) assignment ─────────────────
 
 func test_boss_enemy_data_is_a_duplicate_not_the_original() -> void:
 	var tank := load("res://enemies/tank.tres") as EnemyData
@@ -152,8 +152,8 @@ func test_shared_tank_tres_not_mutated_after_model_assignment() -> void:
 	var tank := load("res://enemies/tank.tres") as EnemyData
 	var original_model := tank.model_scene
 	var boss := Spawner3D.boss_enemy_data(tank, 1.0)
-	# Manually assign serpent (as _spawn_boss does):
-	boss.model_scene = load(Spawner3D.SERPENT_SCENE_PATH) as PackedScene
+	# Manually assign the mini-boss demon model (as _spawn_boss does):
+	boss.model_scene = load(Spawner3D.MINI_BOSS_SCENE_PATH) as PackedScene
 	assert_eq(tank.model_scene, original_model,
 			"Assigning model_scene to the duplicated boss must not mutate the shared tank.tres")
 

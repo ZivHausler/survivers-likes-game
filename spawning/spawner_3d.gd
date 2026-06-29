@@ -7,7 +7,7 @@ class_name Spawner3D extends Node3D
 ## Normal enemies: HP and scale grow with time; move_speed rescaled to 3D world units.
 ## Mini-boss: tank ×8 HP (×hp_mult) ×3 scale — every 180 s window.
 ## Big boss:  tank ×40 HP (×hp_mult) ×5 scale — at t=600 (once).
-## Boss model: undead serpent GLB, distinct from the diatryma tank model.
+## Boss models: demon (mini) and dragon (big) GLBs, distinct from the diatryma tank model.
 ## Boss tint:  texture-preserving (duplicates active material + sets albedo_color).
 
 const ENEMY_SCENE_PATH := "res://enemies/enemy_3d.tscn"
@@ -18,8 +18,10 @@ const ARCHER_PATH      := "res://enemies/archer.tres"
 const MAGICIAN_PATH    := "res://enemies/magician.tres"
 const DASHER_PATH      := "res://enemies/dasher.tres"
 
-## Distinct imposing serpent model used by both mini-boss and big-boss.
-const SERPENT_SCENE_PATH := "res://art/enemies_3d/undead_serpent/serpent_mesh.glb"
+## Distinct imposing monster models for the two boss tiers (CC0 Quaternius).
+## Mini-boss = Demon (heavy melee read); big-boss = Dragon Evolved (escalation).
+const MINI_BOSS_SCENE_PATH := "res://art/enemies_3d/demon/demon_mesh.glb"
+const BIG_BOSS_SCENE_PATH  := "res://art/enemies_3d/dragon_evolved/dragon_evolved_mesh.glb"
 
 const SPAWN_RING_RADIUS: float = 25.0       # 400 px / 16
 const WORLD_SCALE:       float = 1.0 / 16.0 # 1 world unit ≈ 16 px
@@ -187,8 +189,8 @@ func _spawn_boss(hp_mult: float) -> void:
 	if data == null:
 		return
 	var boss_data: EnemyData = boss_enemy_data(data, hp_mult)
-	# Give boss the imposing serpent model instead of the diatryma tank model.
-	boss_data.model_scene = load(SERPENT_SCENE_PATH) as PackedScene
+	# Give boss the imposing demon model instead of the diatryma tank model.
+	boss_data.model_scene = load(MINI_BOSS_SCENE_PATH) as PackedScene
 	# COMPOUND SCALE NOTE: model_scale (BOSS_MODEL_SCALE = 1.5) sets the Model pivot
 	# scale inside Enemy3D.setup(). The body scale (BOSS_SCALE_MULT = 2×) is applied
 	# separately in _instance_enemy(). Combined visual size = 2 × 1.5 = 3.0× base.
@@ -211,8 +213,8 @@ func _spawn_big_boss(hp_mult: float) -> void:
 	if data == null:
 		return
 	var big_data: EnemyData = big_boss_enemy_data(data, hp_mult)
-	# Give big boss the imposing serpent model at a larger scale.
-	big_data.model_scene = load(SERPENT_SCENE_PATH) as PackedScene
+	# Give big boss the imposing dragon model at a larger scale.
+	big_data.model_scene = load(BIG_BOSS_SCENE_PATH) as PackedScene
 	# COMPOUND SCALE NOTE: model_scale (BIG_BOSS_MODEL_SCALE = 2.0) sets the Model pivot
 	# scale inside Enemy3D.setup(). The body scale (BIG_BOSS_SCALE_MULT = 3×) is applied
 	# separately in _instance_enemy(). Combined visual size = 3 × 2.0 = 6.0× base.
@@ -226,7 +228,7 @@ func _spawn_big_boss(hp_mult: float) -> void:
 		var model_node := boss.get_node_or_null("Model") as Node3D
 		if model_node:
 			apply_model_tint(model_node, Color(0.5, 0.0, 1.0, 1.0))
-		boss.configure_boss(Enemy3D.BossKind.BIG, "Undead Serpent")
+		boss.configure_boss(Enemy3D.BossKind.BIG, "Ancient Dragon")
 
 
 func _instance_enemy(data: EnemyData, scale_mult: float) -> Enemy3D:
