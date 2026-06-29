@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CharacterData" load_steps=11 format=3]
+[gd_resource type="Resource" script_class="CharacterData" load_steps=12 format=3]
 
 [ext_resource type="Script" uid="uid://oeuj1jqprh5d" path="res://core/character_data.gd" id="1_char_data"]
 [ext_resource type="Script" uid="uid://0rwxad1au28r" path="res://core/stat_block.gd" id="2_stat_block"]
@@ -9,6 +9,7 @@
 [ext_resource type="Resource" path="res://characters/skills/yuval_resonance.tres" id="7_resonance"]
 [ext_resource type="PackedScene" path="res://weapons/yuval_soundwave_3d.tscn" id="8_weapon"]
 [ext_resource type="Texture2D" uid="uid://c1d3kbgms35xk" path="res://art/characters_3d/kenney_blocky_characters/textures/texture-f.png" id="9_texture"]
+[ext_resource type="Resource" path="res://characters/ultimates/yuval_bass_drop.tres" id="ult_bd"]
 
 [sub_resource type="Resource" id="Resource_stats"]
 script = ExtResource("2_stat_block")
@@ -32,3 +33,4 @@ model_scale = 1.0
 model_tint = Color(1, 1, 1, 1)
 model_texture = ExtResource("9_texture")
 skills = Array[Resource]([ExtResource("4_soundwave"), ExtResource("5_echo_orbit"), ExtResource("6_bass_drop"), ExtResource("7_resonance")])
+ultimate = ExtResource("ult_bd")
