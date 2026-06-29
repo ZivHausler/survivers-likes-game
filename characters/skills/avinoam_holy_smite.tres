@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=6 format=3]
+
+[ext_resource type="Script" uid="uid://d24b36hfii0n" path="res://core/skill_data.gd" id="1_skilldata"]
+[ext_resource type="PackedScene" path="res://weapons/avinoam_holy_smite_3d.tscn" id="2_weapon"]
+[ext_resource type="Resource" path="res://upgrades/avinoam/holy_smite_skill.tres" id="3_skill"]
+[ext_resource type="Resource" path="res://upgrades/avinoam/holy_smite_passive.tres" id="4_passive"]
+[ext_resource type="Resource" path="res://upgrades/avinoam/holy_smite_synergy.tres" id="5_synergy"]
+
+[resource]
+script = ExtResource("1_skilldata")
+id = &"avinoam_holy_smite"
+display_name = "Holy Smite"
+weapon_scene = ExtResource("2_weapon")
+is_signature = true
+skill_upgrade = ExtResource("3_skill")
+passive_upgrade = ExtResource("4_passive")
+synergy_upgrade = ExtResource("5_synergy")
+description = "Avinoam's signature ability. Call down divine wrath upon all nearby enemies."

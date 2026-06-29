@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=13 format=3]
+
+[ext_resource type="Script" uid="uid://oeuj1jqprh5d" path="res://core/character_data.gd" id="1_char_data"]
+[ext_resource type="Script" uid="uid://0rwxad1au28r" path="res://core/stat_block.gd" id="2_stat_block"]
+[ext_resource type="PackedScene" path="res://weapons/matan_irritation_aura_3d.tscn" id="3_weapon"]
+[ext_resource type="PackedScene" path="res://art/characters_3d/kenney_blocky_characters/models/character-d.glb" id="7_model"]
+[ext_resource type="Resource" path="res://characters/skills/matan_irritation_aura.tres" id="8_irritation_aura"]
+[ext_resource type="Resource" path="res://characters/skills/matan_annoyance_orbit.tres" id="9_annoyance_orbit"]
+[ext_resource type="Resource" path="res://characters/skills/matan_outburst.tres" id="10_outburst"]
+[ext_resource type="Resource" path="res://characters/skills/matan_pestering_swarm.tres" id="11_pestering_swarm"]
+
+[sub_resource type="Resource" id="Resource_stats"]
+script = ExtResource("2_stat_block")
+max_hp = 85.0
+move_speed = 8.0
+pickup_range = 4.5
+damage_mult = 1.0
+fire_rate_mult = 1.0
+armor = 0.0
+
+[resource]
+script = ExtResource("1_char_data")
+id = &"matan"
+display_name = "Matan"
+color = Color(0.4, 0.8, 0.2, 1.0)
+base_stats = SubResource("Resource_stats")
+weapon_scene = ExtResource("3_weapon")
+model_scene = ExtResource("7_model")
+model_scale = 1.0
+model_tint = Color(1, 1, 1, 1)
+skills = Array[Resource]([ExtResource("8_irritation_aura"), ExtResource("9_annoyance_orbit"), ExtResource("10_outburst"), ExtResource("11_pestering_swarm")])

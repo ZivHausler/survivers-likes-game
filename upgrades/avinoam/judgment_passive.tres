@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"avinoam_judgment_passive"
+display_name = "Swift Verdict"
+kind = 1
+max_level = 5
+effect_kind = &""
+effect_value = 2.5
+description = "Divine justice is swift. Judgment strikes with greater intensity."
+stat_text = "+2.5 Judgment Damage"
+skill_id = &"avinoam_judgment"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"avinoam_radiant_pulse_passive"
+display_name = "Blinding Glory"
+kind = 1
+max_level = 5
+effect_kind = &""
+effect_value = 0.5
+description = "Holy light spreads ever wider, leaving no shadow for enemies to hide."
+stat_text = "+0.5 Pulse Radius"
+skill_id = &"avinoam_radiant_pulse"

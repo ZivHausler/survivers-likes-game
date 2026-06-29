@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"avinoam_smite_orbs_passive"
+display_name = "Sacred Orbit"
+kind = 1
+max_level = 5
+effect_kind = &""
+effect_value = 2.0
+description = "Holy orbs strike with greater divine force."
+stat_text = "+2 Orb Damage"
+skill_id = &"avinoam_smite_orbs"
