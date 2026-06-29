@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=4 format=3]
 
 [ext_resource type="Script" uid="uid://c2myc8ie504wg" path="res://enemies/enemy_data.gd" id="1_enemy_data"]
 [ext_resource type="Texture2D" uid="uid://by3x5o28yopm4" path="res://art/enemies/PNG/Default/body_greenA.png" id="2_texture"]
+[ext_resource type="PackedScene" uid="uid://cwjga5yrh5g3w" path="res://art/enemies_3d/bug/bug_mesh.glb" id="3_bug_mesh"]
 
 [resource]
 script = ExtResource("1_enemy_data")
@@ -14,3 +15,6 @@ xp_value = 1
 is_ranged = false
 radius = 8.0
 texture = ExtResource("2_texture")
+model_scene = ExtResource("3_bug_mesh")
+model_scale = 1.0
+model_y_offset = 0.0

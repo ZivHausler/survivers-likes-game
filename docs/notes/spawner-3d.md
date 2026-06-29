@@ -19,14 +19,26 @@
 | `scale_enemy_data(base, hp_mult) -> EnemyData` | Duplicate + HP scale + move_speed /16 |
 | `boss_enemy_data(base, hp_mult) -> EnemyData` | Mini-boss: ×8 HP, XP=50, speed /16 |
 | `big_boss_enemy_data(base, hp_mult) -> EnemyData` | Big-boss: ×40 HP, XP=200, speed /16 |
+| `apply_model_tint(node, tint)` | Texture-preserving tint: recurses MeshInstance3D children, duplicates each active material, sets `albedo_color` |
 
 All factory helpers **duplicate()** the source resource — the shared `.tres` is never mutated.
 
-## Boss tinting
+## Boss model (Phase 2)
 
-Instead of `Sprite2D.modulate` (2D), the boss Material is set on `Model/MeshInstance3D.material_override`:
-- Mini-boss: `Color(1, 0.15, 0.1)` (red)
-- Big boss: `Color(0.5, 0, 1)` (purple)
+Both mini-boss and big-boss use the **undead serpent** GLB (`art/enemies_3d/undead_serpent/serpent_mesh.glb`)
+instead of the diatryma tank model, so bosses look visually distinct and imposing.
+
+- Mini-boss: serpent at `model_scale = 1.5`, node `scale = BOSS_SCALE_MULT (3×)`
+- Big boss: serpent at `model_scale = 2.0`, node `scale = BIG_BOSS_SCALE_MULT (5×)`
+
+## Boss tinting (Phase 2 — texture-preserving)
+
+`apply_model_tint()` is called after `enemy.setup()` so the model is already instantiated.
+It recursively finds every `MeshInstance3D` under `Model`, duplicates each surface's active
+material (so the original GLB material is never mutated), and sets `albedo_color` to the tint.
+
+- Mini-boss: `Color(1, 0.15, 0.1)` (red tint over serpent texture)
+- Big boss: `Color(0.5, 0, 1)` (purple tint over serpent texture)
 
 ## Setup
 

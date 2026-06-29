@@ -26,10 +26,37 @@ transition; 2D cleanup is a later task.
 
 **Collision**: `layer = 8` (physics layer 4 — dedicated enemy layer, separate from player layer 1 so XP gem pickup can target the player cleanly), `mask = 0` (enemies pass through each other — swarm).
 
+## Phase 2 — Real Monster Models
+
+`Enemy3D.setup()` now checks `data.model_scene`. When set:
+1. The `Model/MeshInstance3D` sphere placeholder is hidden.
+2. The GLB scene is instanced and added under `Model`; `position.y = data.model_y_offset`.
+3. `Model.scale = Vector3.ONE * data.model_scale`.
+4. An `AnimationPlayer` is searched in the model instance (`find_child`). If found, `idle` is
+   played immediately; `move` plays while moving, `idle` when still. Animation is **best-effort**
+   — FBX→GLB mesh-only files rarely embed clips, so enemies display at static rest-pose.
+5. `Model` is rotated toward the XZ velocity heading via `face_angle()` each physics frame
+   (visual only — collision body stays upright).
+
+When `model_scene` is null (2D .tres without model), the placeholder sphere is tinted by
+`data.color` as before.
+
+### Per-variant model assignment (Phase 2)
+
+| Variant  | Model GLB             | `model_scale` | `model_y_offset` |
+|----------|-----------------------|---------------|------------------|
+| swarmer  | `bug/bug_mesh.glb`    | 1.0           | 0.0              |
+| spitter  | `plant_monster/plant_mesh.glb` | 1.0  | 0.0              |
+| tank     | `diatryma/diatryma_mesh.glb`   | 1.0  | 0.0              |
+| boss     | `undead_serpent/serpent_mesh.glb` | 1.5–2.0 | 0.0         |
+
+All scale/offset values are playtest-tunable directly in the `.tres` files.
+
 ## Script API
 
 ### `setup(p_data: EnemyData, p_target: Node3D)`
-Store data/target, set `hp = data.max_hp`, tint placeholder mesh by `data.color`.
+Store data/target, set `hp = data.max_hp`. If `data.model_scene` is set, instances the real
+model under `Model` and hides the sphere placeholder; otherwise tints the sphere by `data.color`.
 
 ### `charm(duration: float)`
 Suppress movement for `duration` seconds. Stacks by taking the max remaining time.
@@ -41,6 +68,10 @@ and `queue_free()`. No hit-flash yet (Task 1.5 Juice).
 ### `static steer_velocity(from, to, speed) -> Vector3`
 Pure XZ steering helper: returns normalized direction × speed with `y = 0`.
 Used inside `_physics_process` and independently unit-tested.
+
+### `static face_angle(velocity: Vector3) -> float`
+Returns Y-axis rotation in radians for the Model node to face the given XZ velocity.
+Zero-length velocity returns `0.0` (never NaN). Mirrors `Player3D.face_angle()`.
 
 ## Tuning Constants
 

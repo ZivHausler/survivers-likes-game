@@ -7,11 +7,16 @@ class_name Spawner3D extends Node3D
 ## Normal enemies: HP and scale grow with time; move_speed rescaled to 3D world units.
 ## Mini-boss: tank ×8 HP (×hp_mult) ×3 scale — every 180 s window.
 ## Big boss:  tank ×40 HP (×hp_mult) ×5 scale — at t=600 (once).
+## Boss model: undead serpent GLB, distinct from the diatryma tank model.
+## Boss tint:  texture-preserving (duplicates active material + sets albedo_color).
 
 const ENEMY_SCENE_PATH := "res://enemies/enemy_3d.tscn"
 const SWARMER_PATH     := "res://enemies/swarmer.tres"
 const TANK_PATH        := "res://enemies/tank.tres"
 const SPITTER_PATH     := "res://enemies/spitter.tres"
+
+## Distinct imposing serpent model used by both mini-boss and big-boss.
+const SERPENT_SCENE_PATH := "res://art/enemies_3d/undead_serpent/serpent_mesh.glb"
 
 const SPAWN_RING_RADIUS: float = 25.0       # 400 px / 16
 const WORLD_SCALE:       float = 1.0 / 16.0 # 1 world unit ≈ 16 px
@@ -19,10 +24,14 @@ const WORLD_SCALE:       float = 1.0 / 16.0 # 1 world unit ≈ 16 px
 const BOSS_HP_MULT:    float = 8.0
 const BOSS_SCALE_MULT: float = 3.0
 const BOSS_XP_VALUE:   int   = 50
+## Model scale for the serpent in mini-boss form (playtest-tunable).
+const BOSS_MODEL_SCALE: float = 1.5
 
 const BIG_BOSS_HP_MULT:    float = 40.0
 const BIG_BOSS_SCALE_MULT: float = 5.0
 const BIG_BOSS_XP_VALUE:   int   = 200
+## Model scale for the serpent in big-boss form (playtest-tunable).
+const BIG_BOSS_MODEL_SCALE: float = 2.0
 
 var _target: Node3D
 var _timeline: DifficultyTimeline
@@ -69,6 +78,30 @@ static func big_boss_enemy_data(base: EnemyData, hp_mult: float) -> EnemyData:
 	d.xp_value = BIG_BOSS_XP_VALUE
 	d.move_speed *= WORLD_SCALE
 	return d
+
+
+## Recursively apply a texture-preserving albedo tint to all MeshInstance3D nodes under `node`.
+## Duplicates each surface's active material before setting albedo_color so the original
+## GLB material is never mutated. Falls back to a blank StandardMaterial3D when the
+## surface has no existing material.
+## Called AFTER enemy.setup() so the model is already instanced under Model.
+static func apply_model_tint(node: Node, tint: Color) -> void:
+	if node is MeshInstance3D:
+		var mi := node as MeshInstance3D
+		if mi.mesh:
+			for i in mi.mesh.get_surface_count():
+				var existing: Material = mi.get_active_material(i)
+				if existing:
+					var mat: Material = existing.duplicate()
+					if mat is BaseMaterial3D:
+						(mat as BaseMaterial3D).albedo_color = tint
+					mi.set_surface_override_material(i, mat)
+				else:
+					var mat := StandardMaterial3D.new()
+					mat.albedo_color = tint
+					mi.set_surface_override_material(i, mat)
+	for child in node.get_children():
+		apply_model_tint(child, tint)
 
 
 # ── Instance methods ──────────────────────────────────────────────────────────
@@ -133,17 +166,18 @@ func _spawn_boss(hp_mult: float) -> void:
 	if data == null:
 		return
 	var boss_data: EnemyData = boss_enemy_data(data, hp_mult)
+	# Give boss the imposing serpent model instead of the diatryma tank model.
+	boss_data.model_scene = load(SERPENT_SCENE_PATH) as PackedScene
+	boss_data.model_scale = BOSS_MODEL_SCALE
 	var boss: Enemy3D = _instance_enemy(boss_data, BOSS_SCALE_MULT)
 	if boss != null:
 		# ORDERING DEPENDENCY: tint MUST run after _instance_enemy() (which calls
-		# enemy.setup()). setup() sets material_override on "Model/MeshInstance3D";
-		# we intentionally overwrite it here with the boss tint. The node path
-		# "Model/MeshInstance3D" matches the structure of enemy_3d.tscn.
-		var mesh_inst := boss.get_node_or_null("Model/MeshInstance3D") as MeshInstance3D
-		if mesh_inst != null:
-			var mat := StandardMaterial3D.new()
-			mat.albedo_color = Color(1.0, 0.15, 0.1, 1.0)
-			mesh_inst.material_override = mat
+		# enemy.setup()). setup() has already instanced the serpent under Model;
+		# we now recursively tint all MeshInstance3D surfaces to apply the red boss
+		# tint while PRESERVING the monster texture (texture-preserving duplicate).
+		var model_node := boss.get_node_or_null("Model") as Node3D
+		if model_node:
+			apply_model_tint(model_node, Color(1.0, 0.15, 0.1, 1.0))
 
 
 func _spawn_big_boss(hp_mult: float) -> void:
@@ -151,17 +185,17 @@ func _spawn_big_boss(hp_mult: float) -> void:
 	if data == null:
 		return
 	var big_data: EnemyData = big_boss_enemy_data(data, hp_mult)
+	# Give big boss the imposing serpent model at a larger scale.
+	big_data.model_scene = load(SERPENT_SCENE_PATH) as PackedScene
+	big_data.model_scale = BIG_BOSS_MODEL_SCALE
 	var boss: Enemy3D = _instance_enemy(big_data, BIG_BOSS_SCALE_MULT)
 	if boss != null:
 		# ORDERING DEPENDENCY: tint MUST run after _instance_enemy() (which calls
-		# enemy.setup()). setup() sets material_override on "Model/MeshInstance3D";
-		# we intentionally overwrite it here with the big-boss tint. The node path
-		# "Model/MeshInstance3D" matches the structure of enemy_3d.tscn.
-		var mesh_inst := boss.get_node_or_null("Model/MeshInstance3D") as MeshInstance3D
-		if mesh_inst != null:
-			var mat := StandardMaterial3D.new()
-			mat.albedo_color = Color(0.5, 0.0, 1.0, 1.0)
-			mesh_inst.material_override = mat
+		# enemy.setup()). The serpent model is already under Model; we recursively
+		# tint all surfaces with the purple big-boss tint while PRESERVING textures.
+		var model_node := boss.get_node_or_null("Model") as Node3D
+		if model_node:
+			apply_model_tint(model_node, Color(0.5, 0.0, 1.0, 1.0))
 
 
 func _instance_enemy(data: EnemyData, scale_mult: float) -> Enemy3D:

@@ -3,6 +3,7 @@ extends GutTest
 ## Unit tests for Spawner3D.
 ## Focuses on the pure static helpers (ring_position, data factories) which can be
 ## verified without instantiating enemies or a live scene tree.
+## Phase 2 additions: boss model_scene assignment, texture-preserving apply_model_tint.
 
 # ── ring_position static helper ───────────────────────────────────────────────
 
@@ -125,3 +126,86 @@ func test_shared_tank_tres_not_mutated_by_big_boss_enemy_data() -> void:
 			"tank.tres move_speed must be unchanged after big_boss_enemy_data()")
 	assert_almost_eq(tank.max_hp, original_hp, 0.001,
 			"tank.tres max_hp must be unchanged after big_boss_enemy_data()")
+
+# ── boss model_scene — serpent assignment ─────────────────────────────────────
+
+func test_boss_enemy_data_is_a_duplicate_not_the_original() -> void:
+	var tank := load("res://enemies/tank.tres") as EnemyData
+	var boss := Spawner3D.boss_enemy_data(tank, 1.0)
+	assert_true(boss != tank, "boss_enemy_data must return a new duplicate, not the source .tres")
+
+func test_shared_swarmer_tres_model_scene_not_null() -> void:
+	# Verify that swarmer.tres now carries a real model_scene (Phase 2 requirement).
+	var swarmer := load("res://enemies/swarmer.tres") as EnemyData
+	assert_not_null(swarmer.model_scene, "swarmer.tres must have model_scene set (bug_mesh.glb)")
+
+func test_shared_spitter_tres_model_scene_not_null() -> void:
+	var spitter := load("res://enemies/spitter.tres") as EnemyData
+	assert_not_null(spitter.model_scene, "spitter.tres must have model_scene set (plant_mesh.glb)")
+
+func test_shared_tank_tres_model_scene_not_null() -> void:
+	var tank := load("res://enemies/tank.tres") as EnemyData
+	assert_not_null(tank.model_scene, "tank.tres must have model_scene set (diatryma_mesh.glb)")
+
+func test_shared_tank_tres_not_mutated_after_model_assignment() -> void:
+	# Even if boss_enemy_data duplicates, the shared tank.tres model_scene must be untouched.
+	var tank := load("res://enemies/tank.tres") as EnemyData
+	var original_model := tank.model_scene
+	var boss := Spawner3D.boss_enemy_data(tank, 1.0)
+	# Manually assign serpent (as _spawn_boss does):
+	boss.model_scene = load(Spawner3D.SERPENT_SCENE_PATH) as PackedScene
+	assert_eq(tank.model_scene, original_model,
+			"Assigning model_scene to the duplicated boss must not mutate the shared tank.tres")
+
+# ── apply_model_tint — texture-preserving tint ────────────────────────────────
+
+func test_apply_model_tint_duplicates_material_not_replaces() -> void:
+	# Create a MeshInstance3D with an existing material; tint should duplicate, not blank.
+	var mi := MeshInstance3D.new()
+	mi.mesh = SphereMesh.new()
+	var original_mat := StandardMaterial3D.new()
+	original_mat.albedo_color = Color.GREEN
+	mi.set_surface_override_material(0, original_mat)
+	add_child_autofree(mi)
+
+	var tint := Color(1.0, 0.15, 0.1, 1.0)
+	Spawner3D.apply_model_tint(mi, tint)
+
+	var result_mat := mi.get_surface_override_material(0)
+	assert_not_null(result_mat, "tinted surface must have an override material")
+	assert_true(result_mat != original_mat, "material must be a duplicate, not the same instance")
+	var bm := result_mat as BaseMaterial3D
+	assert_not_null(bm, "result material must be a BaseMaterial3D")
+	assert_eq(bm.albedo_color, tint, "duplicated material albedo_color must equal the tint")
+
+func test_apply_model_tint_no_existing_material_creates_standard() -> void:
+	# Surface with no material: should get a new StandardMaterial3D with the tint.
+	var mi := MeshInstance3D.new()
+	mi.mesh = SphereMesh.new()
+	# Do NOT set any surface material — leave it null.
+	add_child_autofree(mi)
+
+	var tint := Color(0.5, 0.0, 1.0, 1.0)
+	Spawner3D.apply_model_tint(mi, tint)
+
+	var result_mat := mi.get_surface_override_material(0)
+	assert_not_null(result_mat, "fallback must create a material when no existing one")
+	var bm := result_mat as BaseMaterial3D
+	assert_not_null(bm, "fallback must produce a BaseMaterial3D")
+	assert_eq(bm.albedo_color, tint, "fallback material albedo_color must equal the tint")
+
+func test_apply_model_tint_recurses_into_children() -> void:
+	# Parent node with a MeshInstance3D child — tint should reach it recursively.
+	var parent := Node3D.new()
+	add_child_autofree(parent)
+	var mi := MeshInstance3D.new()
+	mi.mesh = SphereMesh.new()
+	parent.add_child(mi)
+
+	Spawner3D.apply_model_tint(parent, Color.RED)
+
+	var result_mat := mi.get_surface_override_material(0)
+	assert_not_null(result_mat, "apply_model_tint must reach MeshInstance3D children")
+	var bm := result_mat as BaseMaterial3D
+	assert_not_null(bm, "child material must be BaseMaterial3D")
+	assert_eq(bm.albedo_color, Color.RED, "child surface albedo must equal the tint")

@@ -10,11 +10,11 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[game-camera-3d]] — `GameCamera3D`: tilted perspective Camera3D, follows target on XZ; pure static helpers for unit testing
 - [[arena-3d]] — `arena_3d.tscn`: 3D ground plane (200×200), DirectionalLight3D, WorldEnvironment; gameplay plane = XZ
 - [[player-3d]] — `Player3D` (`CharacterBody3D`): WASD on XZ, HP/XP/level/stat logic ported verbatim from 2D Player; Kenney Blocky Character model with idle/walk animation and movement-facing via `face_angle()`
-- [[enemy-3d]] — `Enemy3D` (`CharacterBody3D`): steering/charm/contact-damage/death ported verbatim from 2D Enemy; emits `enemy_killed_3d(Vector3,int)` for Task 1.4 gem spawner
+- [[enemy-3d]] — `Enemy3D` (`CharacterBody3D`): steering/charm/contact-damage/death; real monster GLB models (bug/plant/diatryma/serpent); `face_angle()` rotation; best-effort animation; emits `enemy_killed_3d`
 - [[weapon-system-3d]] — `Weapon3D` base class: Node3D port of Weapon; same timer/cooldown/level/evolve contract; 1 unit ≈ 16 px
 - [[weapon-ziv-3d]] — `ZivStunningLooks3D`: 3D beam (Area3D BoxShape) + XZ charm sorting; evolve = Y-rotation + always-on CharmField
 - [[weapon-avihay-3d]] — `AvihayChatSpam3D` + `Bubble3D`: XZ directional bubble spread, pierce, homing on evolve; SPEED=14 units/s
-- [[spawner-3d]] — `Spawner3D` (`Node3D`): ring spawner driven by DifficultyTimeline; 3D world scale (25 unit ring, speed /16); pure static helpers for testability
+- [[spawner-3d]] — `Spawner3D` (`Node3D`): ring spawner driven by DifficultyTimeline; bosses use serpent model with texture-preserving tint; pure static helpers for testability
 - [[xp-gem-3d]] — `XPGem3D` (`Area3D`): magnet pickup (XZ plane) that awards XP; emissive gold sphere; `magnet_step` static helper
 - [[game-manager-3d]] — `GameManager3D` (`Node`): full 3D run loop — CharacterData setup, UpgradeSystem, level-up queue (pause/cards/unpause), _apply_upgrade routing, death → game_over; mirrors 2D GameManager verbatim
 - [[character-select-3d]] — `CharacterSelect3D` (`Control`): 3D entry screen; lists ziv_3d.tres / avihay_3d.tres; sets RunState then → main_3d.tscn; boots at project start

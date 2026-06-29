@@ -37,6 +37,9 @@ links:
 | `is_ranged` | `bool` | If true, stops at 140 px from target |
 | `radius` | `float` | Collision/contact radius |
 | `texture` | `Texture2D` | Optional sprite texture; `null` → use ColorRect "Body" placeholder |
+| `model_scene` | `PackedScene` | 3D model GLB; `null` → keep sphere placeholder in `Enemy3D` |
+| `model_scale` | `float` | Uniform scale for the 3D model (default 1.0; playtest-tunable per-monster) |
+| `model_y_offset` | `float` | Y offset in model-local space to seat feet at ground level (default 0.0) |
 
 ### Enemy (CharacterBody2D)
 

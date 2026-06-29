@@ -3,6 +3,7 @@ extends GutTest
 ## Unit tests for Enemy3D — mirrors test_enemy.gd coverage against CharacterBody3D.
 ## Physics-process helpers are called directly (headless); move_and_slide() is a no-op
 ## without a live physics world, so we inspect velocity before it would be consumed.
+## Phase 2 additions: model loading path (model_scene), face_angle() static helper.
 
 ## Stub target with a recordable take_damage method.
 class StubTarget extends Node3D:
@@ -202,3 +203,80 @@ func test_ranged_enemy_outside_standoff_moves_toward_target() -> void:
 	target.global_position = Vector3(10.0, 0.0, 0.0)
 	e._physics_process(0.016)
 	assert_true(e.velocity.x > 0.0, "ranged enemy beyond stand-off should move toward target")
+
+# ── face_angle() static helper ────────────────────────────────────────────────
+
+func test_face_angle_positive_x_velocity() -> void:
+	var angle := Enemy3D.face_angle(Vector3(1.0, 0.0, 0.0))
+	assert_almost_eq(angle, atan2(1.0, 0.0), 0.001, "facing +X → atan2(1,0)")
+
+func test_face_angle_positive_z_velocity() -> void:
+	var angle := Enemy3D.face_angle(Vector3(0.0, 0.0, 1.0))
+	assert_almost_eq(angle, atan2(0.0, 1.0), 0.001, "facing +Z → atan2(0,1)")
+
+func test_face_angle_zero_velocity_returns_zero() -> void:
+	var angle := Enemy3D.face_angle(Vector3.ZERO)
+	assert_almost_eq(angle, 0.0, 0.001, "zero velocity must return 0.0 (never NaN)")
+
+func test_face_angle_negative_x_velocity() -> void:
+	var angle := Enemy3D.face_angle(Vector3(-1.0, 0.0, 0.0))
+	assert_almost_eq(angle, atan2(-1.0, 0.0), 0.001, "facing -X → atan2(-1,0)")
+
+func test_face_angle_y_component_ignored() -> void:
+	# Y is irrelevant; should give same as XZ-only vector.
+	var a1 := Enemy3D.face_angle(Vector3(1.0, 0.0, 0.0))
+	var a2 := Enemy3D.face_angle(Vector3(1.0, 999.0, 0.0))
+	assert_almost_eq(a1, a2, 0.001, "Y component must not affect the heading angle")
+
+# ── model_scene loading path ───────────────────────────────────────────────────
+
+func _make_data_with_model() -> EnemyData:
+	var d := _make_data()
+	d.model_scene = load("res://art/enemies_3d/bug/bug_mesh.glb") as PackedScene
+	d.model_scale = 1.0
+	d.model_y_offset = 0.0
+	return d
+
+func test_model_setup_hides_placeholder() -> void:
+	assert_not_null(Enemy3DScene, "enemy_3d.tscn must exist")
+	var e: Enemy3D = add_child_autofree(Enemy3DScene.instantiate()) as Enemy3D
+	var target: Node3D = add_child_autofree(Node3D.new()) as Node3D
+	e.setup(_make_data_with_model(), target)
+	var placeholder := e.get_node_or_null("Model/MeshInstance3D") as MeshInstance3D
+	assert_not_null(placeholder, "Model/MeshInstance3D node must still exist in scene")
+	assert_false(placeholder.visible, "placeholder MeshInstance3D must be hidden when model_scene is set")
+
+func test_model_setup_adds_child_under_model() -> void:
+	assert_not_null(Enemy3DScene, "enemy_3d.tscn must exist")
+	var e: Enemy3D = add_child_autofree(Enemy3DScene.instantiate()) as Enemy3D
+	var target: Node3D = add_child_autofree(Node3D.new()) as Node3D
+	e.setup(_make_data_with_model(), target)
+	var model_node := e.get_node_or_null("Model") as Node3D
+	assert_not_null(model_node, "Model node must exist")
+	# Model should have at least 2 children: the placeholder and the new model instance.
+	assert_true(model_node.get_child_count() > 1,
+			"Model must have the placeholder + at least one instanced model child")
+
+func test_no_model_scene_keeps_placeholder_visible() -> void:
+	assert_not_null(Enemy3DScene, "enemy_3d.tscn must exist")
+	var e: Enemy3D = add_child_autofree(Enemy3DScene.instantiate()) as Enemy3D
+	var target: Node3D = add_child_autofree(Node3D.new()) as Node3D
+	# Use data without model_scene (default nil).
+	e.setup(_make_data(), target)
+	var placeholder := e.get_node_or_null("Model/MeshInstance3D") as MeshInstance3D
+	assert_not_null(placeholder, "placeholder must exist when no model_scene")
+	assert_true(placeholder.visible, "placeholder must remain visible when model_scene is null")
+
+func test_no_model_scene_tints_placeholder_by_color() -> void:
+	assert_not_null(Enemy3DScene, "enemy_3d.tscn must exist")
+	var e: Enemy3D = add_child_autofree(Enemy3DScene.instantiate()) as Enemy3D
+	var target: Node3D = add_child_autofree(Node3D.new()) as Node3D
+	var d := _make_data()
+	d.color = Color.BLUE
+	e.setup(d, target)
+	var placeholder := e.get_node_or_null("Model/MeshInstance3D") as MeshInstance3D
+	assert_not_null(placeholder, "placeholder must exist")
+	assert_not_null(placeholder.material_override, "material_override must be set for color tint")
+	var mat := placeholder.material_override as StandardMaterial3D
+	assert_not_null(mat, "material_override must be a StandardMaterial3D")
+	assert_eq(mat.albedo_color, Color.BLUE, "albedo_color must match data.color")
