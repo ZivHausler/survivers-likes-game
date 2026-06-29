@@ -48,6 +48,32 @@ func test_move_to_velocity_diagonal() -> void:
 func test_move_to_velocity_zero_dir_gives_zero_vector() -> void:
 	assert_eq(Player3D.move_to_velocity(Vector2.ZERO, 120.0), Vector3.ZERO)
 
+# ── move_to_velocity camera-relative (yaw) ───────────────────────────────────
+
+func test_move_to_velocity_yaw_zero_matches_world_fixed() -> void:
+	# yaw=0 must be identical to the original 2-arg behaviour.
+	var v := Player3D.move_to_velocity(Vector2(1.0, 0.0), 10.0, 0.0)
+	assert_almost_eq(v.x, 10.0, 0.001, "yaw=0: 'right' still maps to +X")
+	assert_almost_eq(v.z, 0.0, 0.001, "yaw=0: z stays 0")
+
+func test_move_to_velocity_yaw_preserves_speed() -> void:
+	# Rotating the input by yaw must not change movement speed.
+	var v := Player3D.move_to_velocity(Vector2(0.0, -1.0), 10.0, PI / 2.0)
+	assert_almost_eq(v.length(), 10.0, 0.001, "rotating input by yaw preserves speed")
+
+func test_move_to_velocity_yaw_90_is_perpendicular_to_unrotated() -> void:
+	# A 90° camera yaw rotates the movement direction by 90° (perpendicular).
+	var v0 := Player3D.move_to_velocity(Vector2(0.0, -1.0), 10.0, 0.0)
+	var v90 := Player3D.move_to_velocity(Vector2(0.0, -1.0), 10.0, PI / 2.0)
+	assert_almost_eq(v0.dot(v90), 0.0, 0.001, "90° yaw makes the velocity perpendicular to the unrotated one")
+
+func test_move_to_velocity_yaw_keeps_y_zero() -> void:
+	var v := Player3D.move_to_velocity(Vector2(1.0, -1.0), 10.0, PI / 3.0)
+	assert_almost_eq(v.y, 0.0, 0.001, "camera-relative movement stays on the XZ plane")
+
+func test_move_to_velocity_yaw_zero_input_is_zero() -> void:
+	assert_eq(Player3D.move_to_velocity(Vector2.ZERO, 10.0, PI / 2.0), Vector3.ZERO)
+
 # ── xp_to_next formula ──────────────────────────────────────────────────────
 
 func test_xp_to_next_level1() -> void:

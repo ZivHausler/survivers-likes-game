@@ -178,7 +178,10 @@ func _physics_process(dt: float) -> void:
 		# Timer just reached 0 — guarantee the model is visible again.
 		_model.visible = true
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	velocity = move_to_velocity(dir, stats.move_speed)
+	# Move relative to the camera's orbit so "up" always heads toward screen-top.
+	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
+	var cam_yaw: float = cam.yaw_radians() if cam is GameCamera3D else 0.0
+	velocity = move_to_velocity(dir, stats.move_speed, cam_yaw)
 	move_and_slide()
 	# Rotate Model toward movement heading (only visual; collision body stays upright).
 	if velocity.length() > WALK_THRESHOLD:
@@ -206,9 +209,11 @@ static func face_angle(velocity: Vector3) -> float:
 	return atan2(velocity.x, velocity.z)
 
 ## Pure XZ mapping helper — unit-testable without Input or scene tree.
-## "up" on screen (move_up action, dir.y = -1) maps to -Z (away from camera).
-static func move_to_velocity(dir: Vector2, speed: float) -> Vector3:
-	return Vector3(dir.x, 0.0, dir.y) * speed
+## "up" on screen (move_up action, dir.y = -1) maps to -Z when yaw_rad = 0. The input
+## is rotated by the camera yaw so movement stays relative to the orbited view; the
+## default yaw_rad = 0.0 preserves the original world-fixed behaviour.
+static func move_to_velocity(dir: Vector2, speed: float, yaw_rad: float = 0.0) -> Vector3:
+	return Vector3(dir.x, 0.0, dir.y).rotated(Vector3.UP, yaw_rad) * speed
 
 func xp_to_next(lvl: int) -> int:
 	# Superlinear (quadratic) curve — same formula as 2D Player.

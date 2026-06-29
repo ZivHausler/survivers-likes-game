@@ -1,176 +1,208 @@
-## Unit tests for GameCamera3D pure math helpers and zoom behaviour.
+## Unit tests for GameCamera3D pure math helpers and input behaviour.
 # See docs/notes/game-camera-3d.md
 extends GutTest
-## No scene tree required — tests call static functions directly on the class.
-## Zoom input tests instantiate a camera node and call _unhandled_input directly.
+## No scene tree required for the math — tests call static functions directly.
+## Input tests instantiate a camera node and call _unhandled_input directly.
+## Orientation/centering is guaranteed by Node3D.look_at (engine primitive) given a
+## correct position, so these tests cover the position geometry + the radius invariant.
 
-# ── compute_position ──────────────────────────────────────────────────────────
+# ── compute_position: orbit sphere (radius, pitch, yaw) ──────────────────────
+# The camera sits on a sphere of `radius` around the target. Both pitch (elevation)
+# and yaw (azimuth) move its position; look_at(target) then keeps the target centered.
 
-func test_compute_position_x_tracks_target_x() -> void:
-	var pos := GameCamera3D.compute_position(Vector3(7.0, 0.0, 3.0), 14.0, 10.0)
-	assert_almost_eq(pos.x, 7.0, 0.001, "Camera X must equal target X")
+func test_compute_position_sits_at_radius_from_target() -> void:
+	# The defining invariant: distance from the target equals `radius` at any angle.
+	for combo in [[-65.0, 0.0], [-45.0, 90.0], [-85.0, 200.0], [-25.0, -130.0]]:
+		var pos := GameCamera3D.compute_position(Vector3.ZERO, 15.0, combo[0], combo[1])
+		assert_almost_eq(pos.length(), 15.0, 0.001,
+			"camera must sit at `radius` from target (pitch=%s, yaw=%s)" % [combo[0], combo[1]])
 
-func test_compute_position_x_tracks_negative_target_x() -> void:
-	var pos := GameCamera3D.compute_position(Vector3(-12.5, 0.0, 0.0), 14.0, 10.0)
-	assert_almost_eq(pos.x, -12.5, 0.001, "Camera X must track negative target X")
+func test_compute_position_radius_invariant_offset_from_nonzero_target() -> void:
+	var target := Vector3(5.0, 0.0, -3.0)
+	var pos := GameCamera3D.compute_position(target, 12.0, -50.0, 70.0)
+	assert_almost_eq((pos - target).length(), 12.0, 0.001, "radius is measured from the target, anywhere")
 
-func test_compute_position_y_is_fixed_height_regardless_of_target_y() -> void:
-	var pos := GameCamera3D.compute_position(Vector3(0.0, 99.0, 0.0), 14.0, 10.0)
-	assert_almost_eq(pos.y, 14.0, 0.001, "Camera Y must equal height, ignoring target Y")
+func test_compute_position_default_view_matches_approved_framing() -> void:
+	# pitch -65°, yaw 0, radius 15.4 → ≈ (0, 13.95, 6.51): the -65° framing the owner approved.
+	var pos := GameCamera3D.compute_position(Vector3.ZERO, 15.4, -65.0, 0.0)
+	assert_almost_eq(pos.x, 0.0, 0.001, "yaw=0: no X offset")
+	assert_almost_eq(pos.y, 13.95, 0.05, "height ≈ radius*sin(65°)")
+	assert_almost_eq(pos.z, 6.51, 0.05, "pull-back ≈ radius*cos(65°)")
 
-func test_compute_position_y_unchanged_when_target_y_varies() -> void:
-	var pos_a := GameCamera3D.compute_position(Vector3(0.0, 0.0, 0.0), 14.0, 10.0)
-	var pos_b := GameCamera3D.compute_position(Vector3(0.0, 50.0, 0.0), 14.0, 10.0)
-	assert_almost_eq(pos_a.y, pos_b.y, 0.001, "Y must be identical regardless of target Y")
+func test_compute_position_y_is_height_above_target() -> void:
+	# Camera is always above the target (positive elevation), regardless of target Y.
+	var pos := GameCamera3D.compute_position(Vector3(0.0, 9.0, 0.0), 15.0, -65.0, 0.0)
+	assert_true(pos.y > 9.0, "camera must sit above the target")
 
-func test_compute_position_z_is_target_z_plus_distance() -> void:
-	var pos := GameCamera3D.compute_position(Vector3(0.0, 0.0, 3.0), 14.0, 10.0)
-	assert_almost_eq(pos.z, 13.0, 0.001, "Camera Z must be target.z + distance")
+func test_compute_position_translates_with_target() -> void:
+	var a := GameCamera3D.compute_position(Vector3(5.0, 0.0, 3.0), 15.0, -65.0, 0.0)
+	var b := GameCamera3D.compute_position(Vector3(7.0, 0.0, -1.0), 15.0, -65.0, 0.0)
+	assert_almost_eq((b - a).x, 2.0, 0.001, "camera X tracks target X movement")
+	assert_almost_eq((b - a).z, -4.0, 0.001, "camera Z tracks target Z movement")
 
-func test_compute_position_z_tracks_target_z_movement() -> void:
-	var pos1 := GameCamera3D.compute_position(Vector3(0.0, 0.0, 0.0), 14.0, 10.0)
-	var pos2 := GameCamera3D.compute_position(Vector3(0.0, 0.0, 5.0), 14.0, 10.0)
-	assert_almost_eq(pos2.z - pos1.z, 5.0, 0.001, "Camera Z delta must match target Z delta")
+func test_compute_position_yaw_sets_horizontal_heading() -> void:
+	# The horizontal offset's azimuth equals yaw, so look_at swings the view around.
+	var pos := GameCamera3D.compute_position(Vector3.ZERO, 15.0, -65.0, 90.0)
+	assert_almost_eq(atan2(pos.x, pos.z), deg_to_rad(90.0), 0.001, "yaw sets the horizontal heading")
 
-func test_compute_position_default_params_match_spec() -> void:
-	# With defaults: height=14, distance=10, target at origin → camera at (0, 14, 10)
-	var pos := GameCamera3D.compute_position(Vector3.ZERO, 14.0, 10.0)
-	assert_almost_eq(pos.x, 0.0, 0.001, "Default target origin: camera X = 0")
-	assert_almost_eq(pos.y, 14.0, 0.001, "Default target origin: camera Y = height (14)")
-	assert_almost_eq(pos.z, 10.0, 0.001, "Default target origin: camera Z = distance (10)")
+func test_compute_position_yaw_zero_is_pure_positive_z_offset() -> void:
+	var pos := GameCamera3D.compute_position(Vector3.ZERO, 15.0, -65.0, 0.0)
+	assert_almost_eq(pos.x, 0.0, 0.001, "yaw=0: X offset = 0")
+	assert_true(pos.z > 0.0, "yaw=0: camera pulled back along +Z")
 
-# ── compute_pitch_basis ───────────────────────────────────────────────────────
+func test_compute_position_steeper_pitch_raises_and_pulls_in() -> void:
+	var shallow := GameCamera3D.compute_position(Vector3.ZERO, 15.0, -40.0, 0.0)
+	var steep := GameCamera3D.compute_position(Vector3.ZERO, 15.0, -80.0, 0.0)
+	assert_true(steep.y > shallow.y, "steeper (more negative) pitch raises the camera (more top-down)")
+	assert_true(steep.z < shallow.z, "steeper pitch reduces the horizontal pull-back")
 
-func test_compute_pitch_basis_minus55_hardcoded_trig() -> void:
-	# Independent numeric ground-truth for X-rotation by -55°.
-	# cos(55°) ≈ 0.5736, sin(55°) ≈ 0.8192  (literals, not re-derived from the SUT)
-	# Y-column of the rotation matrix: (0,  cos55°, -sin55°)
-	# Z-column of the rotation matrix: (0,  sin55°,  cos55°)
-	var basis := GameCamera3D.compute_pitch_basis(-55.0)
-	assert_almost_eq(basis.y.x,  0.0,     0.001, "-55° pitch: y.x = 0 (no yaw/roll)")
-	assert_almost_eq(basis.y.y,  0.5736,  0.001, "-55° pitch: y.y = cos(55°) ≈ 0.5736")
-	assert_almost_eq(basis.y.z, -0.8192,  0.001, "-55° pitch: y.z = -sin(55°) ≈ -0.8192")
-	assert_almost_eq(basis.z.x,  0.0,     0.001, "-55° pitch: z.x = 0 (no yaw/roll)")
-	assert_almost_eq(basis.z.y,  0.8192,  0.001, "-55° pitch: z.y = sin(55°) ≈ 0.8192")
-	assert_almost_eq(basis.z.z,  0.5736,  0.001, "-55° pitch: z.z = cos(55°) ≈ 0.5736")
+func test_compute_position_zoom_scales_radius() -> void:
+	var pos := GameCamera3D.compute_position(Vector3.ZERO, 15.0 * 2.0, -65.0, 0.0)
+	assert_almost_eq(pos.length(), 30.0, 0.001, "zoom multiplies the orbit radius")
 
-func test_compute_pitch_basis_zero_is_identity() -> void:
-	var basis := GameCamera3D.compute_pitch_basis(0.0)
-	assert_almost_eq(basis.x.x, 1.0, 0.001, "Zero pitch: x.x = 1")
-	assert_almost_eq(basis.y.y, 1.0, 0.001, "Zero pitch: y.y = 1")
-	assert_almost_eq(basis.z.z, 1.0, 0.001, "Zero pitch: z.z = 1")
-	assert_almost_eq(basis.x.y, 0.0, 0.001, "Zero pitch: x.y = 0")
-	assert_almost_eq(basis.x.z, 0.0, 0.001, "Zero pitch: x.z = 0")
+# ── clamp_pitch ──────────────────────────────────────────────────────────────
 
-func test_compute_pitch_basis_no_yaw_or_roll() -> void:
-	# A pure X-rotation must not change x-axis direction
-	var basis := GameCamera3D.compute_pitch_basis(-55.0)
-	assert_almost_eq(basis.x.x, 1.0, 0.001, "Pure pitch: right vector X unchanged")
-	assert_almost_eq(basis.x.y, 0.0, 0.001, "Pure pitch: right vector Y = 0")
-	assert_almost_eq(basis.x.z, 0.0, 0.001, "Pure pitch: right vector Z = 0")
+func test_clamp_pitch_below_min_returns_min() -> void:
+	assert_almost_eq(GameCamera3D.clamp_pitch(-90.0), GameCamera3D.PITCH_MIN, 0.001,
+		"pitch steeper than PITCH_MIN must clamp to PITCH_MIN")
+
+func test_clamp_pitch_above_max_returns_max() -> void:
+	assert_almost_eq(GameCamera3D.clamp_pitch(-10.0), GameCamera3D.PITCH_MAX, 0.001,
+		"pitch flatter than PITCH_MAX must clamp to PITCH_MAX")
+
+func test_clamp_pitch_in_range_unchanged() -> void:
+	assert_almost_eq(GameCamera3D.clamp_pitch(-65.0), -65.0, 0.001,
+		"pitch within [PITCH_MIN, PITCH_MAX] must pass through unchanged")
 
 # ── clamp_zoom ────────────────────────────────────────────────────────────────
 
 func test_clamp_zoom_below_min_returns_min() -> void:
-	var result := GameCamera3D.clamp_zoom(0.0)
-	assert_almost_eq(result, GameCamera3D.ZOOM_MIN, 0.001, "zoom below ZOOM_MIN must clamp to ZOOM_MIN (0.45)")
+	assert_almost_eq(GameCamera3D.clamp_zoom(0.0), GameCamera3D.ZOOM_MIN, 0.001, "zoom below ZOOM_MIN clamps to ZOOM_MIN")
 
 func test_clamp_zoom_above_max_returns_max() -> void:
-	var result := GameCamera3D.clamp_zoom(99.0)
-	assert_almost_eq(result, GameCamera3D.ZOOM_MAX, 0.001, "zoom above ZOOM_MAX must clamp to ZOOM_MAX (2.2)")
+	assert_almost_eq(GameCamera3D.clamp_zoom(99.0), GameCamera3D.ZOOM_MAX, 0.001, "zoom above ZOOM_MAX clamps to ZOOM_MAX")
 
 func test_clamp_zoom_in_range_unchanged() -> void:
-	var result := GameCamera3D.clamp_zoom(1.0)
-	assert_almost_eq(result, 1.0, 0.001, "zoom in [ZOOM_MIN, ZOOM_MAX] must pass through unchanged")
-
-func test_clamp_zoom_at_min_boundary_unchanged() -> void:
-	var result := GameCamera3D.clamp_zoom(GameCamera3D.ZOOM_MIN)
-	assert_almost_eq(result, GameCamera3D.ZOOM_MIN, 0.001, "zoom exactly at ZOOM_MIN must be unchanged")
-
-func test_clamp_zoom_at_max_boundary_unchanged() -> void:
-	var result := GameCamera3D.clamp_zoom(GameCamera3D.ZOOM_MAX)
-	assert_almost_eq(result, GameCamera3D.ZOOM_MAX, 0.001, "zoom exactly at ZOOM_MAX must be unchanged")
+	assert_almost_eq(GameCamera3D.clamp_zoom(1.0), 1.0, 0.001, "zoom in range passes through unchanged")
 
 # ── zoom input handling ───────────────────────────────────────────────────────
 
-func _make_wheel_event(button_index: int) -> InputEventMouseButton:
+func _make_button_event(button_index: int, pressed: bool) -> InputEventMouseButton:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = button_index
-	ev.pressed = true
+	ev.pressed = pressed
+	return ev
+
+func _make_motion_event(relative: Vector2) -> InputEventMouseMotion:
+	var ev := InputEventMouseMotion.new()
+	ev.relative = relative
 	return ev
 
 func test_wheel_up_decreases_zoom_by_one_step() -> void:
 	var cam := GameCamera3D.new()
 	cam.zoom = 1.0
-	var ev := _make_wheel_event(MOUSE_BUTTON_WHEEL_UP)
-	cam._unhandled_input(ev)
-	var expected := GameCamera3D.clamp_zoom(1.0 - GameCamera3D.ZOOM_STEP)
-	assert_almost_eq(cam.zoom, expected, 0.001, "WHEEL_UP must decrease zoom by ZOOM_STEP")
+	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_WHEEL_UP, true))
+	assert_almost_eq(cam.zoom, GameCamera3D.clamp_zoom(1.0 - GameCamera3D.ZOOM_STEP), 0.001, "WHEEL_UP decreases zoom by ZOOM_STEP")
 	cam.free()
 
 func test_wheel_down_increases_zoom_by_one_step() -> void:
 	var cam := GameCamera3D.new()
 	cam.zoom = 1.0
-	var ev := _make_wheel_event(MOUSE_BUTTON_WHEEL_DOWN)
-	cam._unhandled_input(ev)
-	var expected := GameCamera3D.clamp_zoom(1.0 + GameCamera3D.ZOOM_STEP)
-	assert_almost_eq(cam.zoom, expected, 0.001, "WHEEL_DOWN must increase zoom by ZOOM_STEP")
+	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_WHEEL_DOWN, true))
+	assert_almost_eq(cam.zoom, GameCamera3D.clamp_zoom(1.0 + GameCamera3D.ZOOM_STEP), 0.001, "WHEEL_DOWN increases zoom by ZOOM_STEP")
 	cam.free()
 
 func test_wheel_up_clamps_at_min() -> void:
 	var cam := GameCamera3D.new()
 	cam.zoom = GameCamera3D.ZOOM_MIN
-	var ev := _make_wheel_event(MOUSE_BUTTON_WHEEL_UP)
-	cam._unhandled_input(ev)
-	assert_almost_eq(cam.zoom, GameCamera3D.ZOOM_MIN, 0.001, "WHEEL_UP at ZOOM_MIN must not go below ZOOM_MIN")
+	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_WHEEL_UP, true))
+	assert_almost_eq(cam.zoom, GameCamera3D.ZOOM_MIN, 0.001, "WHEEL_UP at ZOOM_MIN stays at ZOOM_MIN")
 	cam.free()
 
 func test_wheel_down_clamps_at_max() -> void:
 	var cam := GameCamera3D.new()
 	cam.zoom = GameCamera3D.ZOOM_MAX
-	var ev := _make_wheel_event(MOUSE_BUTTON_WHEEL_DOWN)
-	cam._unhandled_input(ev)
-	assert_almost_eq(cam.zoom, GameCamera3D.ZOOM_MAX, 0.001, "WHEEL_DOWN at ZOOM_MAX must not exceed ZOOM_MAX")
+	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_WHEEL_DOWN, true))
+	assert_almost_eq(cam.zoom, GameCamera3D.ZOOM_MAX, 0.001, "WHEEL_DOWN at ZOOM_MAX stays at ZOOM_MAX")
 	cam.free()
 
-# ── zoom scales compute_position ─────────────────────────────────────────────
+# ── left-drag orbit/tilt + middle-click reset ────────────────────────────────
 
-func test_zoom_in_produces_closer_camera_y() -> void:
-	# zoom < 1 means height * zoom < height → camera is closer (lower Y)
-	var zoom_in: float = 0.5
-	var pos_zoomed := GameCamera3D.compute_position(Vector3.ZERO, 14.0 * zoom_in, 10.0 * zoom_in)
-	var pos_default := GameCamera3D.compute_position(Vector3.ZERO, 14.0, 10.0)
-	assert_true(pos_zoomed.y < pos_default.y, "Zoom in (zoom<1) must reduce camera height (Y)")
+func test_left_drag_horizontal_changes_yaw() -> void:
+	var cam := GameCamera3D.new()
+	cam.yaw_degrees = 0.0
+	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_LEFT, true))
+	cam._unhandled_input(_make_motion_event(Vector2(10.0, 0.0)))
+	assert_almost_eq(cam.yaw_degrees, 10.0 * GameCamera3D.DRAG_SENSITIVITY, 0.001,
+		"horizontal drag rotates yaw by relative.x * DRAG_SENSITIVITY")
+	cam.free()
 
-func test_zoom_out_produces_farther_camera_y() -> void:
-	# zoom > 1 means height * zoom > height → camera is farther (higher Y)
-	var zoom_out: float = 1.5
-	var pos_zoomed := GameCamera3D.compute_position(Vector3.ZERO, 14.0 * zoom_out, 10.0 * zoom_out)
-	var pos_default := GameCamera3D.compute_position(Vector3.ZERO, 14.0, 10.0)
-	assert_true(pos_zoomed.y > pos_default.y, "Zoom out (zoom>1) must increase camera height (Y)")
+func test_left_drag_vertical_changes_pitch() -> void:
+	var cam := GameCamera3D.new()
+	cam.pitch_degrees = -65.0
+	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_LEFT, true))
+	cam._unhandled_input(_make_motion_event(Vector2(0.0, 5.0)))
+	assert_almost_eq(cam.pitch_degrees, GameCamera3D.clamp_pitch(-65.0 + 5.0 * GameCamera3D.DRAG_SENSITIVITY), 0.001,
+		"vertical drag tilts pitch by relative.y * DRAG_SENSITIVITY (clamped)")
+	cam.free()
 
-func test_zoom_in_produces_closer_camera_z() -> void:
-	# zoom < 1 means distance * zoom < distance → camera Z offset is smaller
-	var zoom_in: float = 0.5
-	var pos_zoomed := GameCamera3D.compute_position(Vector3.ZERO, 14.0 * zoom_in, 10.0 * zoom_in)
-	var pos_default := GameCamera3D.compute_position(Vector3.ZERO, 14.0, 10.0)
-	assert_true(pos_zoomed.z < pos_default.z, "Zoom in (zoom<1) must reduce camera Z offset")
+func test_left_drag_pitch_clamped_to_min() -> void:
+	var cam := GameCamera3D.new()
+	cam.pitch_degrees = -84.0
+	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_LEFT, true))
+	cam._unhandled_input(_make_motion_event(Vector2(0.0, -100.0)))
+	assert_almost_eq(cam.pitch_degrees, GameCamera3D.PITCH_MIN, 0.001, "a large vertical drag cannot push pitch past PITCH_MIN")
+	cam.free()
 
-func test_zoom_out_produces_farther_camera_z() -> void:
-	# zoom > 1 means distance * zoom > distance → camera Z offset is larger
-	var zoom_out: float = 1.5
-	var pos_zoomed := GameCamera3D.compute_position(Vector3.ZERO, 14.0 * zoom_out, 10.0 * zoom_out)
-	var pos_default := GameCamera3D.compute_position(Vector3.ZERO, 14.0, 10.0)
-	assert_true(pos_zoomed.z > pos_default.z, "Zoom out (zoom>1) must increase camera Z offset")
+func test_motion_without_left_button_does_not_change_view() -> void:
+	var cam := GameCamera3D.new()
+	cam.yaw_degrees = 0.0
+	cam.pitch_degrees = -65.0
+	cam._unhandled_input(_make_motion_event(Vector2(50.0, 50.0)))
+	assert_almost_eq(cam.yaw_degrees, 0.0, 0.001, "no orbit without an active left-drag")
+	assert_almost_eq(cam.pitch_degrees, -65.0, 0.001, "no tilt without an active left-drag")
+	cam.free()
 
-func test_zoom_scales_height_proportionally() -> void:
-	# At zoom=0.5, height should be exactly 14 * 0.5 = 7.0
-	var zoom: float = 0.5
-	var pos := GameCamera3D.compute_position(Vector3.ZERO, 14.0 * zoom, 10.0 * zoom)
-	assert_almost_eq(pos.y, 7.0, 0.001, "zoom=0.5 must halve the effective height (14→7)")
+func test_left_release_stops_dragging() -> void:
+	var cam := GameCamera3D.new()
+	cam.yaw_degrees = 0.0
+	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_LEFT, true))
+	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_LEFT, false))
+	cam._unhandled_input(_make_motion_event(Vector2(50.0, 0.0)))
+	assert_almost_eq(cam.yaw_degrees, 0.0, 0.001, "releasing the left button stops orbiting")
+	cam.free()
 
-func test_zoom_scales_distance_proportionally() -> void:
-	# At zoom=2.0, Z offset should be exactly 10 * 2.0 = 20.0
-	var zoom: float = 2.0
-	var pos := GameCamera3D.compute_position(Vector3.ZERO, 14.0 * zoom, 10.0 * zoom)
-	assert_almost_eq(pos.z, 20.0, 0.001, "zoom=2.0 must double the effective distance (10→20)")
+func test_middle_click_resets_view() -> void:
+	var cam := GameCamera3D.new()
+	cam.yaw_degrees = 123.0
+	cam.pitch_degrees = -40.0
+	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_MIDDLE, true))
+	assert_almost_eq(cam.pitch_degrees, GameCamera3D.DEFAULT_PITCH, 0.001, "middle-click resets pitch to default")
+	assert_almost_eq(cam.yaw_degrees, GameCamera3D.DEFAULT_YAW, 0.001, "middle-click resets yaw to default")
+	cam.free()
+
+func test_reset_view_restores_defaults() -> void:
+	var cam := GameCamera3D.new()
+	cam.yaw_degrees = 99.0
+	cam.pitch_degrees = -30.0
+	cam.reset_view()
+	assert_almost_eq(cam.pitch_degrees, GameCamera3D.DEFAULT_PITCH, 0.001, "reset_view restores default pitch")
+	assert_almost_eq(cam.yaw_degrees, GameCamera3D.DEFAULT_YAW, 0.001, "reset_view restores default yaw")
+	cam.free()
+
+func test_yaw_radians_converts_degrees() -> void:
+	var cam := GameCamera3D.new()
+	cam.yaw_degrees = 90.0
+	assert_almost_eq(cam.yaw_radians(), PI / 2.0, 0.001, "yaw_radians() converts yaw_degrees to radians")
+	cam.free()
+
+# ── screen shake (pure helpers) ──────────────────────────────────────────────
+
+func test_shake_offset_zero_trauma_is_zero() -> void:
+	assert_eq(GameCamera3D.shake_offset(0.0, 1.23), Vector3.ZERO, "trauma=0 → no shake offset")
+
+func test_decay_trauma_reduces_toward_zero() -> void:
+	assert_almost_eq(GameCamera3D.decay_trauma(1.0, 0.1), 1.0 - GameCamera3D.SHAKE_DECAY * 0.1, 0.001, "trauma decays at SHAKE_DECAY")
+
+func test_decay_trauma_clamps_at_zero() -> void:
+	assert_almost_eq(GameCamera3D.decay_trauma(0.05, 1.0), 0.0, 0.001, "trauma never goes below 0")
