@@ -7,7 +7,16 @@ A **Godot 4.7 (GDScript) 3D horde-survivor** ("Vampire Survivors"–style) with 
 
 - **Repo:** `~/friends-swarm` — branch **`feature/v1-vertical-slice`**.
 - **Run it:** `godot --path ~/friends-swarm` → boots to **character select (3D)** → pick 1 of 10 friends → 3D run. Headless boot: `godot --headless --quit`.
-- **Tests:** `godot --headless --import && godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://test -gexit` → **879/879 green**. (⚠️ GUT 9.7.0 **silently skips** any test file using `assert_le`/`assert_ge` — always use `assert_true(x <= y)`; watch that the test count rises as expected.)
+- **Tests:** `godot --headless --import && godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://test -gexit` → **916/916 green**. (⚠️ GUT 9.7.0 **silently skips** any test file using `assert_le`/`assert_ge` — always use `assert_true(x <= y)`; watch that the test count rises as expected.)
+
+## Playtest round 1 — fixes applied (after first user run)
+- **Camera was invisible (CRITICAL):** `GameCamera3D.target` never resolved from the `.tscn` `NodePath` → camera stuck at origin. Now set in code (`GameManager3D.start()` assigns `cam.target = player`); regression-tested.
+- **Everything rendered white:** model GLBs ship untextured (albedo white, no texture bound). Fix: players now apply their Kenney skin atlas (`CharacterData.model_texture` = `texture-a…j`, applied in `Player3D`); monsters' embedded textures were corrupt (`image/unknown` MIME) so enemies are now **tinted by `EnemyData.color`** (swarmer green / spitter blue / tank dark-red / serpent boss).
+- **Skills not visible:** orbiters/nova-telegraph/beam/bubbles + cast/hit VFX are now emissive-colored by `vfx_color`.
+- **Enemies slid lifelessly:** added a procedural bob/lean while moving (guaranteed); a skeletal-walk retarget from the separate anim GLBs is attempted but **unconfirmed** (see below).
+- **Ground:** arena ground is now brown earth + warm backdrop (was a white plane on blue-gray).
+- Runtime-ordering bugs fixed: Avihay bubble + Nova telegraph were setting `global_position` before `add_child` (`!is_inside_tree()` errors, spawned at origin).
+- ⚠️ **Process note:** a parallel merge of the three visual fixes silently dropped two branches + introduced a parse error (suite hit 97 failures); recovered by reset + clean re-merge by commit hash. Lesson: after multi-branch merges, run the full suite before declaring green; merge branches one at a time.
 
 ## The 8 delivered items
 1. **3D conversion** — gameplay on the XZ plane; fixed perspective `Camera3D` at −55° tilt (height 14 / pullback 10), follows the player; `core/game_camera_3d.gd` (+ shake via `add_trauma`).
@@ -32,7 +41,7 @@ Subagent-driven, review-gated: each task = implementer subagent → reviewer sub
 
 ## ⚠️ Open / deferred (next session)
 1. **2D code still present** — the old 2D scenes/scripts/tests were kept intact as a fallback during the pivot (Option B). A **cleanup task to delete 2D** (`game/main.tscn`, 2D player/enemy/weapons/spawner/gem, `game/game_manager.gd`, `ui/character_select.tscn`, 2D-only tests, `autoload/Juice` 2D) is **deferred until the user confirms the 3D build in a playtest**. `project.godot` main scene is already `character_select_3d`.
-2. **Enemy animations are static** — mesh GLBs lack embedded AnimationPlayers; wire idle/move/die by retargeting the separate `*_idle/_run/_die.glb` clips onto each mesh's skeleton (needs the Godot editor to verify track paths). Players DO animate (idle/walk).
+2. **Enemy skeletal animation UNCONFIRMED** — mesh GLBs lack embedded AnimationPlayers. A procedural bob/lean now keeps enemies visually alive while moving (works). A skeletal retarget (loading the separate `*_run/_walk.glb` clips onto each mesh's skeleton) is attempted in `Enemy3D` but **not verified to actually move bones** (needs the Godot editor / a real playtest to confirm track paths match). If bones don't move, finish the retarget in-editor. Players DO animate (idle/walk).
 3. **Playtest tuning** — enemy `model_scale`/`model_y_offset` (converted FBX may import large/offset; bosses compound body-scale × model-scale), camera-shake magnitude, skill balance (e.g. Ido DoT cd 1.0 at high damage_mult), orb-color readability, VFX visibility/perf with many enemies.
 4. **Accumulated Minor review notes** (non-blocking) are listed per-task in `.superpowers/sdd/progress.md` — triage before any release.
 5. **Asset license** — the MDA monster pack is a 2016 commercial Unity asset with **no bundled license**: fine for a personal prototype, rights UNCONFIRMED before distribution (`docs/notes/asset-licenses.md`). Player models (Kenney) + VFX lib are CC0/MIT.
