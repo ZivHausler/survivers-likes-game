@@ -2,7 +2,7 @@
 extends GutTest
 ## Tests for the decoupled skill VFX layer (Task 4.5 Item 8).
 ##
-## Part A — legacy C2 tests: EvolutionFlash scene loading + Juice signal guards.
+## Part A — legacy C2 tests: EvolutionFlash scene loading + Juice3D signal guards.
 ## Part B — new skill VFX tests: skill_cast/skill_hit signals, SkillVFX autoload,
 ##   effect spawning, and auto-free lifetime.
 ##
@@ -39,17 +39,17 @@ func _effect_parent() -> Node:
 # ─────────────────────────────────────────────────────────────────────────────
 
 func after_each() -> void:
-	Juice.register_player(null)
-	Juice.register_camera(null)
+	Juice3D.register_player(null)
+	Juice3D.register_camera(null)
 
 func test_evolution_flash_scene_loads() -> void:
 	var packed := load("res://vfx/evolution_flash.tscn")
 	assert_not_null(packed, "evolution_flash.tscn must load successfully")
 
 func test_evolution_flash_spawned_and_auto_frees() -> void:
-	var dummy := Node2D.new()
+	var dummy := Node3D.new()
 	add_child(dummy)
-	Juice.register_player(dummy)
+	Juice3D.register_player(dummy)
 
 	var tree := get_tree()
 	var spawn_parent: Node = tree.current_scene if tree.current_scene != null else tree.root
@@ -79,19 +79,19 @@ func _find_evolution_flash(root: Node) -> EvolutionFlash:
 	return null
 
 func test_player_leveled_up_no_player_no_crash() -> void:
-	Juice.register_player(null)
+	Juice3D.register_player(null)
 	GameEvents.player_leveled_up.emit(1)
 	await get_tree().process_frame
 	assert_true(true, "no crash when player_leveled_up emitted without player")
 
 func test_xp_collected_no_player_no_crash() -> void:
-	Juice.register_player(null)
+	Juice3D.register_player(null)
 	GameEvents.xp_collected.emit(5)
 	await get_tree().process_frame
 	assert_true(true, "no crash when xp_collected emitted without player")
 
 func test_evolution_unlocked_no_player_no_crash() -> void:
-	Juice.register_player(null)
+	Juice3D.register_player(null)
 	GameEvents.evolution_unlocked.emit(&"weapon_test")
 	await get_tree().process_frame
 	assert_true(true, "no crash when evolution_unlocked emitted without player")
