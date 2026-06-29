@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://d24b36hfii0n" path="res://core/skill_data.gd" id="1_skilldata"]
+[ext_resource type="PackedScene" path="res://weapons/ult_carpet_bomb_3d.tscn" id="2_weapon"]
+
+[resource]
+script = ExtResource("1_skilldata")
+id = &"yinon_carpet_bomb"
+display_name = "Carpet Bomb"
+weapon_scene = ExtResource("2_weapon")
+is_signature = false
+type = &"bomber"
+description = "Yinon's ultimate. A barrage of explosions rains down around the player."
