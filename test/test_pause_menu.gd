@@ -137,17 +137,12 @@ func test_pause_menu_is_open_false_after_close() -> void:
 
 
 # ---------------------------------------------------------------------------
-# PauseMenu scene path constants
+# PauseMenu scene path constant (Retry)
 # ---------------------------------------------------------------------------
 
 func test_pause_menu_arena_scene_path() -> void:
 	assert_eq(PauseMenu.ARENA_SCENE, "res://game/main_3d.tscn",
 		"ARENA_SCENE must point to main_3d.tscn")
-
-
-func test_pause_menu_select_scene_path() -> void:
-	assert_eq(PauseMenu.SELECT_SCENE, "res://ui/character_select_3d.tscn",
-		"SELECT_SCENE must point to character_select_3d.tscn")
 
 
 # ---------------------------------------------------------------------------

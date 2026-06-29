@@ -36,8 +36,5 @@ text = "Continue"
 [node name="RetryButton" type="Button" parent="Panel/VBox"]
 text = "Retry"
 
-[node name="CharacterSelectButton" type="Button" parent="Panel/VBox"]
-text = "Character Select"
-
 [node name="QuitButton" type="Button" parent="Panel/VBox"]
 text = "Quit Game"

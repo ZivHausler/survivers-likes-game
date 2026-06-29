@@ -6,11 +6,9 @@ class_name PauseMenu extends CanvasLayer
 ## and the tree's paused flag together so the two never drift apart.
 
 const ARENA_SCENE  := "res://game/main_3d.tscn"
-const SELECT_SCENE := "res://ui/character_select_3d.tscn"
 
 @onready var _continue_btn: Button = $Panel/VBox/ContinueButton
 @onready var _retry_btn:    Button = $Panel/VBox/RetryButton
-@onready var _select_btn:   Button = $Panel/VBox/CharacterSelectButton
 @onready var _quit_btn:     Button = $Panel/VBox/QuitButton
 
 
@@ -20,8 +18,6 @@ func _ready() -> void:
 		_continue_btn.pressed.connect(_on_continue)
 	if _retry_btn:
 		_retry_btn.pressed.connect(_on_retry)
-	if _select_btn:
-		_select_btn.pressed.connect(_on_character_select)
 	if _quit_btn:
 		_quit_btn.pressed.connect(_on_quit)
 
@@ -53,11 +49,6 @@ func _on_retry() -> void:
 	# selected_character persists in RunState; just reload the run scene.
 	get_tree().paused = false
 	get_tree().change_scene_to_file(ARENA_SCENE)
-
-
-func _on_character_select() -> void:
-	get_tree().paused = false
-	get_tree().change_scene_to_file(SELECT_SCENE)
 
 
 func _on_quit() -> void:

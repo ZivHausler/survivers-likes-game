@@ -11,7 +11,6 @@ A CanvasLayer overlay shown when Escape is pressed during a 3D run.
       - **PausedLabel** (Label, "PAUSED")
       - **ContinueButton** (Button)
       - **RetryButton** (Button)
-      - **CharacterSelectButton** (Button)
       - **QuitButton** (Button)
 
 ## API
