@@ -1,29 +1,40 @@
 # See docs/notes/character-select-3d.md
 class_name CharacterSelect3D extends Control
-## Character selection screen for 3D run: two buttons, one per playable character.
-## Sets RunState.selected_character (3D CharacterData) then transitions to main_3d.
+## Character selection screen for 3D run: one Button per playable character, generated
+## data-driven from CHARACTER_PATHS.  Sets RunState.selected_character (3D CharacterData)
+## then transitions to main_3d.
 
-const MAIN_3D_SCENE  := "res://game/main_3d.tscn"
-const ZIV_3D_PATH    := "res://characters/ziv_3d.tres"
-const AVIHAY_3D_PATH := "res://characters/avihay_3d.tres"
+const MAIN_3D_SCENE := "res://game/main_3d.tscn"
 
-@onready var _ziv_btn:    Button = $VBox/ZivButton
-@onready var _avihay_btn: Button = $VBox/AvihayButton
+## All 10 playable 3D characters — Ziv and Avihay first, then the eight new friends.
+const CHARACTER_PATHS: Array[String] = [
+	"res://characters/ziv_3d.tres",
+	"res://characters/avihay_3d.tres",
+	"res://characters/avinoam_3d.tres",
+	"res://characters/matan_3d.tres",
+	"res://characters/ido_3d.tres",
+	"res://characters/yuval_3d.tres",
+	"res://characters/natali_3d.tres",
+	"res://characters/barak_3d.tres",
+	"res://characters/yinon_3d.tres",
+	"res://characters/yoav_3d.tres",
+]
+
+@onready var _grid: GridContainer = $VBox/Scroll/Grid
 
 func _ready() -> void:
-	# Tint buttons by character colour
-	var ziv_data: CharacterData    = load(ZIV_3D_PATH)    as CharacterData
-	var avihay_data: CharacterData = load(AVIHAY_3D_PATH) as CharacterData
+	for path in CHARACTER_PATHS:
+		var data: CharacterData = load(path) as CharacterData
+		if data == null:
+			push_warning("CharacterSelect3D: could not load CharacterData from %s — skipping" % path)
+			continue
 
-	if ziv_data:
-		_ziv_btn.text     = ziv_data.display_name
-		_ziv_btn.modulate = ziv_data.color
-	if avihay_data:
-		_avihay_btn.text     = avihay_data.display_name
-		_avihay_btn.modulate = avihay_data.color
-
-	_ziv_btn.pressed.connect(func():    _pick(ZIV_3D_PATH))
-	_avihay_btn.pressed.connect(func(): _pick(AVIHAY_3D_PATH))
+		var btn := Button.new()
+		btn.text               = data.display_name
+		btn.modulate           = data.color
+		btn.custom_minimum_size = Vector2(160, 50)
+		btn.pressed.connect(_pick.bind(path))
+		_grid.add_child(btn)
 
 func _pick(path: String) -> void:
 	RunState.selected_character = load(path) as CharacterData

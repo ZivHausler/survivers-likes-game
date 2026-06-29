@@ -9,22 +9,21 @@ script = ExtResource("1_cs3d")
 
 [node name="VBox" type="VBoxContainer" parent="."]
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 0.1
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -180.0
-offset_top = -120.0
-offset_right = 180.0
-offset_bottom = 120.0
+anchor_bottom = 0.9
+offset_left = -220.0
+offset_right = 220.0
+grow_horizontal = 2
 
 [node name="TitleLabel" type="Label" parent="VBox"]
 text = "Friends Swarm 3D — Choose Your Character"
 horizontal_alignment = 1
 
-[node name="ZivButton" type="Button" parent="VBox"]
-custom_minimum_size = Vector2(0, 50)
-text = "Ziv"
+[node name="Scroll" type="ScrollContainer" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
 
-[node name="AvihayButton" type="Button" parent="VBox"]
-custom_minimum_size = Vector2(0, 50)
-text = "Avihay"
+[node name="Grid" type="GridContainer" parent="VBox/Scroll"]
+layout_mode = 2
+columns = 2

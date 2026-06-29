@@ -17,7 +17,18 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[spawner-3d]] — `Spawner3D` (`Node3D`): ring spawner driven by DifficultyTimeline; bosses use serpent model with texture-preserving tint; pure static helpers for testability; `xp_time_mult` scales normal-enemy XP with elapsed time (+100% per 2 min)
 - [[xp-gem-3d]] — `XPGem3D` (`Area3D`): magnet pickup (XZ plane) that awards XP; orb color reflects XP tier via `tier_color()` (blue→green→yellow→orange→magenta); `magnet_step` static helper
 - [[game-manager-3d]] — `GameManager3D` (`Node`): full 3D run loop — CharacterData setup, SkillSystem (or legacy UpgradeSystem), level-up queue, routing via `_route_skill_upgrade` (SKILL/PASSIVE/SYNERGY/GENERIC) or `_apply_upgrade` (legacy), death → game_over; grants `LEVELUP_INVULN` (2.0 s) to player on final level-up resolution
-- [[character-select-3d]] — `CharacterSelect3D` (`Control`): 3D entry screen; lists ziv_3d.tres / avihay_3d.tres; sets RunState then → main_3d.tscn; boots at project start
+- [[character-select-3d]] — `CharacterSelect3D` (`Control`): 3D entry screen; data-driven list of all 10 friends (CHARACTER_PATHS const, one Button per CharacterData, tinted by color, ScrollContainer/GridContainer so all 10 fit); sets RunState then → main_3d.tscn; boots at project start
+
+## 3D Characters (Phase 5 — all 10 friends)
+
+- [[char-avinoam]] — Avinoam "Divine Smite": holy/gold, NovaWeapon3D signature (Holy Smite), OrbitWeapon3D (Smite Orbs), Radiant Pulse, Judgment; model character-c.glb
+- [[char-matan]] — Matan "Debug Mode": tech/cyan, signature (Debug Pulse Nova), Null Pointer Orbit, Stack Overflow Nova, Infinite Loop Nova; model character-b.glb
+- [[char-ido]] — Ido "Steady State": earth/green, signature (Grounding Nova), Root Network Orbit, Stone Skin passive Nova, Tectonic Pulse Nova; model character-d.glb
+- [[char-yuval]] — Yuval "Deep Cut": dark-blue, signature (Deep Strike Nova), Blade Orbit, Pressure Wave Nova, Lethal Tempo Nova; model character-e.glb
+- [[char-natali]] — Natali "Nature's Wrath": leaf-green, signature (Thorn Burst Nova), Seed Orbit, Bloom Pulse Nova, Overgrowth Nova; model character-f.glb
+- [[char-barak]] — Barak "Thunder Strike": electric-yellow, signature (Lightning Strike Nova), Thunder Orbit, Shockwave Nova, Storm Surge Nova; model character-g.glb
+- [[char-yinon]] — Yinon "Shadow Veil": purple, signature (Shadow Slash Nova), Phantom Orbit, Umbra Nova, Eclipse Nova; model character-h.glb
+- [[char-yoav]] — Yoav "Iron Will": iron-gray, signature (Iron Slam Nova), Shield Orbit, Bulwark Nova, Fortress Nova; model character-i.glb
 
 ## Task 3.3 — Extra Skills (4 per character)
 
