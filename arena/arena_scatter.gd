@@ -53,8 +53,11 @@ static func compute_positions(rng_seed: int, count: int, extent: float,
 @export var tree_height: float = 6.0
 @export var rock_footprint_radius: float = 1.4
 @export var rock_height: float = 2.0
-## Uniform scale applied to instanced models (real-world gltf scale can be large).
+## Uniform scale applied to rock / generic instanced models (real-world gltf scale can be large).
 @export var model_scale: float = 1.0
+## Scale applied specifically to the tree prop. The raw fir_tree_01 mesh is ~18 units tall
+## while the player capsule is ~2 units, so 0.35 gives ~6 units — tunable in the inspector.
+@export var tree_model_scale: float = 0.35
 
 const _OBSTACLE_SCENE := preload("res://obstacles/obstacle_3d.tscn")
 const _TREE_PATH := "res://art/models/nature/fir_tree_01/fir_tree_01_1k.gltf"
@@ -85,8 +88,13 @@ func _ready() -> void:
 		var obs: Obstacle3D = _OBSTACLE_SCENE.instantiate()
 		var model: Node = prop_scene.instantiate() if prop_scene != null else null
 		if model is Node3D:
-			(model as Node3D).scale = Vector3.ONE * model_scale
-			obs.set_model(model as Node3D, footprint, height)
+			var visual: Node3D = model as Node3D
+			if is_tree:
+				visual = _extract_tree_variant(visual)
+				visual.scale = Vector3.ONE * tree_model_scale
+			else:
+				visual.scale = Vector3.ONE * model_scale
+			obs.set_model(visual, footprint, height)
 		else:
 			if model != null:
 				model.free()  # not a Node3D — discard and fall back
@@ -97,6 +105,26 @@ func _ready() -> void:
 	# Defer the single attach to the arena: during scene entry the parent is
 	# "busy setting up children", so a direct add_child() would be rejected.
 	parent.add_child.call_deferred(obstacles)
+
+## The fir_tree_01 gltf packs THREE sibling variants (fir_tree_01_a_LOD0,
+## fir_tree_01_b_LOD0, fir_tree_01_c_LOD0) offset along X. This helper
+## extracts ONE variant so the visible tree matches the single cylindrical
+## collision + NavigationObstacle3D footprint. Falls back to the whole instance
+## (with a warning) if no "fir_tree" named child is found.
+func _extract_tree_variant(tree_instance: Node3D) -> Node3D:
+	var chosen: Node3D = null
+	for child in tree_instance.get_children():
+		if child is Node3D and "fir_tree" in child.name:
+			chosen = child as Node3D
+			break
+	if chosen == null:
+		push_warning("ArenaScatter: tree gltf has no 'fir_tree' named child — " +
+				"using whole instance as fallback (visuals may not match collision)")
+		return tree_instance
+	tree_instance.remove_child(chosen)
+	chosen.transform = Transform3D.IDENTITY  # re-seat at obstacle origin
+	tree_instance.free()  # discards the other variants still attached
+	return chosen
 
 ## Primitive stand-in used only when a prop model fails to load.
 func _fallback_mesh(footprint_radius: float, height: float) -> Mesh:

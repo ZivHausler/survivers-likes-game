@@ -62,3 +62,36 @@ func test_scatter_spawns_obstacles_at_runtime() -> void:
 		if child is Obstacle3D:
 			count += 1
 	assert_true(count > 0, "scatter must spawn at least one Obstacle3D at runtime")
+
+## Counts nodes whose name contains "fir_tree" and "_LOD0" at any depth inside node.
+## Pre-fix: 3 (all three gltf siblings). Post-fix: exactly 1 (single variant).
+func _count_fir_lod0_in(node: Node) -> int:
+	var total := 0
+	for child in node.get_children():
+		if "fir_tree" in child.name and "_LOD0" in child.name:
+			total += 1
+		total += _count_fir_lod0_in(child)
+	return total
+
+func test_tree_obstacle_has_single_fir_variant() -> void:
+	var root: Node = autofree(_instantiate())
+	add_child(root)
+	await get_tree().process_frame
+	var obstacles := root.get_node_or_null("Obstacles")
+	assert_not_null(obstacles, "Obstacles container must exist")
+	if obstacles == null:
+		return
+	# Even-indexed children are trees (ArenaScatter spawns tree when i%2==0).
+	var checked := false
+	for i in obstacles.get_child_count():
+		if i % 2 != 0:
+			continue
+		var child := obstacles.get_child(i)
+		if not (child is Obstacle3D):
+			continue
+		var lod_count := _count_fir_lod0_in(child)
+		assert_eq(lod_count, 1,
+			"tree Obstacle3D must contain exactly ONE fir_tree*_LOD0 variant, got %d" % lod_count)
+		checked = true
+		break  # one confirmed tree is sufficient to prove the fix
+	assert_true(checked, "at least one tree Obstacle3D must have been inspected")

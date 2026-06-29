@@ -50,6 +50,23 @@ This design prevents infinite loops while allowing graceful degradation when the
 
 The arena scene will call `compute_positions()` with run-specific parameters (seed from RunState), then instantiate `Obstacle3D` at each returned position.
 
+## Single-Variant Tree Selection (defect fix)
+
+The `fir_tree_01_1k.gltf` asset contains **three** sibling tree variants as direct children of
+its root node: `fir_tree_01_a_LOD0`, `fir_tree_01_b_LOD0`, `fir_tree_01_c_LOD0`, each offset
+along X by ~6 units. Attaching the whole instantiated scene to an Obstacle3D would render a
+cluster of 3 trees while only one has a CylinderShape3D collision and NavigationObstacle3D footprint.
+
+`_extract_tree_variant(tree_instance)` resolves this: it picks the **first direct child** whose
+name contains `"fir_tree"` (currently `fir_tree_01_a_LOD0`), resets its transform to
+`Transform3D.IDENTITY`, frees the parent (which discards the other siblings), and returns the
+single variant. If no matching child is found a `push_warning` is emitted and the whole instance
+is used as a safe fallback.
+
+The `tree_model_scale` export (default `0.35`) controls the scale of the extracted tree variant;
+the raw mesh is ~18 units tall and the player capsule is ~2 units, so `0.35` gives ~6 units.
+Rocks continue to use the existing `model_scale` export.
+
 ## Tests
 
 `test/test_arena_scatter.gd` validates:
