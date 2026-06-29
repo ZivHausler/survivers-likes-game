@@ -121,6 +121,10 @@ func start() -> void:
 			char_data.evolution_upgrade
 		)
 
+	# Ultimate: dedicated manual slot, granted separately from the weapon pool.
+	if _player and char_data and char_data.ultimate and char_data.ultimate.weapon_scene:
+		_player.grant_ultimate(char_data.ultimate.weapon_scene)
+
 	# Connect UpgradeUI chosen signal.
 	if _upgrade_ui and _upgrade_ui.has_signal("chosen"):
 		_upgrade_ui.chosen.connect(_on_upgrade_chosen)
