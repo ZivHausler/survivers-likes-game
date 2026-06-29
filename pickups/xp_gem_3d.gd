@@ -21,21 +21,42 @@ func _ready() -> void:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(self, "scale", Vector3(0.85, 0.85, 0.85), 0.6) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	# Emissive gold material so the gem pops against the 3D arena.
-	var mesh := get_node_or_null("MeshInstance3D") as MeshInstance3D
-	if mesh:
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(1.0, 0.843, 0.0, 1.0)
-		mat.emission_enabled = true
-		mat.emission = Color(1.0, 0.843, 0.0, 1.0)
-		mat.emission_energy_multiplier = 2.0
-		mesh.material_override = mat
 
 
 func setup(value: int, player: Node3D) -> void:
 	_value = value
 	_player = player
+	# Apply tier color to the gem mesh so the orb's color signals its XP value.
+	# A fresh StandardMaterial3D is created per gem — never mutates a shared resource.
+	var mesh := get_node_or_null("MeshInstance3D") as MeshInstance3D
+	if mesh:
+		var c := tier_color(_value)
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = c
+		mat.emission_enabled = true
+		mat.emission = c
+		mat.emission_energy_multiplier = 2.0
+		mesh.material_override = mat
 	body_entered.connect(_on_body_entered)
+
+
+## Maps an XP value to a tier color.
+## Tiers (low value = cool color, high value = hot/rare color):
+##   1–2   → blue   Color(0.3, 0.6, 1.0)   easiest / earliest enemies
+##   3–5   → green  Color(0.3, 1.0, 0.4)
+##   6–15  → yellow Color(1.0, 0.9, 0.2)
+##   16–49 → orange Color(1.0, 0.55, 0.1)
+##   50+   → magenta Color(1.0, 0.2, 0.6)  bosses / late-game
+static func tier_color(value: int) -> Color:
+	if value >= 50:
+		return Color(1.0, 0.2, 0.6)   # magenta — boss / late-game
+	if value >= 16:
+		return Color(1.0, 0.55, 0.1)  # orange
+	if value >= 6:
+		return Color(1.0, 0.9, 0.2)   # yellow
+	if value >= 3:
+		return Color(0.3, 1.0, 0.4)   # green
+	return Color(0.3, 0.6, 1.0)       # blue — lowest tier
 
 
 func _process(dt: float) -> void:
