@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"yinon_rocket_barrage_skill"
+display_name = "Rocket Barrage+"
+kind = 4
+max_level = 5
+effect_kind = &""
+effect_value = 0.0
+description = "Rain more rockets. Bigger explosions, wider blast radius."
+stat_text = "Signature ability level +1"
+skill_id = &"yinon_rocket_barrage"

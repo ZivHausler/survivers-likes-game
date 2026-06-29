@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"yoav_drive_by_synergy"
+display_name = "EVOLVE: Wolt Prime Rush"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "Maximum delivery tier unlocked. Blast radius goes supersonic."
+stat_text = "Unlocks Wolt Prime Rush mode"
+skill_id = &"yoav_drive_by"

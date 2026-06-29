@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=6 format=3]
+
+[ext_resource type="Script" uid="uid://d24b36hfii0n" path="res://core/skill_data.gd" id="1_skilldata"]
+[ext_resource type="PackedScene" path="res://weapons/yoav_hot_meal_3d.tscn" id="2_weapon"]
+[ext_resource type="Resource" path="res://upgrades/yoav/hot_meal_skill.tres" id="3_skill"]
+[ext_resource type="Resource" path="res://upgrades/yoav/hot_meal_passive.tres" id="4_passive"]
+[ext_resource type="Resource" path="res://upgrades/yoav/hot_meal_synergy.tres" id="5_synergy"]
+
+[resource]
+script = ExtResource("1_skilldata")
+id = &"yoav_hot_meal"
+display_name = "Hot Meal"
+weapon_scene = ExtResource("2_weapon")
+is_signature = false
+skill_upgrade = ExtResource("3_skill")
+passive_upgrade = ExtResource("4_passive")
+synergy_upgrade = ExtResource("5_synergy")
+description = "An incendiary food delivery explodes on arrival, scalding nearby enemies."

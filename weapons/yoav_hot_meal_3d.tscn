@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://weapons/yoav_hot_meal_3d.gd" id="1_hotmeal3d"]
+
+[node name="YoavHotMeal3D" type="Node3D"]
+script = ExtResource("1_hotmeal3d")
