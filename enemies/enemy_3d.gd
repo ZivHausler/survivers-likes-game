@@ -231,6 +231,22 @@ func _try_load_anim(model_inst: Node3D, p_data: EnemyData) -> bool:
 		tgt_ap = AnimationPlayer.new()
 		model_inst.add_child(tgt_ap)
 
+	# Duplicate so we never mutate the shared, cached source Animation resource
+	# (retargeting rewrites track paths in place and must not leak across enemies).
+	var move_anim: Animation = (first_anim as Animation).duplicate(true) as Animation
+
+	# The anim GLB keys node-path tracks (RootNode/bug_body/…), but the skinned mesh
+	# imports its rig as a Skeleton3D, so those paths never resolve. Retarget each
+	# track onto the matching skeleton bone (leaf node name == bone name). Without a
+	# skeleton (non-skinned model) the original node-path tracks are kept as-is.
+	var skel: Skeleton3D = find_skeleton(model_inst)
+	if skel:
+		var anim_root: Node = tgt_ap.get_node_or_null(tgt_ap.root_node)
+		if anim_root == null:
+			anim_root = tgt_ap.get_parent()
+		if anim_root:
+			retarget_tracks_to_skeleton(move_anim, skel, anim_root.get_path_to(skel))
+
 	# Add the animation to the global library (create if absent) as "move".
 	var lib: AnimationLibrary
 	if tgt_ap.has_animation_library(""):
@@ -239,7 +255,7 @@ func _try_load_anim(model_inst: Node3D, p_data: EnemyData) -> bool:
 		lib = AnimationLibrary.new()
 		tgt_ap.add_animation_library("", lib)
 	if not lib.has_animation("move"):
-		lib.add_animation("move", first_anim)
+		lib.add_animation("move", move_anim)
 
 	# Free the temporary animation scene; the Animation resource lives on via lib.
 	anim_inst.queue_free()
@@ -249,6 +265,48 @@ func _try_load_anim(model_inst: Node3D, p_data: EnemyData) -> bool:
 	# Confirm the animation is present and playing (track-path mismatch won't crash,
 	# but is_playing will still return true; procedural bob is the visual safety net).
 	return _anim_player.has_animation("move") and _anim_player.is_playing()
+
+## Recursively find the first Skeleton3D under `root` (depth-first). Null if none.
+## Skinned GLB meshes import their armature as a Skeleton3D, which is what skeletal
+## animation tracks must address (via a ":bonename" subpath).
+static func find_skeleton(root: Node) -> Skeleton3D:
+	if root is Skeleton3D:
+		return root as Skeleton3D
+	for child in root.get_children():
+		var found := find_skeleton(child)
+		if found:
+			return found
+	return null
+
+## Rewrite an animation's node-path transform tracks (e.g. "RootNode/bug_body/bug_thorax1")
+## into skeleton-bone tracks (e.g. "RootNode/Skeleton3D:bug_thorax1") so an animation
+## authored against a plain Node3D rig can drive a skinned Skeleton3D. Each track's leaf
+## node name is matched against the skeleton's bone names: matches are repointed at the
+## bone, everything else (unmatched leaves, non-transform tracks) is dropped to avoid
+## unresolved-track warnings. `skel_rel` is the skeleton's path relative to the target
+## AnimationPlayer's root_node. Mutates `anim` in place; returns the count of kept tracks.
+static func retarget_tracks_to_skeleton(anim: Animation, skel: Skeleton3D, skel_rel: NodePath) -> int:
+	var base: String = String(skel_rel)
+	var kept := 0
+	# Iterate high→low so remove_track() doesn't shift indices we have yet to visit.
+	for t in range(anim.get_track_count() - 1, -1, -1):
+		var ttype := anim.track_get_type(t)
+		if ttype != Animation.TYPE_POSITION_3D and ttype != Animation.TYPE_ROTATION_3D \
+				and ttype != Animation.TYPE_SCALE_3D:
+			anim.remove_track(t)
+			continue
+		var p := anim.track_get_path(t)
+		var nc := p.get_name_count()
+		if nc == 0:
+			anim.remove_track(t)
+			continue
+		var bone_name := String(p.get_name(nc - 1))
+		if skel.find_bone(bone_name) == -1:
+			anim.remove_track(t)
+			continue
+		anim.track_set_path(t, NodePath(base + ":" + bone_name))
+		kept += 1
+	return kept
 
 ## Pure static steering helper — unit-testable without a live physics step.
 ## Returns XZ-flattened direction from `from` toward `to`, scaled by `speed`.
