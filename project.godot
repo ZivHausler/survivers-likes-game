@@ -48,3 +48,11 @@ move_down={
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+
+[layer_names]
+
+3d_physics/layer_1="player_body"
+3d_physics/layer_2="player_hurtbox"
+3d_physics/layer_3="bubble"
+3d_physics/layer_4="enemy"
+3d_physics/layer_5="obstacle"
