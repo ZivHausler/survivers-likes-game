@@ -7,6 +7,12 @@ extends GutTest
 ##   (c) with a player registered, enemy_killed_3d spawns a DeathPop3D + DamageNumber3D,
 ##   (d) player_hp_changed with a decrease runs the flash+trauma path without crashing.
 
+## Duck-typed camera stub that records add_trauma() calls.
+class StubCamera extends Node3D:
+	var trauma_calls: Array = []
+	func add_trauma(amount: float) -> void:
+		trauma_calls.append(amount)
+
 func after_each() -> void:
 	# Reset Juice3D singleton state to avoid cross-test contamination.
 	Juice3D.register_player(null)
@@ -139,3 +145,38 @@ func test_player_hp_changed_decrease_with_player_no_crash() -> void:
 	GameEvents.player_hp_changed.emit(70.0, 100.0)
 	await get_tree().process_frame
 	assert_true(true, "hp_changed decrease with player must not crash even without camera")
+
+# ── boss-only screen shake on death ───────────────────────────────────────────
+
+func test_boss_killed_3d_signal_is_connected() -> void:
+	assert_true(
+		GameEvents.boss_killed_3d.is_connected(Juice3D._on_boss_killed_3d),
+		"Juice3D must connect boss_killed_3d in _ready()"
+	)
+
+func test_normal_enemy_kill_does_not_shake_camera() -> void:
+	var cam: StubCamera = add_child_autofree(StubCamera.new())
+	Juice3D.register_camera(cam)
+	var dummy: Node3D = add_child_autofree(Node3D.new())
+	Juice3D.register_player(dummy)
+	GameEvents.enemy_killed_3d.emit(Vector3.ZERO, 5)
+	await get_tree().process_frame
+	assert_eq(cam.trauma_calls.size(), 0, "normal enemy death must NOT shake the camera")
+
+func test_mini_boss_kill_shakes_camera_once() -> void:
+	var cam: StubCamera = add_child_autofree(StubCamera.new())
+	Juice3D.register_camera(cam)
+	GameEvents.boss_killed_3d.emit(Enemy3D.BossKind.MINI)
+	await get_tree().process_frame
+	assert_eq(cam.trauma_calls.size(), 1, "mini-boss death must shake once")
+	assert_gt(cam.trauma_calls[0], 0.0, "shake trauma must be positive")
+
+func test_big_boss_kill_shakes_harder_than_mini() -> void:
+	var cam: StubCamera = add_child_autofree(StubCamera.new())
+	Juice3D.register_camera(cam)
+	GameEvents.boss_killed_3d.emit(Enemy3D.BossKind.MINI)
+	GameEvents.boss_killed_3d.emit(Enemy3D.BossKind.BIG)
+	await get_tree().process_frame
+	assert_eq(cam.trauma_calls.size(), 2, "two boss deaths → two shakes")
+	assert_gt(cam.trauma_calls[1], cam.trauma_calls[0],
+		"big-boss shake must exceed mini-boss shake")

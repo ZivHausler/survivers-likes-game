@@ -395,3 +395,25 @@ func test_normal_enemy_damage_emits_no_boss_signals() -> void:
 	e.take_damage(10.0)
 	assert_signal_not_emitted(GameEvents, "boss_hp_changed")
 	assert_signal_not_emitted(GameEvents, "boss_died")
+
+# ── boss death → boss_killed_3d (drives boss-only screen shake) ────────────────
+
+func test_mini_boss_death_emits_boss_killed_3d() -> void:
+	var e: Enemy3D = _make_enemy(50.0)
+	e.configure_boss(Enemy3D.BossKind.MINI)
+	watch_signals(GameEvents)
+	e.take_damage(50.0)  # lethal
+	assert_signal_emitted_with_parameters(GameEvents, "boss_killed_3d", [Enemy3D.BossKind.MINI])
+
+func test_big_boss_death_emits_boss_killed_3d() -> void:
+	var e: Enemy3D = _make_enemy(50.0)
+	e.configure_boss(Enemy3D.BossKind.BIG, "Undead Serpent")
+	watch_signals(GameEvents)
+	e.take_damage(50.0)  # lethal
+	assert_signal_emitted_with_parameters(GameEvents, "boss_killed_3d", [Enemy3D.BossKind.BIG])
+
+func test_normal_enemy_death_does_not_emit_boss_killed_3d() -> void:
+	var e: Enemy3D = _make_enemy(20.0)
+	watch_signals(GameEvents)
+	e.take_damage(20.0)  # lethal
+	assert_signal_not_emitted(GameEvents, "boss_killed_3d")

@@ -10,6 +10,10 @@ var _camera = null   ## GameCamera3D registered by GameManager3D; duck-typed for
 var _player: Node3D = null
 var _last_hp: float = -1.0  ## Tracks previous HP to detect a decrease
 
+## Screen-shake trauma applied when a boss dies. Big boss jolts harder than a mini-boss.
+const MINI_BOSS_SHAKE: float = 0.45
+const BIG_BOSS_SHAKE: float = 0.85
+
 const _DeathPop3DScene: PackedScene = preload("res://vfx/death_pop_3d.tscn")
 const _DamageNumber3DScene: PackedScene = preload("res://vfx/damage_number_3d.tscn")
 const _EvolutionFlashScene: PackedScene = preload("res://vfx/evolution_flash.tscn")
@@ -21,6 +25,7 @@ func _ready() -> void:
 	GameEvents.player_hp_changed.connect(_on_player_hp_changed)
 	GameEvents.player_died.connect(_on_player_died)
 	GameEvents.evolution_unlocked.connect(_on_evolution_unlocked)
+	GameEvents.boss_killed_3d.connect(_on_boss_killed_3d)
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
@@ -61,8 +66,7 @@ func _on_enemy_killed_3d(pos: Vector3, xp: int) -> void:
 	var num: DamageNumber3D = _DamageNumber3DScene.instantiate()
 	parent.add_child(num)
 	num.setup(xp, pos)
-	# Small camera shake
-	_add_trauma(0.25)
+	# No camera shake on normal enemy deaths — only bosses shake (see _on_boss_killed_3d).
 
 func _on_xp_collected(_amount: int) -> void:
 	if not is_instance_valid(_player):
@@ -94,6 +98,11 @@ func _on_player_hp_changed(current: float, _max_hp: float) -> void:
 
 func _on_player_died() -> void:
 	pass  # Death-screen transition handled by GameManager3D
+
+## Boss-only screen shake: mini-boss gives a solid jolt, big boss a bigger one.
+func _on_boss_killed_3d(boss_kind: int) -> void:
+	var amount := BIG_BOSS_SHAKE if boss_kind == Enemy3D.BossKind.BIG else MINI_BOSS_SHAKE
+	_add_trauma(amount)
 
 func _on_evolution_unlocked(_weapon_id: StringName) -> void:
 	var parent := _safe_parent()

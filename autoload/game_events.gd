@@ -16,3 +16,5 @@ signal skill_hit(vfx_id: StringName, color: Color, position: Vector3)
 signal boss_spawned(boss_name: String, max_hp: float)
 signal boss_hp_changed(current: float, max_hp: float)
 signal boss_died()
+## Emitted when a boss dies (boss_kind = Enemy3D.BossKind.MINI or BIG). Drives boss-only screen shake.
+signal boss_killed_3d(boss_kind: int)

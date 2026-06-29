@@ -6,7 +6,7 @@ extends GutTest
 # ── Boss XP ──────────────────────────────────────────────────────────────────
 
 func test_boss_xp_value_constant_is_large() -> void:
-	# BOSS_XP_VALUE must exceed a normal tank (xp_value = 5) by a large margin.
+	# BOSS_XP_VALUE must exceed a normal tank (xp_value = 10) by a large margin.
 	assert_true(
 		Spawner.BOSS_XP_VALUE >= 20,
 		"BOSS_XP_VALUE (%d) must be >= 20 to reward killing a boss" % Spawner.BOSS_XP_VALUE

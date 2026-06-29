@@ -209,8 +209,8 @@ static func move_to_velocity(dir: Vector2, speed: float) -> Vector3:
 
 func xp_to_next(lvl: int) -> int:
 	# Superlinear (quadratic) curve — same formula as 2D Player.
-	# 5 + lvl*3 + lvl²*2  →  lvl1=10, lvl2=19, lvl3=32, lvl5=70, lvl10=235
-	return 5 + lvl * 3 + lvl * lvl * 2
+	# Fast early game: 2 + lvl + lvl²  →  lvl1=4, lvl2=8, lvl3=14, lvl5=32, lvl10=112
+	return 2 + lvl + lvl * lvl
 
 func add_xp(amount: int) -> void:
 	xp += amount

@@ -193,6 +193,9 @@ func take_damage(amount: float) -> void:
 		# Big boss announces death so the HUD bar hides before the node is freed.
 		if boss_kind == BossKind.BIG:
 			GameEvents.boss_died.emit()
+		# Bosses (mini + big) trigger a screen shake on death; normal enemies do not.
+		if boss_kind != BossKind.NONE:
+			GameEvents.boss_killed_3d.emit(boss_kind)
 		# Death visuals handled by Juice3D / HitFlash3D + the death pop particle;
 		# _play_anim("die") would never render because queue_free() follows immediately.
 		GameEvents.enemy_killed_3d.emit(global_position, data.xp_value)

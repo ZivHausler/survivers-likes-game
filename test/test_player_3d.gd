@@ -52,45 +52,45 @@ func test_move_to_velocity_zero_dir_gives_zero_vector() -> void:
 
 func test_xp_to_next_level1() -> void:
 	var p := _make_player()
-	assert_eq(p.xp_to_next(1), 10, "5 + 1*3 + 1*1*2 = 10")
+	assert_eq(p.xp_to_next(1), 4, "2 + 1 + 1*1 = 4")
 
 func test_xp_to_next_level2() -> void:
 	var p := _make_player()
-	assert_eq(p.xp_to_next(2), 19, "5 + 2*3 + 2*2*2 = 19")
+	assert_eq(p.xp_to_next(2), 8, "2 + 2 + 2*2 = 8")
 
 func test_xp_to_next_level3() -> void:
 	var p := _make_player()
-	assert_eq(p.xp_to_next(3), 32, "5 + 3*3 + 3*3*2 = 32")
+	assert_eq(p.xp_to_next(3), 14, "2 + 3 + 3*3 = 14")
 
 func test_xp_to_next_level5() -> void:
 	var p := _make_player()
-	assert_eq(p.xp_to_next(5), 70, "5 + 5*3 + 5*5*2 = 70")
+	assert_eq(p.xp_to_next(5), 32, "2 + 5 + 5*5 = 32")
 
 # ── add_xp leveling ──────────────────────────────────────────────────────────
 
 func test_add_xp_exact_single_level_up() -> void:
 	var p := _make_player()
-	p.add_xp(10)  # xp_to_next(1) = 10 exactly
+	p.add_xp(4)  # xp_to_next(1) = 4 exactly
 	assert_eq(p.level, 2, "Should advance to level 2")
 	assert_eq(p.xp, 0, "No remainder after exact threshold")
 
 func test_add_xp_multi_level_up_with_remainder() -> void:
 	var p := _make_player()
-	# level 1→2 costs 10, level 2→3 costs 19; total = 29; give 30 → 1 remainder
-	p.add_xp(30)
+	# level 1→2 costs 4, level 2→3 costs 8; total = 12; give 13 → 1 remainder
+	p.add_xp(13)
 	assert_eq(p.level, 3, "Should advance two levels")
 	assert_eq(p.xp, 1, "Remainder 1 should carry over")
 
 func test_add_xp_partial_no_level_up() -> void:
 	var p := _make_player()
-	p.add_xp(5)  # less than xp_to_next(1) = 10
+	p.add_xp(3)  # less than xp_to_next(1) = 4
 	assert_eq(p.level, 1, "Should still be level 1")
-	assert_eq(p.xp, 5, "XP should accumulate")
+	assert_eq(p.xp, 3, "XP should accumulate")
 
 func test_add_xp_emits_player_leveled_up() -> void:
 	var p := _make_player()
 	watch_signals(GameEvents)
-	p.add_xp(10)
+	p.add_xp(4)
 	assert_signal_emitted(GameEvents, "player_leveled_up")
 
 # ── take_damage ──────────────────────────────────────────────────────────────
