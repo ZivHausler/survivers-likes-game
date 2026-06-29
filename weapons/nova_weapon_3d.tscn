@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://weapons/nova_weapon_3d.gd" id="1_nova3d"]
+
+[node name="NovaWeapon3D" type="Node3D"]
+script = ExtResource("1_nova3d")

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://weapons/ziv_selfie_flash_3d.gd" id="1_flash3d"]
+
+[node name="ZivSelfieFlash3D" type="Node3D"]
+script = ExtResource("1_flash3d")

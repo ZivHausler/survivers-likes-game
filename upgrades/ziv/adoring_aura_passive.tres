@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"ziv_adoring_aura_passive"
+display_name = "Lingering Perfume"
+kind = 1
+max_level = 5
+effect_kind = &""
+effect_value = 1.5
+description = "Your aura lingers long after you've walked away."
+stat_text = "+1.5 Aura Radius"
+skill_id = &"ziv_adoring_aura"

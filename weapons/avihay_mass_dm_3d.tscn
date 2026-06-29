@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://weapons/avihay_mass_dm_3d.gd" id="1_massdm3d"]
+
+[node name="AvihayMassDM3D" type="Node3D"]
+script = ExtResource("1_massdm3d")

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"avihay_voice_blast_synergy"
+display_name = "SYNERGY: Sonic Boom"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "You break the sound barrier with your commentary. Arena-wide shockwave."
+stat_text = "Massive radius boost"
+skill_id = &"avihay_voice_blast"

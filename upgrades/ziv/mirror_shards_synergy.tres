@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"ziv_mirror_shards_synergy"
+display_name = "SYNERGY: Hall of Mirrors"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "Infinite reflections. Your shards multiply and spin at blinding speed."
+stat_text = "Doubles shards, speeds orbit"
+skill_id = &"ziv_mirror_shards"

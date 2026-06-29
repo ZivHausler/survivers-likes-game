@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CharacterData" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="CharacterData" load_steps=13 format=3]
 
 [ext_resource type="Script" uid="uid://oeuj1jqprh5d" path="res://core/character_data.gd" id="1_char_data"]
 [ext_resource type="Script" uid="uid://0rwxad1au28r" path="res://core/stat_block.gd" id="2_stat_block"]
@@ -8,6 +8,9 @@
 [ext_resource type="Resource" path="res://upgrades/ziv/evolution.tres" id="6_evo"]
 [ext_resource type="PackedScene" uid="uid://duvjv73aas321" path="res://art/characters_3d/kenney_blocky_characters/models/character-a.glb" id="7_model"]
 [ext_resource type="Resource" path="res://characters/skills/ziv_charm.tres" id="8_ziv_charm"]
+[ext_resource type="Resource" path="res://characters/skills/ziv_mirror_shards.tres" id="9_mirror_shards"]
+[ext_resource type="Resource" path="res://characters/skills/ziv_selfie_flash.tres" id="10_selfie_flash"]
+[ext_resource type="Resource" path="res://characters/skills/ziv_adoring_aura.tres" id="11_adoring_aura"]
 
 [sub_resource type="Resource" id="Resource_stats"]
 script = ExtResource("2_stat_block")
@@ -34,4 +37,4 @@ evolution_upgrade = ExtResource("6_evo")
 model_scene = ExtResource("7_model")
 model_scale = 1.0
 model_tint = Color(1, 1, 1, 1)
-skills = Array[Resource]([ExtResource("8_ziv_charm")])
+skills = Array[Resource]([ExtResource("8_ziv_charm"), ExtResource("9_mirror_shards"), ExtResource("10_selfie_flash"), ExtResource("11_adoring_aura")])
