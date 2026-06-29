@@ -17,8 +17,20 @@ func attack_tick(enemy: Enemy3D, target: Node3D, dt: float) -> void          # b
 Both methods are no-ops in the base class. Minimal stub subclasses exist now:
 `RangedAttack` (`enemies/attacks/ranged_attack.gd`) and `DashAttack`
 (`enemies/attacks/dash_attack.gd`) — they extend EnemyAttack and inherit the
-no-op behavior. Full kite/LOS/fire logic (RangedAttack) is added in Task 4;
+no-op behavior. Full approach-and-hold/LOS/fire logic (RangedAttack) is added in Task 4;
 full approach/windup/dash/cooldown logic (DashAttack) is added in Task 5.
+
+### RangedAttack movement — approach-and-hold (no kiting)
+
+`RangedAttack.approach_velocity` implements a two-state rule:
+
+- **Beyond `attack_range`**: move toward the player at `move_speed` (approach).
+- **Within `attack_range`**: return `Vector3.ZERO` — hold position and keep firing.
+
+There is no retreat branch. If the player closes into melee range the ranged enemy
+stands its ground and continues shooting. The fire threshold (`dist <= attack_range`)
+matches the hold threshold exactly, so a holding enemy always satisfies the range
+condition for `_can_fire`.
 
 ## The contract — and why MELEE stays inline
 

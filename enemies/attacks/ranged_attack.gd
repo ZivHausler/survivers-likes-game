@@ -1,28 +1,25 @@
 # See docs/notes/enemy-attacks.md
 class_name RangedAttack extends EnemyAttack
-## Kites to EnemyData.attack_range and fires EnemyProjectile3D at the player when it has
-## line of sight (terrain on layer 16 blocks the ray → hold fire). Telegraphs each shot
-## with a windup. Holds a hysteresis band around attack_range so it doesn't jitter.
+## Approaches to EnemyData.attack_range then holds position and fires EnemyProjectile3D at
+## the player when it has line of sight (terrain on layer 16 blocks the ray → hold fire).
+## Telegraphs each shot with a windup. Never retreats — once within attack_range, holds.
 
 const PROJECTILE := preload("res://enemies/enemy_projectile_3d.tscn")
-const BAND := 2.0  ## +/- world units of "hold" tolerance around attack_range
 
 var _cooldown_left: float = 0.0
 var _windup_left: float = -1.0  ## >=0 means a shot is winding up
 
-## Pure kite velocity: approach if beyond range+band, retreat if inside range-band, else hold.
-static func kite_velocity(from: Vector3, to: Vector3, attack_range: float, speed: float) -> Vector3:
+## Pure approach velocity: move toward player if beyond attack_range, else hold position.
+## No retreat — an enemy closer than attack_range stands its ground and keeps firing.
+static func approach_velocity(from: Vector3, to: Vector3, attack_range: float, speed: float) -> Vector3:
 	var delta := to - from
 	delta.y = 0.0
 	var dist := delta.length()
 	if dist < 0.001:
 		return Vector3.ZERO
-	var dir := delta.normalized()
-	if dist > attack_range + BAND:
-		return dir * speed            # approach
-	if dist < attack_range - BAND:
-		return -dir * speed           # retreat (kite)
-	return Vector3.ZERO               # hold in band
+	if dist > attack_range:
+		return delta.normalized() * speed  # approach
+	return Vector3.ZERO                     # hold — stand and fire
 
 func _ready_to_fire() -> bool:
 	return _cooldown_left <= 0.0
@@ -32,7 +29,7 @@ func _can_fire(dist: float, los_clear: bool, attack_range: float) -> bool:
 	return dist <= attack_range and los_clear and _ready_to_fire()
 
 func desired_velocity(enemy: Enemy3D, target: Node3D, _dt: float) -> Vector3:
-	return kite_velocity(enemy.global_position, target.global_position,
+	return approach_velocity(enemy.global_position, target.global_position,
 			enemy.data.attack_range, enemy.data.move_speed)
 
 func attack_tick(enemy: Enemy3D, target: Node3D, dt: float) -> void:
