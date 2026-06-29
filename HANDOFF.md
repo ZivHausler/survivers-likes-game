@@ -4,9 +4,17 @@
 
 ## 🚧 3D PIVOT IN PROGRESS (plan: docs/superpowers/plans/2026-06-29-3d-pivot-and-feature-expansion.md)
 The 2D→3D conversion + 8-item feature expansion is **underway** (subagent-driven, review-gated; ledger in `.superpowers/sdd/progress.md`). Decisions locked: tilted perspective `Camera3D` @ -55° on the XZ plane; players = Kenney Blocky Characters (CC0); enemies = user's MDA Downloads monster pack (FBX→glTF via FBX2glTF; ⚠️ license unconfirmed). Plan phases: 1 core 3D · A assets · 2 model integration · 3 four-skills + invuln + orb-colors · 4 per-skill synergy · 4.5 skill VFX · 5 all 10 friends · 6 integration.
-**Done so far:** Track A assets (merged) · 1.1 world/camera/ground/`main_3d.tscn` · 1.2 Player3D (CharacterBody3D, XZ move, logic ported) · 1.3 Enemy3D (CharacterBody3D, steering/charm/contact, `enemy_killed_3d` signal, enemy physics layer 4). Suite 280/280. 2D scenes/tests intact during transition.
-**World scale:** 1 unit ≈ 16 px (rescale spatial constants /16, logic identical).
-**Next:** 1.4a weapons (Weapon3D + Ziv3D/Avihay3D/Bubble3D) → 1.4b spawner+gems+playable wiring.
+**World scale:** 1 unit ≈ 16 px (rescale spatial constants /16, logic identical). 2D scenes/tests kept intact (Option B) until a final cleanup task — deferred until after user playtest confirms the 3D build.
+
+**Done:**
+- **Phase 1 (3D core) COMPLETE:** 1.1 world/camera (perspective Camera3D @ -55°, XZ plane) · 1.2 Player3D · 1.3 Enemy3D (`enemy_killed_3d`, layer 8) · 1.4a Weapon3D + Ziv/Avihay 3D weapons + Bubble3D · 1.4b Spawner3D + XPGem3D + GameManager3D (playable loop) · 1.5 full run-flow (upgrade cards, HUD, game-over, character_select_3d; HUD/game_over made dimension-agnostic) · 1.6 Juice3D (shake/hit-flash/damage-numbers/death-pops).
+- **Phase 2 (models) COMPLETE:** 2.1 player = Kenney Blocky chars (Ziv=character-a, Avihay=character-b), idle/walk/facing, texture-preserving tint. 2.2 enemies = real monsters (bug/plant/diatryma, serpent boss). ⚠️ enemy anims are STATIC rest-pose (mesh GLBs lack embedded AnimationPlayer — needs editor retarget); model scale/orientation NEED PLAYTEST TUNING (FBX cm-scale).
+- **Phase 3 (in progress):** 3.1 SkillSystem (4 skills/char; level0=unowned, acquire@0→1, per-skill passive + synergy golden when skill lvl5 + passive≥1 — **item 5 done in logic**) · 3.2 Player3D multi-weapon + GameManager3D on SkillSystem + system-agnostic card UI (Ziv/Avihay migrated to skills arrays) · 3.6 **item 6** 2s post-levelup invuln · 3.7 **item 7** XP-orb tier colors + xp-grows-over-time. 3.3 (Ziv/Avihay's 3 extra skills each — **item 3**) running.
+- Suite: 594/594 (will rise as 3.3 merges).
+
+**Items status:** #1 (3D) ✅ · #2 (models) ✅ (tuning pending) · #3 (4 skills) framework ✅, authoring in progress · #5 (synergy) ✅ logic · #6 (invuln) ✅ · #7 (orb colors) ✅ · #4 (8 more chars) + #8 (skill VFX) pending.
+
+**Next:** merge 3.3 → Phase 4.5 skill VFX framework → Phase 5 author 8 remaining friends → Phase 6 integration + (deferred) 2D-deletion cleanup. **USER PLAYTEST recommended now** to tune model scales/orientation.
 
 ## What this is
 A **Godot 4.7 (GDScript) 2D horde-survivor game** ("Vampire Survivors"–style): move-only control, auto-firing signature ability, enemies swarm, XP gems → level-up → pick 1-of-3 upgrades, with a synergy/evolution system (signature maxed + dedicated passive owned → golden EVOLVE). Each playable character is based on one of the owner's real friends.
