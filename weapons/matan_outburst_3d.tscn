@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://weapons/matan_outburst_3d.gd" id="1_outburst3d"]
+
+[node name="MatanOutburst3D" type="Node3D"]
+script = ExtResource("1_outburst3d")
