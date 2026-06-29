@@ -11,3 +11,8 @@ signal player_died()
 signal evolution_unlocked(weapon_id: StringName)
 signal skill_cast(vfx_id: StringName, color: Color, position: Vector3)
 signal skill_hit(vfx_id: StringName, color: Color, position: Vector3)
+
+## Big-boss lifecycle (drives the top-center HUD boss bar).
+signal boss_spawned(boss_name: String, max_hp: float)
+signal boss_hp_changed(current: float, max_hp: float)
+signal boss_died()
