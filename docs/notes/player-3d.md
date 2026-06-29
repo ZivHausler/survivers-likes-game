@@ -53,7 +53,9 @@ and follows the Player3D node via its `target` export.
 | `xp` | `int` | XP accumulated toward next level |
 | `hp` | `float` | Current HP |
 | `add_xp(amount: int)` | `func` | Add XP, auto-level-up with carry-over remainder |
-| `take_damage(amount: float)` | `func` | Subtract `max(0, amount − armor)`; emit death if hp ≤ 0 |
+| `take_damage(amount: float)` | `func` | No-op while invulnerable. Otherwise subtract `max(0, amount − armor)`; emit death if hp ≤ 0. |
+| `set_invulnerable(duration: float)` | `func` | Grant `duration` seconds of i-frames. Takes `max(_invuln_timer, duration)` so existing windows are never shortened. |
+| `is_invulnerable() -> bool` | `func` | True while `_invuln_timer > 0`. |
 | `get_pickup_range()` | `func` | Returns `stats.pickup_range` |
 | `xp_to_next(lvl: int) -> int` | `func` | XP curve: `5 + lvl*3 + lvl²*2` |
 | `apply_stat_upgrade(kind, value)` | `func` | Mutates the matching stat. `fire_rate` refreshes all weapons in the `weapons` dict (legacy path refreshes the `weapon` pointer). |
@@ -93,7 +95,7 @@ Identical to 2D Player: `5 + lvl*3 + lvl²*2`
 
 ## Signals emitted (via [[game-events]])
 
-- `player_hp_changed(current, max_hp)` — on `setup()` and every `take_damage()`
+- `player_hp_changed(current, max_hp)` — on `setup()` and every `take_damage()` that is not blocked by invulnerability
 - `player_leveled_up(level)` — once per level gained inside `add_xp()`
 - `player_died()` — when HP drops to or below 0
 
@@ -107,6 +109,7 @@ When `CharacterData.model_scene` is set, `setup()`:
    and plays `"idle"` if found.
 
 In `_physics_process()`:
+- Decrements `_invuln_timer`; while > 0 blinks `$Model.visible` on a 0.1 s interval (`fmod(_invuln_timer, 0.2) < 0.1`). Restores `$Model.visible = true` the frame the timer reaches 0.
 - When `velocity.length() > WALK_THRESHOLD` (0.05), rotates `$Model.rotation.y` to
   `face_angle(velocity)` and plays `"walk"`.
 - Otherwise plays `"idle"`.

@@ -37,7 +37,8 @@ then calls `_upgrade_ui.present(active_system, player)`.
 `_on_upgrade_chosen(u)` — applies to active system, routes to player, calls `_resolve_next_or_unpause()`.
 
 `_resolve_next_or_unpause()` — if `_pending_levelups > 0`, decrement and call `_present_next()`
-(stays paused); otherwise `_choosing = false`, unpause.
+(stays paused); otherwise `_choosing = false`, unpause, then call `player.set_invulnerable(LEVELUP_INVULN)`
+(2.0 s). Invulnerability is granted exactly once per level-up chain, only on the final resolution.
 
 ## Upgrade routing
 

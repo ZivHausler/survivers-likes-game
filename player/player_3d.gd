@@ -12,6 +12,9 @@ class_name Player3D extends CharacterBody3D
 ## Velocity below this length plays idle animation instead of walk.
 const WALK_THRESHOLD := 0.05
 
+## Seconds of remaining invulnerability (i-frames). Counts down in _physics_process.
+var _invuln_timer: float = 0.0
+
 var stats: StatBlock
 ## All acquired skills: skill_id → Weapon3D. Populated by acquire_skill().
 var weapons: Dictionary = {}
@@ -32,6 +35,15 @@ var _anim_player: AnimationPlayer = null
 ## Acquire a skill by skill_id. Instantiates weapon_scene, guards Node3D, adds as child,
 ## calls weapon.setup(self, stats), stores in weapons[skill_id]. Sets the convenience
 ## `weapon` pointer if this is the first acquired skill. No-op if already owned.
+## Returns true while the player is invulnerable (i-frame window active).
+func is_invulnerable() -> bool:
+	return _invuln_timer > 0.0
+
+## Grant invulnerability for `duration` seconds. Takes the max so multiple callers
+## never shorten an existing window.
+func set_invulnerable(duration: float) -> void:
+	_invuln_timer = max(_invuln_timer, duration)
+
 func acquire_skill(skill_id: StringName, weapon_scene: PackedScene) -> void:
 	if weapons.has(skill_id):
 		return
@@ -125,9 +137,18 @@ func _apply_tint(node: Node, tint: Color) -> void:
 	for child in node.get_children():
 		_apply_tint(child, tint)
 
-func _physics_process(_dt: float) -> void:
+func _physics_process(dt: float) -> void:
 	if not stats:
 		return
+	# Invulnerability i-frame countdown + model blink.
+	var was_invuln := _invuln_timer > 0.0
+	_invuln_timer = max(0.0, _invuln_timer - dt)
+	if _invuln_timer > 0.0:
+		# Blink: alternate Model visibility every 0.1 s while invulnerable.
+		_model.visible = fmod(_invuln_timer, 0.2) < 0.1
+	elif was_invuln:
+		# Timer just reached 0 — guarantee the model is visible again.
+		_model.visible = true
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = move_to_velocity(dir, stats.move_speed)
 	move_and_slide()
@@ -174,6 +195,8 @@ func add_xp(amount: int) -> void:
 		GameEvents.player_leveled_up.emit(level)
 
 func take_damage(amount: float) -> void:
+	if _invuln_timer > 0.0:
+		return
 	var dealt: float = max(0.0, amount - stats.armor)
 	hp -= dealt
 	GameEvents.player_hp_changed.emit(hp, stats.max_hp)

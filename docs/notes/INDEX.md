@@ -9,14 +9,14 @@ Add new notes here as they are created; link by `[[id]]`.
 
 - [[game-camera-3d]] — `GameCamera3D`: tilted perspective Camera3D, follows target on XZ; pure static helpers for unit testing
 - [[arena-3d]] — `arena_3d.tscn`: 3D ground plane (200×200), DirectionalLight3D, WorldEnvironment; gameplay plane = XZ
-- [[player-3d]] — `Player3D` (`CharacterBody3D`): WASD on XZ, HP/XP/level/stat logic; multi-weapon `weapons` dict (skill_id→Weapon3D) + `acquire_skill/level_skill/apply_skill_passive/evolve_skill`; `fire_rate` refreshes all weapons; legacy single-weapon fallback when `skills` empty
+- [[player-3d]] — `Player3D` (`CharacterBody3D`): WASD on XZ, HP/XP/level/stat logic; multi-weapon `weapons` dict (skill_id→Weapon3D) + `acquire_skill/level_skill/apply_skill_passive/evolve_skill`; `fire_rate` refreshes all weapons; legacy single-weapon fallback when `skills` empty; post-levelup i-frames via `set_invulnerable(duration)` / `is_invulnerable()` + model blink
 - [[enemy-3d]] — `Enemy3D` (`CharacterBody3D`): steering/charm/contact-damage/death; real monster GLB models (bug/plant/diatryma/serpent); `face_angle()` rotation; best-effort animation; emits `enemy_killed_3d`
 - [[weapon-system-3d]] — `Weapon3D` base class: Node3D port of Weapon; same timer/cooldown/level/evolve contract; 1 unit ≈ 16 px
 - [[weapon-ziv-3d]] — `ZivStunningLooks3D`: 3D beam (Area3D BoxShape) + XZ charm sorting; evolve = Y-rotation + always-on CharmField
 - [[weapon-avihay-3d]] — `AvihayChatSpam3D` + `Bubble3D`: XZ directional bubble spread, pierce, homing on evolve; SPEED=14 units/s
 - [[spawner-3d]] — `Spawner3D` (`Node3D`): ring spawner driven by DifficultyTimeline; bosses use serpent model with texture-preserving tint; pure static helpers for testability; `xp_time_mult` scales normal-enemy XP with elapsed time (+100% per 2 min)
 - [[xp-gem-3d]] — `XPGem3D` (`Area3D`): magnet pickup (XZ plane) that awards XP; orb color reflects XP tier via `tier_color()` (blue→green→yellow→orange→magenta); `magnet_step` static helper
-- [[game-manager-3d]] — `GameManager3D` (`Node`): full 3D run loop — CharacterData setup, SkillSystem (or legacy UpgradeSystem), level-up queue, routing via `_route_skill_upgrade` (SKILL/PASSIVE/SYNERGY/GENERIC) or `_apply_upgrade` (legacy), death → game_over
+- [[game-manager-3d]] — `GameManager3D` (`Node`): full 3D run loop — CharacterData setup, SkillSystem (or legacy UpgradeSystem), level-up queue, routing via `_route_skill_upgrade` (SKILL/PASSIVE/SYNERGY/GENERIC) or `_apply_upgrade` (legacy), death → game_over; grants `LEVELUP_INVULN` (2.0 s) to player on final level-up resolution
 - [[character-select-3d]] — `CharacterSelect3D` (`Control`): 3D entry screen; lists ziv_3d.tres / avihay_3d.tres; sets RunState then → main_3d.tscn; boots at project start
 
 ## Systems

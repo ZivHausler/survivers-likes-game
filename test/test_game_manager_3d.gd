@@ -433,6 +433,8 @@ class StubPlayer3D extends Node3D:
 	var passived: Dictionary = {}   # skill_id → value
 	var evolved: Array = []
 	var stat_upgrades: Dictionary = {}
+	## Recorded set_invulnerable() call arguments, in order.
+	var invuln_calls: Array = []
 
 	var stats: StatBlock
 	var weapon: Node3D = null
@@ -449,6 +451,8 @@ class StubPlayer3D extends Node3D:
 	# Note: apply_stat_upgrade is defined so Object.has_method("apply_stat_upgrade") → true.
 	func apply_stat_upgrade(kind: StringName, v: float) -> void:
 		stat_upgrades[kind] = stat_upgrades.get(kind, 0.0) + v
+	func set_invulnerable(duration: float) -> void:
+		invuln_calls.append(duration)
 
 # ---------------------------------------------------------------------------
 # SkillSystem integration: built at start
@@ -622,3 +626,76 @@ func test_avihay_3d_skills_first_is_signature() -> void:
 	assert_not_null(s, "skills[0] must be a SkillData"); if s == null: return
 	assert_true(s.is_signature, "avihay_3d skills[0] must be marked is_signature")
 	assert_not_null(s.weapon_scene, "avihay_3d signature must have a weapon_scene")
+
+# ---------------------------------------------------------------------------
+# Post-levelup invulnerability
+# ---------------------------------------------------------------------------
+
+## Build a manager wired to a StubPlayer3D and a StubUpgradeUI3D, using the
+## legacy UpgradeSystem path so the tests don't depend on external .tres files.
+## Mirrors the pattern in test_3d_stacked_levelups_resolve_in_sequence_and_unpause
+## (ui added via add_child_autofree so start() does not auto-connect chosen).
+func _make_invuln_test_scene() -> Array:
+	var root := Node3D.new()
+	add_child_autofree(root)
+
+	var stub := StubPlayer3D.new()
+	stub.name = "StubPlayer"
+	stub.stats = StatBlock.new()
+	root.add_child(stub)
+
+	var manager := GameManager3D.new()
+	manager.name = "GM"
+	root.add_child(manager)  # triggers _ready → start(); no UpgradeUI node found so no auto-connect
+
+	# UI added outside root so start() didn't auto-connect chosen; we connect manually.
+	var ui := StubUpgradeUI3D.new()
+	add_child_autofree(ui)
+	manager._player = stub
+	manager.skill_system = null
+	manager.upgrade_system = _make_upgrade_system_3d()
+	manager._upgrade_ui = ui
+	ui.chosen.connect(manager._on_upgrade_chosen)
+
+	return [manager, stub, ui]
+
+
+func test_invuln_granted_on_final_levelup_resolve() -> void:
+	var arr     := _make_invuln_test_scene()
+	var manager := arr[0] as GameManager3D
+	var stub    := arr[1] as StubPlayer3D
+
+	var u := _make_upgrade_3d(Upgrade.Kind.GENERIC, &"move_speed", 1.0, &"spd_invtest")
+	manager._on_player_leveled_up(2)   # starts: _choosing=true, present #1
+	(arr[2] as StubUpgradeUI3D).pick(u)  # resolves final → should grant invuln
+
+	assert_true(stub.invuln_calls.size() > 0,
+		"set_invulnerable must be called once after the final level-up resolves")
+	assert_almost_eq(stub.invuln_calls[0], GameManager3D.LEVELUP_INVULN, 0.001,
+		"set_invulnerable must be called with LEVELUP_INVULN (2.0)")
+
+	get_tree().paused = false  # safety reset
+
+
+func test_invuln_not_granted_while_pending_levelups_remain() -> void:
+	var arr     := _make_invuln_test_scene()
+	var manager := arr[0] as GameManager3D
+	var stub    := arr[1] as StubPlayer3D
+	var ui      := arr[2] as StubUpgradeUI3D
+
+	var u1 := _make_upgrade_3d(Upgrade.Kind.GENERIC, &"move_speed", 1.0, &"sp_iv1")
+	var u2 := _make_upgrade_3d(Upgrade.Kind.GENERIC, &"armor",      1.0, &"sp_iv2")
+
+	# Simulate two synchronous level-ups.
+	manager._on_player_leveled_up(2)  # starts: _choosing=true, _pending=0
+	manager._on_player_leveled_up(3)  # queued: _pending=1
+
+	ui.pick(u1)  # resolves first; second starts → invuln must NOT be granted yet
+	assert_true(stub.invuln_calls.is_empty(),
+		"set_invulnerable must NOT be called while a second level-up is still pending")
+
+	ui.pick(u2)  # resolves final → now grant invuln
+	assert_true(stub.invuln_calls.size() > 0,
+		"set_invulnerable must be called after the last queued level-up resolves")
+
+	get_tree().paused = false  # safety reset

@@ -372,6 +372,75 @@ func test_fire_rate_stat_upgrade_refreshes_all_weapons() -> void:
 		"fire_rate upgrade must call refresh_cooldown on weapon w2")
 
 
+# ── invulnerability (post-levelup i-frames) ─────────────────────────────────
+
+func test_set_invulnerable_makes_is_invulnerable_true() -> void:
+	var p := _make_player()
+	p.set_invulnerable(2.0)
+	assert_true(p.is_invulnerable(), "is_invulnerable must return true after set_invulnerable(2.0)")
+
+func test_is_invulnerable_false_by_default() -> void:
+	var p := _make_player()
+	assert_false(p.is_invulnerable(), "player must not be invulnerable at start")
+
+func test_take_damage_ignored_while_invulnerable() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.set_invulnerable(2.0)
+	p.take_damage(50.0)
+	assert_almost_eq(p.hp, 100.0, 0.001, "HP must not change while invulnerable")
+
+func test_take_damage_does_not_emit_hp_changed_while_invulnerable() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.set_invulnerable(2.0)
+	watch_signals(GameEvents)
+	p.take_damage(50.0)
+	assert_signal_not_emitted(GameEvents, "player_hp_changed",
+		"player_hp_changed must not emit while invulnerable")
+
+func test_take_damage_does_not_emit_player_died_while_invulnerable() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.set_invulnerable(2.0)
+	watch_signals(GameEvents)
+	p.take_damage(999.0)
+	assert_signal_not_emitted(GameEvents, "player_died",
+		"player_died must not emit while invulnerable")
+
+func test_take_damage_applies_after_invuln_expires() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.set_invulnerable(0.1)
+	# Drive the timer past zero via _physics_process
+	p._physics_process(0.2)
+	assert_false(p.is_invulnerable(), "invuln must have expired after driving timer to 0")
+	p.take_damage(30.0)
+	assert_almost_eq(p.hp, 70.0, 0.001, "damage must apply once invuln expires")
+
+func test_set_invulnerable_takes_max_smaller_second_call() -> void:
+	var p := _make_player()
+	p.set_invulnerable(2.0)
+	p.set_invulnerable(1.0)
+	# Timer should remain at 2.0 (or very close, no time has passed)
+	assert_true(p._invuln_timer > 1.5,
+		"set_invulnerable(1.0) after 2.0 must keep 2.0 (max semantics)")
+
+func test_set_invulnerable_takes_max_larger_second_call() -> void:
+	var p := _make_player()
+	p.set_invulnerable(1.0)
+	p.set_invulnerable(2.0)
+	assert_almost_eq(p._invuln_timer, 2.0, 0.001,
+		"set_invulnerable(2.0) after 1.0 must raise timer to 2.0")
+
+func test_model_visible_restored_when_invuln_ends() -> void:
+	var p := _make_player()
+	p.set_invulnerable(0.05)
+	# Drive past the timer so blink logic runs and then invuln ends
+	p._physics_process(0.1)
+	var model := p.get_node_or_null("Model") as Node3D
+	assert_not_null(model, "Model node must exist")
+	assert_true(model.visible,
+		"Model must be visible again after invulnerability ends")
+
+# ── backward_single_weapon_fallback ─────────────────────────────────────────
+
 func test_backward_single_weapon_fallback_when_skills_empty() -> void:
 	# When CharacterData.skills is empty AND weapon_scene is set, the old single-weapon
 	# flow must still work so pre-migration tests and legacy configs stay green.

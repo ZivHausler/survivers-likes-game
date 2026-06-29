@@ -5,6 +5,9 @@ class_name GameManager3D extends Node
 ## Uses SkillSystem when char_data.skills is non-empty (3D multi-weapon flow).
 ## Falls back to UpgradeSystem when char_data.skills is empty (legacy / test-injection path).
 
+## Seconds of invulnerability granted to the player when the level-up card flow resolves.
+const LEVELUP_INVULN := 2.0
+
 const GEM_SCENE_PATH := "res://pickups/xp_gem_3d.tscn"
 const GAME_OVER_SCENE := "res://ui/game_over.tscn"
 const ZIV_3D_PATH := "res://characters/ziv_3d.tres"
@@ -255,6 +258,8 @@ func _on_upgrade_chosen(u: Upgrade) -> void:
 
 ## Resolve the next queued level-up (if any) before unpausing, so no level-up
 ## loses its reward and the tree only resumes once all are done.
+## When the final level-up resolves and play resumes, the player receives
+## LEVELUP_INVULN seconds of invulnerability to re-orient safely.
 func _resolve_next_or_unpause() -> void:
 	if _pending_levelups > 0:
 		_pending_levelups -= 1
@@ -262,6 +267,9 @@ func _resolve_next_or_unpause() -> void:
 	else:
 		_choosing = false
 		get_tree().paused = false
+		# Grant i-frame window only on the final resolve (not per stacked level-up).
+		if is_instance_valid(_player) and _player.has_method("set_invulnerable"):
+			_player.set_invulnerable(LEVELUP_INVULN)
 
 
 ## Courtesy bonus for a level-up gained when every upgrade is already maxed:
