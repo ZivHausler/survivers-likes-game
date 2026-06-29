@@ -27,3 +27,16 @@ func test_environment_uses_sky_background() -> void:
 	assert_eq(we.environment.background_mode, 2,
 		"WorldEnvironment must use Sky background, not solid color")
 	root.free()
+
+const OBSTACLE_BIT := 16
+
+func test_has_four_border_walls_on_obstacle_layer() -> void:
+	var root := _instantiate()
+	var borders := root.get_node_or_null("Borders")
+	assert_not_null(borders, "arena must have a Borders node")
+	var walls := 0
+	for child in borders.get_children():
+		if child is StaticBody3D and ((child as StaticBody3D).collision_layer & OBSTACLE_BIT) == OBSTACLE_BIT:
+			walls += 1
+	assert_eq(walls, 4, "must have 4 border walls on the Obstacles layer")
+	root.free()

@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://bq6n3f8p5xm2kw"]
+[gd_scene load_steps=13 format=3 uid="uid://bq6n3f8p5xm2kw"]
 
 [ext_resource type="Texture2D" uid="uid://x77lbs8pj4p2" path="res://art/textures/grass_diff_2k.jpg" id="1_grass_diff"]
 [ext_resource type="Texture2D" uid="uid://c6322ugkte1ja" path="res://art/textures/grass_nor_2k.jpg" id="2_grass_nor"]
@@ -32,6 +32,12 @@ background_mode = 2
 sky = SubResource("Sky_main")
 ambient_light_source = 3
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_ns"]
+size = Vector3(200, 10, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_ew"]
+size = Vector3(2, 10, 200)
+
 [node name="Arena3D" type="Node3D"]
 
 [node name="Ground" type="StaticBody3D" parent="."]
@@ -53,3 +59,37 @@ shadow_enabled = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
+
+[node name="Borders" type="Node3D" parent="."]
+
+[node name="WallNorth" type="StaticBody3D" parent="Borders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -95)
+collision_layer = 16
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Borders/WallNorth"]
+shape = SubResource("BoxShape3D_wall_ns")
+
+[node name="WallSouth" type="StaticBody3D" parent="Borders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 95)
+collision_layer = 16
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Borders/WallSouth"]
+shape = SubResource("BoxShape3D_wall_ns")
+
+[node name="WallEast" type="StaticBody3D" parent="Borders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 95, 5, 0)
+collision_layer = 16
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Borders/WallEast"]
+shape = SubResource("BoxShape3D_wall_ew")
+
+[node name="WallWest" type="StaticBody3D" parent="Borders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -95, 5, 0)
+collision_layer = 16
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Borders/WallWest"]
+shape = SubResource("BoxShape3D_wall_ew")
