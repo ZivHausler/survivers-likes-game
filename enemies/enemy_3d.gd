@@ -40,6 +40,13 @@ var _bob_phase: float = 0.0
 
 @onready var _model: Node3D = $Model
 @onready var _placeholder: MeshInstance3D = $Model/MeshInstance3D
+## RVO avoidance agent; routes the actual move so the swarm flows around obstacles
+## and each other. velocity_computed is connected in _ready().
+@onready var _agent: NavigationAgent3D = $NavigationAgent3D
+
+func _ready() -> void:
+	if _agent:
+		_agent.velocity_computed.connect(_on_velocity_computed)
 
 func setup(p_data: EnemyData, p_target: Node3D) -> void:
 	data = p_data
@@ -83,6 +90,22 @@ func setup(p_data: EnemyData, p_target: Node3D) -> void:
 func charm(duration: float) -> void:
 	_charm_timer = max(_charm_timer, duration)
 
+## Route this frame's desired velocity through RVO avoidance when available; the
+## actual move_and_slide() then happens in _on_velocity_computed. Falls back to a
+## direct move when there is no agent or we are outside the scene tree (headless
+## unit tests), preserving the original synchronous behavior.
+func _apply_movement(_dt: float) -> void:
+	if _agent and _agent.avoidance_enabled and is_inside_tree():
+		_agent.set_velocity(velocity)
+	else:
+		move_and_slide()
+
+## Avoidance result: the navigation server's collision-free velocity. Apply it and
+## perform the real move. velocity_computed fires during the physics step.
+func _on_velocity_computed(safe_velocity: Vector3) -> void:
+	velocity = safe_velocity
+	move_and_slide()
+
 func _physics_process(dt: float) -> void:
 	if data == null:
 		return
@@ -90,7 +113,7 @@ func _physics_process(dt: float) -> void:
 	_charm_timer = max(0.0, _charm_timer - dt)
 	if _charm_timer > 0.0:
 		velocity = Vector3.ZERO
-		move_and_slide()
+		_apply_movement(dt)
 		return
 	if not is_instance_valid(target):
 		return
@@ -99,7 +122,7 @@ func _physics_process(dt: float) -> void:
 	var dist := to_target.length()
 	var desired := 0.0 if (data.is_ranged and dist < RANGED_STANDOFF) else data.move_speed
 	velocity = steer_velocity(global_position, target.global_position, desired)
-	move_and_slide()
+	_apply_movement(dt)
 	var moving: bool = velocity.length_squared() > MOVE_THRESHOLD * MOVE_THRESHOLD
 	# Rotate Model toward movement direction (visual only — collision body stays upright).
 	if _model and moving:

@@ -21,3 +21,8 @@ shape = SubResource("SphereShape3D_body")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Model"]
 mesh = SubResource("SphereMesh_model")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+avoidance_enabled = true
+radius = 0.6
+max_speed = 12.0

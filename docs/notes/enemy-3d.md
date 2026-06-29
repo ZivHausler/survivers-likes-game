@@ -23,6 +23,7 @@ transition; 2D cleanup is a later task.
 | `CollisionShape3D` | `SphereShape3D` r=0.5 | Physics body |
 | `Model` | `Node3D` | Model root; Phase 2 swaps real mesh in |
 | `Model/MeshInstance3D` | `SphereMesh` r=0.5 | Placeholder; tinted by `data.color` |
+| `NavigationAgent3D` | `NavigationAgent3D` | RVO avoidance (`avoidance_enabled=true`, `radius=0.6`, `max_speed=12.0`) |
 
 **Collision**: `layer = 8` (physics layer 4 — dedicated enemy layer, separate from player layer 1 so XP gem pickup can target the player cleanly), `mask = 0` (enemies pass through each other — swarm).
 
@@ -72,6 +73,34 @@ Used inside `_physics_process` and independently unit-tested.
 ### `static face_angle(velocity: Vector3) -> float`
 Returns Y-axis rotation in radians for the Model node to face the given XZ velocity.
 Zero-length velocity returns `0.0` (never NaN). Mirrors `Player3D.face_angle()`.
+
+## RVO Avoidance (Task 7)
+
+Enemies carry a `NavigationAgent3D` (`_agent`) so the swarm locally avoids the
+`NavigationObstacle3D`s on props/walls/water (Tasks 2, 5, 6) and each other,
+instead of piling up. The agent's `velocity_computed` signal is connected to
+`_on_velocity_computed` in `_ready()`.
+
+**Critical synchronous-velocity invariant.** RVO computes the collision-free
+velocity *asynchronously* (the navigation server emits `velocity_computed` during
+the physics step). But the unit tests call `_physics_process(dt)` and then read
+`velocity` *synchronously* (charm → `Vector3.ZERO`; post-charm → `+X`). To keep
+both working:
+
+- `_physics_process` still assigns `velocity` synchronously exactly as before
+  (compute desired velocity / `steer_velocity` and set `velocity`), then calls
+  `_apply_movement(dt)` **in place of** the old `move_and_slide()`.
+- `_apply_movement(dt)`: when an avoidance agent is present, enabled, **and** the
+  node is inside the tree, it calls `_agent.set_velocity(velocity)` so the real
+  move is routed through avoidance. The `velocity_computed(safe_velocity)`
+  callback (`_on_velocity_computed`) then sets `velocity = safe_velocity` and
+  calls `move_and_slide()`.
+- Fallback: no agent, or **not** inside the tree (headless unit tests), it calls
+  `move_and_slide()` directly — preserving the original behavior so the synchronous
+  `velocity` reads still pass.
+
+Never remove the synchronous `velocity = ...` assignments in `_physics_process`;
+`test_enemy_3d.gd` and `test_enemy_3d_avoidance.gd` lock this in.
 
 ## Tuning Constants
 
