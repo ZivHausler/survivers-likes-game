@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3 uid="uid://cw4t3rpond3dv1"]
+
+[ext_resource type="Script" uid="uid://bw4t3r3dscr1pt" path="res://obstacles/water_3d.gd" id="1_water_script"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_water"]
+albedo_color = Color(0.15, 0.35, 0.5, 0.75)
+transparency = 1
+roughness = 0.05
+metallic = 0.2
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_water"]
+size = Vector2(24, 24)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_water"]
+radius = 12.0
+height = 2.0
+
+[node name="Water3D" type="StaticBody3D"]
+collision_layer = 16
+collision_mask = 0
+script = ExtResource("1_water_script")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_water")
+surface_material_override/0 = SubResource("StandardMaterial3D_water")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CylinderShape3D_water")
+
+[node name="NavigationObstacle3D" type="NavigationObstacle3D" parent="."]
+radius = 12.0

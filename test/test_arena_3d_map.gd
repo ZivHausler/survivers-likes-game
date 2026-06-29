@@ -40,3 +40,13 @@ func test_has_four_border_walls_on_obstacle_layer() -> void:
 			walls += 1
 	assert_eq(walls, 4, "must have 4 border walls on the Obstacles layer")
 	root.free()
+
+func test_arena_contains_water() -> void:
+	var root := _instantiate()
+	var found := false
+	for child in root.get_children():
+		if child is Water3D:
+			found = true
+			break
+	assert_true(found, "arena must contain at least one Water3D body")
+	root.free()
