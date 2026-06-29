@@ -24,6 +24,7 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[game-events]] — Global signal bus (`GameEvents` autoload)
 - [[run-state]] — Cross-scene run persistence (`RunState` autoload)
 - [[juice]] — `Juice` autoload: decoupled visual-effects layer (connects to GameEvents; enemy_killed + hp_changed filled in Wave C / Task C1)
+- [[juice-3d]] — `Juice3D` autoload: 3D companion to Juice; DeathPop3D, DamageNumber3D, HitFlash3D, camera shake via GameCamera3D.add_trauma (Task 1.6)
 - [[vfx-system]] — Wave C VFX scenes: ScreenShake, HitFlash, DamageNumber, DeathPop, EvolutionFlash (C2), XpSparkle (C2)
 - [[sprite-integration]] — Optional sprite fields on `CharacterData`/`EnemyData` + fallback rule (Wave A/B)
 - [[data-driven-characters]] — How a friend is modelled as `CharacterData` + weapon + passive + evolution

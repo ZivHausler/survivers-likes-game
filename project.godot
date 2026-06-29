@@ -15,6 +15,7 @@ run/main_scene="res://ui/character_select_3d.tscn"
 GameEvents="*res://autoload/game_events.gd"
 RunState="*res://autoload/run_state.gd"
 Juice="*res://autoload/juice.gd"
+Juice3D="*res://autoload/juice_3d.gd"
 
 [input]
 

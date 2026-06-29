@@ -83,7 +83,13 @@ func start() -> void:
 	GameEvents.player_leveled_up.connect(_on_player_leveled_up)
 	GameEvents.player_died.connect(_on_player_died)
 
-	# Juice guard: 3D Juice integration is Task 1.6 — skip for now.
+	# Register Player3D and GameCamera3D with the Juice3D autoload so it can
+	# spawn effects and forward camera shake. Both are siblings of this node.
+	if _player:
+		Juice3D.register_player(_player)
+	var cam: GameCamera3D = parent.get_node_or_null("GameCamera3D") as GameCamera3D
+	if cam:
+		Juice3D.register_camera(cam)
 
 
 func _process(dt: float) -> void:

@@ -64,7 +64,8 @@ func take_damage(amount: float) -> void:
 		GameEvents.enemy_killed_3d.emit(global_position, data.xp_value)
 		queue_free()
 		return
-	# 3D hit-flash is Task 1.5 Juice work — no visual effect here yet.
+	# Non-lethal hit: flash the enemy mesh white for 0.08 s.
+	HitFlash3D.flash(self, 0.08)
 
 ## Pure static steering helper — unit-testable without a live physics step.
 ## Returns XZ-flattened direction from `from` toward `to`, scaled by `speed`.
