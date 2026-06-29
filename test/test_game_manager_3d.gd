@@ -746,5 +746,9 @@ func test_camera_y_leaves_origin_after_physics_step() -> void:
 	# Invoke _physics_process directly — Camera3D may not run physics frames
 	# automatically in headless mode; direct invocation is equivalent and reliable.
 	cam._physics_process(0.016)
-	assert_almost_eq(cam.global_position.y, cam.height, 0.1,
-		"Camera global_position.y must equal height after first physics step, not stay at origin")
+	var expected := GameCamera3D.compute_position(
+		cam.target.global_position, cam.distance * cam.zoom, cam.pitch_degrees, cam.yaw_degrees)
+	assert_almost_eq(cam.global_position.y, expected.y, 0.1,
+		"Camera global_position.y must reach the orbit height above the target after first physics step, not stay at origin")
+	assert_true(cam.global_position.y > cam.target.global_position.y + 1.0,
+		"Camera must sit above the target, not at origin")

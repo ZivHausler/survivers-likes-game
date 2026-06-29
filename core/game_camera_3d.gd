@@ -1,27 +1,27 @@
-## Tilted, orbitable follow camera for the 3D arena.
+## Orbitable follow camera for the 3D arena.
 class_name GameCamera3D extends Camera3D
-## Follows a target on XZ only; camera Y = `height` (constant). The view can be
-## orbited (yaw) and tilted (pitch) by dragging with the left mouse button, and
-## reset to defaults with a middle-click. Mouse wheel zooms. Supports trauma-based
-## screen shake via add_trauma().
+## The camera sits on a sphere of `distance` (radius) around `target`. Left-drag orbits
+## (yaw) and tilts (pitch) by moving the camera around that sphere; the camera always
+## look_at()s the target, so the target stays perfectly centered from any angle.
+## Middle-click resets to the default view; the mouse wheel zooms (scales the radius).
+## Supports trauma-based screen shake via add_trauma().
 ##
-## The math helpers (compute_position / compute_basis / clamp_pitch / shake_offset /
-## decay_trauma / clamp_zoom) are pure & static, so they are unit-testable without a
-## live camera. Position and orientation rotate by the SAME yaw around the target, so
-## the camera keeps aiming at the target from any angle.
+## The math helpers (compute_position / clamp_pitch / clamp_zoom / shake_offset /
+## decay_trauma) are pure & static, so they are unit-testable without a live camera.
+## Orientation is delegated to Node3D.look_at (engine primitive), which guarantees the
+## target is centered given a correct position.
 
 @export var target: Node3D
-@export var height: float = 14.0
 ## Downward tilt in degrees (negative looks down). Drag-mutable, clamped to
-## [PITCH_MIN, PITCH_MAX]. Default kept in sync with `distance`+`height` so the
-## camera aims at the target: atan(height/distance) = atan(14/6.5) ≈ 65°.
+## [PITCH_MIN, PITCH_MAX]. Determines the camera's elevation on the orbit sphere.
 @export var pitch_degrees: float = -65.0
 ## Orbit angle around the target's Y axis, in degrees. Drag-mutable, wraps freely.
 @export var yaw_degrees: float = 0.0
-## Horizontal pull-back radius from the target.
-@export var distance: float = 6.5
+## Orbit radius: straight-line distance from the target to the camera. At pitch -65°
+## this gives ≈ height 14 / pull-back 6.5 — the approved framing.
+@export var distance: float = 15.4
 @export var follow_speed: float = 10.0
-## Current zoom multiplier applied to height and distance; 1.0 = default.
+## Current zoom multiplier applied to the orbit radius; 1.0 = default.
 @export var zoom: float = 1.0
 
 ## Peak world-unit offset magnitude at trauma = 1.0.
@@ -37,7 +37,7 @@ const ZOOM_STEP: float = 0.12
 
 ## Degrees of yaw/pitch change per pixel of left-drag.
 const DRAG_SENSITIVITY: float = 0.3
-## Steepest allowed tilt (most top-down). Stops the camera flipping under the floor.
+## Steepest allowed tilt (most top-down). Stops the camera flipping over the target.
 const PITCH_MIN: float = -85.0
 ## Flattest allowed tilt (most side-on). Stops the view going fully horizontal.
 const PITCH_MAX: float = -25.0
@@ -56,16 +56,16 @@ var _snapped: bool = false
 var _dragging: bool = false
 
 func _ready() -> void:
-	basis = compute_basis(pitch_degrees, yaw_degrees)
 	if target:
-		_base_position = compute_position(target.global_position, height * zoom, distance * zoom, yaw_degrees)
+		_base_position = compute_position(target.global_position, distance * zoom, pitch_degrees, yaw_degrees)
 		global_position = _base_position
 		_snapped = true
+		look_at(target.global_position, Vector3.UP)
 
 func _physics_process(delta: float) -> void:
 	if not target:
 		return
-	var desired := compute_position(target.global_position, height * zoom, distance * zoom, yaw_degrees)
+	var desired := compute_position(target.global_position, distance * zoom, pitch_degrees, yaw_degrees)
 	# Snap on the first frame the target is valid (avoids lerping from origin when
 	# target is assigned after _ready, e.g. by GameManager3D).
 	if not _snapped:
@@ -75,8 +75,8 @@ func _physics_process(delta: float) -> void:
 	# Decay trauma and apply shake offset layered on top of the base follow position.
 	_trauma = decay_trauma(_trauma, delta)
 	global_position = _base_position + shake_offset(_trauma, Time.get_ticks_msec() * 0.001)
-	# Re-apply orientation in case something else mutated the basis (and to reflect drag).
-	basis = compute_basis(pitch_degrees, yaw_degrees)
+	# Always aim at the target so it stays centered, regardless of follow lag / orbit.
+	look_at(target.global_position, Vector3.UP)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -109,13 +109,11 @@ func add_trauma(amount: float) -> void:
 	_trauma = clampf(_trauma + amount, 0.0, 1.0)
 
 ## Pure static helper — reduce trauma toward 0 at SHAKE_DECAY rate; clamp at 0.
-## Unit-testable without a live camera.
 static func decay_trauma(trauma: float, dt: float) -> float:
 	return maxf(0.0, trauma - SHAKE_DECAY * dt)
 
-## Pure static helper — compute a world-space shake offset for a given trauma and time seed.
-## Returns Vector3.ZERO when trauma <= 0 (so trauma=0 → no movement, existing tests stay green).
-## Magnitude scales as trauma^2 * SHAKE_MAX_OFFSET; direction varies with `seed_t`.
+## Pure static helper — world-space shake offset for a given trauma and time seed.
+## Returns Vector3.ZERO when trauma <= 0 (so trauma=0 → no movement).
 static func shake_offset(trauma: float, seed_t: float) -> Vector3:
 	if trauma <= 0.0:
 		return Vector3.ZERO
@@ -124,22 +122,18 @@ static func shake_offset(trauma: float, seed_t: float) -> Vector3:
 	var angle_v: float = fmod(seed_t * 23.0 + trauma * 7.0, TAU)
 	return Vector3(cos(angle_h) * mag, sin(angle_v) * mag * 0.3, sin(angle_h) * mag * 0.5)
 
-## Return the world-space camera position for a target, orbited by `yaw_deg` around Y.
-## The horizontal offset rotates with yaw; Y is always `height`. At yaw=0 this is
-## (target.x, height, target.z + distance) — identical to the original fixed camera.
-static func compute_position(target_pos: Vector3, height: float, distance: float, yaw_deg: float = 0.0) -> Vector3:
+## Pure static helper — the camera's world position on the orbit sphere.
+## `radius` is the straight-line distance from the target; `pitch_deg` (negative = down)
+## sets the elevation; `yaw_deg` sets the azimuth. The result is always exactly `radius`
+## from `target_pos`, sitting above it, so look_at(target) keeps the target centered.
+static func compute_position(target_pos: Vector3, radius: float, pitch_deg: float, yaw_deg: float) -> Vector3:
+	var elevation := deg_to_rad(-pitch_deg)  # angle above the horizontal plane
 	var yaw := deg_to_rad(yaw_deg)
-	return Vector3(
-		target_pos.x + sin(yaw) * distance,
-		height,
-		target_pos.z + cos(yaw) * distance)
-
-## Return the camera orientation: yaw (around Y) composed with pitch (around X).
-## At yaw=0 this is a pure X-rotation by pitch. Because position rotates by the same
-## yaw, the camera's +Z axis keeps pointing back toward the camera from the target.
-static func compute_basis(pitch_deg: float, yaw_deg: float = 0.0) -> Basis:
-	return Basis.from_euler(Vector3(0.0, deg_to_rad(yaw_deg), 0.0)) \
-		* Basis.from_euler(Vector3(deg_to_rad(pitch_deg), 0.0, 0.0))
+	var horizontal := radius * cos(elevation)
+	return target_pos + Vector3(
+		horizontal * sin(yaw),
+		radius * sin(elevation),
+		horizontal * cos(yaw))
 
 ## Pure static helper — clamp a pitch value to [PITCH_MIN, PITCH_MAX].
 static func clamp_pitch(deg: float) -> float:
