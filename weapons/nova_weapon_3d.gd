@@ -18,6 +18,8 @@ var charm_duration: float = 0.0
 
 func _init() -> void:
 	base_cooldown = 2.5
+	vfx_id = &"nova_cast"
+	vfx_color = Color(0.5, 0.8, 1.0)  # cyan/pulse blue
 
 func _ready() -> void:
 	super()
@@ -33,6 +35,7 @@ func fire() -> void:
 	for enemy in targets:
 		if damage > 0.0 and enemy.has_method("take_damage"):
 			enemy.take_damage(dmg)
+			GameEvents.skill_hit.emit(vfx_id, vfx_color, (enemy as Node3D).global_position)
 		if charm_duration > 0.0 and enemy.has_method("charm"):
 			enemy.charm(charm_duration)
 

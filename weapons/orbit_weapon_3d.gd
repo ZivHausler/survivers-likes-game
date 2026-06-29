@@ -30,6 +30,8 @@ var _hit_cd: Dictionary = {}
 
 func _init() -> void:
 	base_cooldown = 2.5
+	vfx_id = &"orbit_cast"
+	vfx_color = Color(1.0, 0.8, 0.2)  # gold/orbit glow
 
 func _ready() -> void:
 	super()
@@ -62,6 +64,7 @@ func fire() -> void:
 			_hit_cd[eid] = now + HIT_CD_MS
 			if body.has_method("take_damage"):
 				body.take_damage(dmg)
+				GameEvents.skill_hit.emit(vfx_id, vfx_color, (body as Node3D).global_position)
 
 ## Level up: +1 orbiter, +4 damage, rebuild ring.
 func level_up() -> void:

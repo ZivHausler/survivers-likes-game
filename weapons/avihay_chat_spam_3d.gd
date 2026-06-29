@@ -30,6 +30,8 @@ var _homing_mode: bool = false
 
 func _ready() -> void:
 	base_cooldown = 2.0
+	vfx_id = &"avihay_chat_spam"
+	vfx_color = Color(0.3, 0.6, 1.0)  # blue/chat
 	super()
 	_bubble_scene = load("res://weapons/bubble_3d.tscn")
 

@@ -14,16 +14,27 @@ subclasses are scaled from the original 2D pixel values using **1 world unit ≈
 
 ## Lifecycle
 
-1. `_ready()` — creates `Timer`, connects `timeout → fire()`.  Does **not**
-   call `_refresh_cooldown()` because `stats` is null at that point.
+1. `_ready()` — creates `Timer`, connects `timeout → _fire_internal()`.  Does
+   **not** call `_refresh_cooldown()` because `stats` is null at that point.
 2. `setup(player, stats)` — stores `stats`, calls `_refresh_cooldown()`, starts
    the timer.
-3. `fire()` — no-op in base; subclasses override.
-4. `level_up()` — increments `level`, calls `_refresh_cooldown()`.
-5. `evolve()` — sets `evolved = true`; subclasses call `super()` then add
+3. `_fire_internal()` — timer wrapper; emits `GameEvents.skill_cast` then calls `fire()`.
+4. `fire()` — no-op in base; subclasses override.  Calling it directly (e.g. in tests) skips the cast signal.
+5. `level_up()` — increments `level`, calls `_refresh_cooldown()`.
+6. `evolve()` — sets `evolved = true`; subclasses call `super()` then add
    behavior.
-6. `refresh_cooldown()` — public wrapper, delegates to `_refresh_cooldown()`.
-7. `apply_passive(value)` — virtual no-op; subclasses override.
+7. `refresh_cooldown()` — public wrapper, delegates to `_refresh_cooldown()`.
+8. `apply_passive(value)` — virtual no-op; subclasses override.
+
+## VFX fields (Task 4.5)
+
+```gdscript
+var vfx_id: StringName = &""       # label for effect routing; archetypes set defaults
+var vfx_color: Color = Color(1,1,1) # tint applied to cast/hit particles
+```
+
+The timer → `_fire_internal()` → `skill_cast` → `fire()` chain gives every
+subclass cast VFX for free.  See [[skill-vfx]] for full details.
 
 ## Cooldown formula
 

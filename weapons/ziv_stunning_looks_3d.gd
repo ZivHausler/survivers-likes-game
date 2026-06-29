@@ -31,6 +31,8 @@ const _BEAM_ROTATION_SPEED: float = TAU / 3.0
 
 func _ready() -> void:
 	base_cooldown = 3.0
+	vfx_id = &"ziv_stunning_looks"
+	vfx_color = Color(1.0, 0.4, 0.8)  # pink/charm
 	super()
 	# Keep Beam monitoring always on so get_overlapping_bodies() is populated
 	# by the physics server before fire() is called.
@@ -56,6 +58,7 @@ func _deal_beam_damage() -> void:
 	for body in _beam.get_overlapping_bodies():
 		if body.is_in_group("enemies"):
 			body.take_damage(damage)
+			GameEvents.skill_hit.emit(vfx_id, vfx_color, body.global_position)
 
 func _charm_nearby_enemies() -> void:
 	if evolved:

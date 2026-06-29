@@ -16,6 +16,7 @@ GameEvents="*res://autoload/game_events.gd"
 RunState="*res://autoload/run_state.gd"
 Juice="*res://autoload/juice.gd"
 Juice3D="*res://autoload/juice_3d.gd"
+SkillVFX="*res://autoload/skill_vfx.gd"
 
 [input]
 

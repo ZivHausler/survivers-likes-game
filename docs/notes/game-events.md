@@ -24,6 +24,8 @@ See [[adr-godot]] for why the Godot node/signal model was chosen.
 | `player_hp_changed` | `current: float, max_hp: float` | Player HP component | HP bar HUD |
 | `player_died` | _(none)_ | Player HP component | Game over screen |
 | `evolution_unlocked` | `weapon_id: StringName` | Evolution checker | Weapon manager |
+| `skill_cast` | `vfx_id: StringName, color: Color, position: Vector3` | `Weapon3D._fire_internal()` | `SkillVFX` (Task 4.5) |
+| `skill_hit` | `vfx_id: StringName, color: Color, position: Vector3` | Orbit/Nova `fire()`, Ziv beam, Bubble3D `_on_hit()` | `SkillVFX` (Task 4.5) |
 
 ## Usage pattern
 

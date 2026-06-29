@@ -22,6 +22,9 @@ var _homing: bool = false
 var _lifetime: float = 0.0
 ## Enemies already hit by this bubble instance — no re-hit allowed.
 var _hit_enemies: Array[Node] = []
+## VFX identifiers for skill_hit signal. Defaults match Avihay's color scheme.
+var vfx_id: StringName = &"avihay_chat_spam"
+var vfx_color: Color = Color(0.3, 0.6, 1.0)  # blue/chat
 
 ## Initialise the bubble after adding to scene tree.
 ## Call this immediately after add_child(bubble).
@@ -67,6 +70,7 @@ func _on_hit(enemy: Node) -> void:
 	_hit_enemies.append(enemy)
 	if enemy.has_method("take_damage"):
 		enemy.take_damage(_damage)
+		GameEvents.skill_hit.emit(vfx_id, vfx_color, (enemy as Node3D).global_position)
 	_pierce -= 1
 	if _pierce <= 0:
 		queue_free()
