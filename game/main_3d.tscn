@@ -21,8 +21,8 @@ script = ExtResource("2_main_script")
 script = ExtResource("3_cam_script")
 target = NodePath("../Player")
 height = 14.0
-pitch_degrees = -55.0
-distance = 10.0
+pitch_degrees = -65.0
+distance = 6.5
 follow_speed = 10.0
 
 [node name="GameManager3D" type="Node" parent="."]

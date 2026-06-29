@@ -7,9 +7,11 @@ class_name GameCamera3D extends Camera3D
 
 @export var target: Node3D
 @export var height: float = 14.0
-@export var pitch_degrees: float = -55.0
+@export var pitch_degrees: float = -65.0
 ## Distance pulled back along +Z from the target (so the tilt reads correctly).
-@export var distance: float = 10.0
+## Kept in sync with the pitch+height so the camera aims at the target:
+## atan(height/distance) = atan(14/6.5) ≈ 65°.
+@export var distance: float = 6.5
 @export var follow_speed: float = 10.0
 ## Current zoom multiplier applied to height and distance; 1.0 = default.
 @export var zoom: float = 1.0
