@@ -8,6 +8,8 @@
 | `addons/godot_vfx/` | https://github.com/haowg/GODOT-VFX-LIBRARY | MIT | Yes |
 | `art/characters_3d/kenney_blocky_characters/` | https://kenney.nl/assets/blocky-characters | CC0 1.0 Universal | No |
 | `art/enemies_3d/` | MDA Hatchery CP1 (user's Downloads) | ⚠️ Commercial — prototype only | N/A |
+| `art/textures/grass_*` | https://polyhaven.com/a/aerial_grass_rock (Poly Haven "aerial_grass_rock") | CC0 1.0 Universal | No |
+| `art/hdri/sky_2k.hdr` | https://polyhaven.com/a/kloofendal_43d_clear_puresky (Poly Haven "kloofendal_43d_clear_puresky") | CC0 1.0 Universal | No |
 
 ## Character tile choices (Task B1)
 
