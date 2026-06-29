@@ -7,7 +7,7 @@ A **Godot 4.7 (GDScript) 3D horde-survivor** ("Vampire Survivors"–style) with 
 
 - **Repo:** `~/friends-swarm` — branch **`feature/v1-vertical-slice`**.
 - **Run it:** `godot --path ~/friends-swarm` → boots to **character select (3D)** → pick 1 of 10 friends → 3D run. Headless boot: `godot --headless --quit`.
-- **Tests:** `godot --headless --import && godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://test -gexit` → **916/916 green**. (⚠️ GUT 9.7.0 **silently skips** any test file using `assert_le`/`assert_ge` — always use `assert_true(x <= y)`; watch that the test count rises as expected.)
+- **Tests:** `godot --headless --import && godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://test -gexit` → **1047/1047 green**. (⚠️ GUT 9.7.0 **silently skips** any test file using `assert_le`/`assert_ge` — always use `assert_true(x <= y)`; watch that the test count rises as expected.)
 
 ## Playtest round 1 — fixes applied (after first user run)
 - **Camera was invisible (CRITICAL):** `GameCamera3D.target` never resolved from the `.tscn` `NodePath` → camera stuck at origin. Now set in code (`GameManager3D.start()` assigns `cam.target = player`); regression-tested.
@@ -48,6 +48,38 @@ A **Godot 4.7 (GDScript) 3D horde-survivor** ("Vampire Survivors"–style) with 
 
 ## How work was run (process)
 Subagent-driven, review-gated: each task = implementer subagent → reviewer subagent (spec + quality) → fix loop, suite kept green, atomic commits. Phase 5 (8 characters) + several features fanned out across parallel git-worktree agents, merged sequentially. **The user runs the actual game for visual/feel verification** (headless can't see pixels).
+
+## Ranged & Dasher enemy archetypes (feature: ranged-and-dasher-enemies)
+
+Three new enemy variants are now registered in the spawner and gated by difficulty time:
+
+### New variants
+| Variant   | Attack kind | `.tres`                  | Unlocks at |
+|-----------|-------------|--------------------------|------------|
+| `archer`  | RANGED      | `enemies/archer.tres`    | t ≥ 150 s  |
+| `dasher`  | DASHER      | `enemies/dasher.tres`    | t ≥ 180 s  |
+| `magician`| RANGED      | `enemies/magician.tres`  | t ≥ 240 s  |
+
+### Attack-strategy system
+`Enemy3D` now delegates movement and attacks to an `EnemyAttack` strategy object (created from `EnemyData.attack_kind` via `_make_attack()`):
+- **MELEE** — `MeleeAttack`: charge at target, deal damage on contact (unchanged swarmer/tank behaviour).
+- **RANGED** — `RangedAttack`: kite at standoff distance (`RANGED_STANDOFF = 6.0`), advance while outside LOS or out of range, telegraph and fire an `EnemyProjectile3D` (terrain-blocked, ignores enemies; collision mask 18 = layers 2 + 16).
+- **DASHER** — `DashAttack`: approach target, windup telegraph, dash lunge, cooldown; telegraphs before any damage for fairness.
+
+### Difficulty thresholds (full table)
+| t (s) | Variants in pool                                     |
+|-------|------------------------------------------------------|
+| 0–59  | swarmer                                              |
+| 60–119| swarmer, tank                                        |
+| 120–149| swarmer, tank, spitter                              |
+| 150–179| swarmer, tank, spitter, **archer**                 |
+| 180–239| swarmer, tank, spitter, archer, **dasher**         |
+| 240+  | swarmer, tank, spitter, archer, dasher, **magician**|
+
+### Files changed
+- `spawning/spawner_3d.gd` — `ARCHER_PATH`/`MAGICIAN_PATH`/`DASHER_PATH` consts + three `_variants` entries in `setup()`.
+- `spawning/difficulty_timeline.gd` — `ARCHER_THRESHOLD`/`DASHER_THRESHOLD`/`MAGICIAN_THRESHOLD` consts + three `variants.append` calls in `state_at()`.
+- `test/test_enemy_variant_gating.gd` — 4 gating tests covering all three thresholds + early-game invariant.
 
 ## ⚠️ Open / deferred (next session)
 1. **2D code still present** — the old 2D scenes/scripts/tests were kept intact as a fallback during the pivot (Option B). A **cleanup task to delete 2D** (`game/main.tscn`, 2D player/enemy/weapons/spawner/gem, `game/game_manager.gd`, `ui/character_select.tscn`, 2D-only tests, `autoload/Juice` 2D) is **deferred until the user confirms the 3D build in a playtest**. `project.godot` main scene is already `character_select_3d`.

@@ -14,6 +14,9 @@ const ENEMY_SCENE_PATH := "res://enemies/enemy_3d.tscn"
 const SWARMER_PATH     := "res://enemies/swarmer.tres"
 const TANK_PATH        := "res://enemies/tank.tres"
 const SPITTER_PATH     := "res://enemies/spitter.tres"
+const ARCHER_PATH      := "res://enemies/archer.tres"
+const MAGICIAN_PATH    := "res://enemies/magician.tres"
+const DASHER_PATH      := "res://enemies/dasher.tres"
 
 ## Distinct imposing serpent model used by both mini-boss and big-boss.
 const SERPENT_SCENE_PATH := "res://art/enemies_3d/undead_serpent/serpent_mesh.glb"
@@ -126,9 +129,12 @@ func setup(target: Node3D) -> void:
 	_enemy_scene = load(ENEMY_SCENE_PATH) as PackedScene
 
 	_variants = {
-		&"swarmer": load(SWARMER_PATH) as EnemyData,
-		&"tank":    load(TANK_PATH)    as EnemyData,
-		&"spitter": load(SPITTER_PATH) as EnemyData,
+		&"swarmer":  load(SWARMER_PATH)   as EnemyData,
+		&"tank":     load(TANK_PATH)      as EnemyData,
+		&"spitter":  load(SPITTER_PATH)   as EnemyData,
+		&"archer":   load(ARCHER_PATH)    as EnemyData,
+		&"magician": load(MAGICIAN_PATH)  as EnemyData,
+		&"dasher":   load(DASHER_PATH)    as EnemyData,
 	}
 
 	_active = true

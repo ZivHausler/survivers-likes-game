@@ -43,6 +43,9 @@ const INTERVAL_SLOPE: float = 0.01146
 
 const TANK_THRESHOLD:    float = 60.0
 const SPITTER_THRESHOLD: float = 120.0
+const ARCHER_THRESHOLD:  float = 150.0
+const DASHER_THRESHOLD:  float = 180.0
+const MAGICIAN_THRESHOLD: float = 240.0
 const BOSS_PERIOD:       float = 180.0  ## mini-boss every 3 minutes
 const BIG_BOSS_THRESHOLD: float = 600.0 ## 10-minute big boss
 
@@ -75,6 +78,12 @@ func state_at(t: float) -> Dictionary:
 		variants.append(&"tank")
 	if t >= SPITTER_THRESHOLD:
 		variants.append(&"spitter")
+	if t >= ARCHER_THRESHOLD:
+		variants.append(&"archer")
+	if t >= DASHER_THRESHOLD:
+		variants.append(&"dasher")
+	if t >= MAGICIAN_THRESHOLD:
+		variants.append(&"magician")
 
 	# ── mini-boss due? ────────────────────────────────────────────────────────
 	var current_window: int = int(t / BOSS_PERIOD)
