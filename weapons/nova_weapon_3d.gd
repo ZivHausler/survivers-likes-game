@@ -71,8 +71,8 @@ func _spawn_telegraph() -> Node3D:
 	var parent: Node = tree.current_scene if tree.current_scene != null else tree.root
 	# Container node positioned at weapon origin.
 	var holder := Node3D.new()
-	holder.global_position = global_position
 	parent.add_child(holder)
+	holder.global_position = global_position
 	# Sphere mesh visual.
 	var mi := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
@@ -90,7 +90,7 @@ func _spawn_telegraph() -> Node3D:
 	holder.add_child(mi)
 	# Animate: scale from near-zero to the AoE radius over 0.25 s, then free.
 	holder.scale = Vector3(0.05, 0.05, 0.05)
-	var target_scale := Vector3.ONE * max(radius, 0.1) * 2.0
+	var target_scale := Vector3.ONE * (maxf(radius, 0.1) * 2.0)
 	var tween := holder.create_tween()
 	tween.tween_property(holder, "scale", target_scale, 0.25)
 	tween.tween_callback(holder.queue_free)
