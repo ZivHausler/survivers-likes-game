@@ -26,6 +26,7 @@ Add new notes here as they are created; link by `[[id]]`.
 ## Task 2 — Ranged & Dasher Enemies
 
 - [[enemy-projectile-3d]] — `EnemyProjectile3D` (`Area3D`): traveling enemy attack fired by ranged enemies; moves along XZ direction, damages player hurtbox on contact, despawns on terrain (layer 16) for cover mechanic; lifetime cap = 6s
+- [[enemy-attacks]] — `EnemyAttack` (`RefCounted`) strategy base: `desired_velocity()` + `attack_tick()` (no-ops in base); `Enemy3D._attack` is null for MELEE (inline default path) and set via `_make_attack()` for RANGED/DASHER; melee chase + CONTACT_RANGE contact-damage stays byte-identical in the `else` branch
 
 ## 3D Characters (Phase 5 — all 10 friends)
 

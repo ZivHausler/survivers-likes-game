@@ -31,6 +31,8 @@ const LEAN_MAX_RAD := 0.07
 var data: EnemyData
 var target: Node3D
 var hp: float = 0.0
+## Non-melee attack strategy (RangedAttack / DashAttack); null for MELEE (inline default).
+var _attack: EnemyAttack = null
 var _contact_cd: float = 0.0
 ## Remaining charm time in seconds. While > 0, movement is suppressed.
 var _charm_timer: float = 0.0
@@ -75,6 +77,7 @@ func setup(p_data: EnemyData, p_target: Node3D) -> void:
 	# so fast enemies (move_speed > tscn default 12.0) are not RVO-clamped.
 	if _agent and data:
 		_agent.max_speed = max(_agent.max_speed, data.move_speed)
+	_attack = _make_attack(data)
 
 	if data.model_scene:
 		# Hide the sphere placeholder — real monster model takes over.
@@ -107,6 +110,20 @@ func setup(p_data: EnemyData, p_target: Node3D) -> void:
 			var mat := StandardMaterial3D.new()
 			mat.albedo_color = data.color
 			mesh_inst.material_override = mat
+
+## Pick the attack strategy for this enemy's data. MELEE → null (inline default).
+## Legacy is_ranged=true is treated as RANGED for back-compat.
+func _make_attack(d: EnemyData) -> EnemyAttack:
+	var kind: int = d.attack_kind
+	if kind == EnemyData.AttackKind.MELEE and d.is_ranged:
+		kind = EnemyData.AttackKind.RANGED
+	match kind:
+		EnemyData.AttackKind.RANGED:
+			return RangedAttack.new()
+		EnemyData.AttackKind.DASHER:
+			return DashAttack.new()
+		_:
+			return null
 
 ## Tag this enemy as a boss. Called by Spawner3D AFTER setup() (so `data` is set).
 ## BIG  → announce to the HUD via GameEvents.boss_spawned (no head bar).
@@ -178,8 +195,11 @@ func _physics_process(dt: float) -> void:
 	var to_target := target.global_position - global_position
 	to_target.y = 0.0  # Move only on XZ plane.
 	var dist := to_target.length()
-	var desired := 0.0 if (data.is_ranged and dist < RANGED_STANDOFF) else data.move_speed
-	velocity = steer_velocity(global_position, target.global_position, desired)
+	if _attack:
+		velocity = _attack.desired_velocity(self, target, dt)
+	else:
+		var desired := 0.0 if (data.is_ranged and dist < RANGED_STANDOFF) else data.move_speed
+		velocity = steer_velocity(global_position, target.global_position, desired)
 	_apply_movement(dt)
 	var moving: bool = velocity.length_squared() > MOVE_THRESHOLD * MOVE_THRESHOLD
 	# Rotate Model toward movement direction (visual only — collision body stays upright).
@@ -192,11 +212,14 @@ func _physics_process(dt: float) -> void:
 	# Gives a vertical bob + forward lean while moving so enemies never look frozen-sliding
 	# even if skeletal retargeting failed. Visual only; never affects steering or contact.
 	_apply_bob(dt, velocity)
-	# Contact damage with 0.5 s cooldown.
-	_contact_cd = max(0.0, _contact_cd - dt)
-	if dist < CONTACT_RANGE and _contact_cd == 0.0 and is_instance_valid(target) and target.has_method("take_damage"):
-		target.take_damage(data.contact_damage)
-		_contact_cd = 0.5
+	if _attack:
+		_attack.attack_tick(self, target, dt)
+	else:
+		# Melee contact damage with 0.5 s cooldown (unchanged).
+		_contact_cd = max(0.0, _contact_cd - dt)
+		if dist < CONTACT_RANGE and _contact_cd == 0.0 and is_instance_valid(target) and target.has_method("take_damage"):
+			target.take_damage(data.contact_damage)
+			_contact_cd = 0.5
 
 func take_damage(amount: float) -> void:
 	if data == null:

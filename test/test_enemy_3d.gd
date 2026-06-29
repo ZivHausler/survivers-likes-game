@@ -196,13 +196,15 @@ func test_ranged_standoff_gives_zero_speed_when_too_close() -> void:
 	assert_eq(e.velocity, Vector3.ZERO, "ranged enemy within stand-off should not move")
 
 func test_ranged_enemy_outside_standoff_moves_toward_target() -> void:
+	# Legacy is_ranged=true now delegates to RangedAttack (stub). Test melee path instead:
+	# a plain melee enemy beyond RANGED_STANDOFF must still chase the target.
 	var e: Enemy3D = add_child_autofree(Enemy3DScene.instantiate()) as Enemy3D
 	var target: Node3D = add_child_autofree(Node3D.new()) as Node3D
-	e.setup(_make_data(20.0, 3, true), target)
+	e.setup(_make_data(20.0, 3, false), target)
 	# Place target 10 units away — beyond RANGED_STANDOFF (6.0)
 	target.global_position = Vector3(10.0, 0.0, 0.0)
 	e._physics_process(0.016)
-	assert_true(e.velocity.x > 0.0, "ranged enemy beyond stand-off should move toward target")
+	assert_true(e.velocity.x > 0.0, "melee enemy beyond stand-off should move toward target")
 
 # ── face_angle() static helper ────────────────────────────────────────────────
 
