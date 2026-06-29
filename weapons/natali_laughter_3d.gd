@@ -28,13 +28,15 @@ func fire() -> void:
 		return
 	# ── Heal the player ──────────────────────────────────────────────────────
 	if is_instance_valid(_player_ref) and "hp" in _player_ref:
-		var max_hp: float = 100.0
-		if "stats" in _player_ref and _player_ref.stats != null:
-			max_hp = _player_ref.stats.max_hp
-		_player_ref.hp = minf(_player_ref.hp + HEAL_AMOUNT, max_hp)
-		# Notify HUD if the player exposes the GameEvents signal path.
-		if _player_ref.has_method("_on_hp_changed"):
-			_player_ref._on_hp_changed()
+		if _player_ref.has_method("heal"):
+			# Preferred path: delegates hp update + HUD notification to Player3D.heal().
+			_player_ref.heal(HEAL_AMOUNT)
+		else:
+			# Fallback for stub players or tests that don't implement heal().
+			var max_hp: float = 100.0
+			if "stats" in _player_ref and _player_ref.stats != null:
+				max_hp = _player_ref.stats.max_hp
+			_player_ref.hp = minf(_player_ref.hp + HEAL_AMOUNT, max_hp)
 	# ── Light AoE damage to nearby enemies ───────────────────────────────────
 	var all_enemies: Array = get_tree().get_nodes_in_group("enemies")
 	var targets: Array = affected_enemies(all_enemies, global_position)

@@ -203,6 +203,14 @@ func take_damage(amount: float) -> void:
 	if hp <= 0.0:
 		GameEvents.player_died.emit()
 
+## Restore HP by amount, clamped to max_hp, and notify the HUD via GameEvents.
+## Guard against null stats so tests with partially-set-up players stay safe.
+func heal(amount: float) -> void:
+	if not stats:
+		return
+	hp = minf(hp + amount, stats.max_hp)
+	GameEvents.player_hp_changed.emit(hp, stats.max_hp)
+
 func get_pickup_range() -> float:
 	return stats.pickup_range
 

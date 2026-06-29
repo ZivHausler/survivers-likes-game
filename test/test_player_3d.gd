@@ -439,6 +439,42 @@ func test_model_visible_restored_when_invuln_ends() -> void:
 	assert_true(model.visible,
 		"Model must be visible again after invulnerability ends")
 
+# ── heal() ───────────────────────────────────────────────────────────────────
+
+func test_heal_increases_hp() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.take_damage(40.0)  # hp → 60
+	var before := p.hp
+	p.heal(10.0)
+	assert_almost_eq(p.hp, before + 10.0, 0.001, "heal() must increase hp by the given amount")
+
+func test_heal_clamped_to_max_hp() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.take_damage(5.0)  # hp → 95
+	p.heal(20.0)        # would be 115 without clamp
+	assert_almost_eq(p.hp, 100.0, 0.001, "heal() must not push hp above max_hp")
+
+func test_heal_at_max_hp_stays_at_max() -> void:
+	var p := _make_player(100.0, 0.0)
+	# hp already at max — heal should keep it there
+	p.heal(10.0)
+	assert_almost_eq(p.hp, 100.0, 0.001, "heal() must not overheal beyond max_hp")
+
+func test_heal_emits_player_hp_changed() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.take_damage(30.0)  # hp → 70
+	watch_signals(GameEvents)
+	p.heal(5.0)
+	assert_signal_emitted(GameEvents, "player_hp_changed",
+		"heal() must emit player_hp_changed so the HUD updates")
+
+func test_heal_emits_correct_values() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.take_damage(30.0)  # hp → 70
+	watch_signals(GameEvents)
+	p.heal(10.0)         # hp → 80
+	assert_signal_emitted_with_parameters(GameEvents, "player_hp_changed", [80.0, 100.0])
+
 # ── backward_single_weapon_fallback ─────────────────────────────────────────
 
 func test_backward_single_weapon_fallback_when_skills_empty() -> void:

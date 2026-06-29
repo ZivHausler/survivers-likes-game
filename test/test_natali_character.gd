@@ -15,6 +15,12 @@ class StubPlayer extends Node3D:
 		stats = StatBlock.new()
 		stats.max_hp = 100.0
 
+	## Mirrors Player3D.heal() so the preferred code path is exercised in tests.
+	func heal(amount: float) -> void:
+		if not stats:
+			return
+		hp = minf(hp + amount, stats.max_hp)
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
