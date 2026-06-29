@@ -84,7 +84,7 @@ func test_bubble_advance_distance_matches_speed_times_dt() -> void:
 	var b := _make_bubble(Vector3(1.0, 0.0, 0.0))
 	b._advance(0.5)
 	var expected := Bubble3D.SPEED * 0.5
-	assert_almost_eq(b.global_position.x, expected, 0.5,
+	assert_almost_eq(b.global_position.x, expected, 0.01,
 		"bubble x should be ~SPEED*dt after advance")
 
 func test_bubble_y_stays_zero_after_advance() -> void:
@@ -202,6 +202,18 @@ func test_homing_bubble_direction_stays_unit_length() -> void:
 	b._advance(0.1)
 	assert_almost_eq(b._direction.length(), 1.0, 0.001,
 		"homing direction must remain a unit vector after steering")
+
+func test_homing_bubble_direction_y_stays_zero_when_enemy_at_different_y() -> void:
+	# Guard for fix #1: enemy has a non-zero Y position.
+	# After a homing _advance step the bubble's _direction.y must stay ≈ 0
+	# because homing projects onto the XZ plane before normalising.
+	var b := _make_bubble(Vector3(1.0, 0.0, 0.0), 10.0, 1, true)
+	b.global_position = Vector3(0.0, 0.0, 0.0)
+	var e := _make_enemy(0.0, 5.0)
+	e.global_position = Vector3(0.0, 10.0, 5.0)  # Y differs from bubble's Y=0
+	b._advance(0.1)
+	assert_lt(abs(b._direction.y), 1e-5,
+		"homing must not introduce Y drift when enemy is at a different Y")
 
 # ═════════════════════════════════════════════════════════════════════════════
 # AvihayChatSpam3D — level_up() scaling
@@ -347,8 +359,8 @@ func test_fire_directions_span_spread_cone() -> void:
 	# All directions should be within the spread cone:
 	# angle from +X in XZ plane should be within ±SPREAD_HALF_ANGLE + small epsilon
 	for dir in dirs:
-		var angle_from_x := abs(atan2(dir.z, dir.x))
-		assert_le(angle_from_x, AvihayChatSpam3D.SPREAD_HALF_ANGLE + 0.01,
+		var angle_from_x: float = abs(atan2(dir.z, dir.x))
+		assert_true(angle_from_x <= AvihayChatSpam3D.SPREAD_HALF_ANGLE + 0.01,
 			"all non-evolved directions must be within ±SPREAD_HALF_ANGLE of target")
 
 func test_nearest_enemy_direction_returns_xz_unit_vector() -> void:

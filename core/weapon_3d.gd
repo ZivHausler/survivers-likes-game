@@ -52,4 +52,6 @@ func apply_passive(_value: float) -> void:
 func _refresh_cooldown() -> void:
 	if not _timer:
 		return
+	if not stats:
+		return
 	_timer.wait_time = max(0.05, base_cooldown / stats.fire_rate_mult)

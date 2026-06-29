@@ -47,7 +47,9 @@ func _advance(dt: float) -> void:
 	if _homing and is_inside_tree():
 		var nearest := _nearest_enemy()
 		if nearest and is_instance_valid(nearest):
-			var to_enemy := (nearest.global_position - global_position).normalized()
+			var diff := nearest.global_position - global_position
+			diff.y = 0.0
+			var to_enemy := diff.normalized()
 			_direction = _direction.lerp(to_enemy, 5.0 * dt).normalized()
 	global_position += _direction * SPEED * dt
 
