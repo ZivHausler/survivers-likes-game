@@ -9,9 +9,16 @@ A CanvasLayer overlay shown when Escape is pressed during a 3D run.
   - **Panel** (Panel, centered)
     - **VBox** (VBoxContainer)
       - **PausedLabel** (Label, "PAUSED")
-      - **ContinueButton** (Button)
-      - **RetryButton** (Button)
-      - **QuitButton** (Button)
+      - **ContinueButton** (Button) — resume the run.
+      - **RetryButton** (Button) — restart the run with the same character.
+      - **MainMenuButton** (Button) — return to the main menu (character-select).
+
+## Buttons
+- **Continue** → `close()` (unpause + hide).
+- **Retry** → unpause + `change_scene_to_file(ARENA_SCENE)` (RunState.selected_character persists).
+- **Main Menu** → unpause + `change_scene_to_file(MAIN_MENU_SCENE)`.
+  This does NOT close the application. The actual "Quit Game" button lives on the
+  main menu (`ui/character_select_3d.tscn`), which calls `get_tree().quit()`.
 
 ## API
 - `open()` — shows the overlay and pauses the scene tree.

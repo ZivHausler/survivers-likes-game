@@ -5,11 +5,15 @@ class_name PauseMenu extends CanvasLayer
 ## the scene tree is paused. Hidden by default; open()/close() toggle visibility
 ## and the tree's paused flag together so the two never drift apart.
 
-const ARENA_SCENE  := "res://game/main_3d.tscn"
+const ARENA_SCENE     := "res://game/main_3d.tscn"
+## Main menu = the character-select screen (the game's entry scene). Returning
+## here exits the run without closing the application; the actual "Quit Game"
+## button lives on the main menu.
+const MAIN_MENU_SCENE := "res://ui/character_select_3d.tscn"
 
-@onready var _continue_btn: Button = $Panel/VBox/ContinueButton
-@onready var _retry_btn:    Button = $Panel/VBox/RetryButton
-@onready var _quit_btn:     Button = $Panel/VBox/QuitButton
+@onready var _continue_btn:  Button = $Panel/VBox/ContinueButton
+@onready var _retry_btn:     Button = $Panel/VBox/RetryButton
+@onready var _main_menu_btn: Button = $Panel/VBox/MainMenuButton
 
 
 func _ready() -> void:
@@ -18,8 +22,8 @@ func _ready() -> void:
 		_continue_btn.pressed.connect(_on_continue)
 	if _retry_btn:
 		_retry_btn.pressed.connect(_on_retry)
-	if _quit_btn:
-		_quit_btn.pressed.connect(_on_quit)
+	if _main_menu_btn:
+		_main_menu_btn.pressed.connect(_on_main_menu)
 
 
 ## Show the overlay and pause the scene tree.
@@ -51,5 +55,8 @@ func _on_retry() -> void:
 	get_tree().change_scene_to_file(ARENA_SCENE)
 
 
-func _on_quit() -> void:
-	get_tree().quit()
+## Returns to the main menu (character-select). Does NOT close the application —
+## quitting the whole game is handled by the Quit Game button on the main menu.
+func _on_main_menu() -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file(MAIN_MENU_SCENE)

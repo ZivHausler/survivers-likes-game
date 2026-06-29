@@ -137,12 +137,35 @@ func test_pause_menu_is_open_false_after_close() -> void:
 
 
 # ---------------------------------------------------------------------------
-# PauseMenu scene path constant (Retry)
+# PauseMenu scene path constants (Retry → arena, Main Menu → character select)
 # ---------------------------------------------------------------------------
 
 func test_pause_menu_arena_scene_path() -> void:
 	assert_eq(PauseMenu.ARENA_SCENE, "res://game/main_3d.tscn",
 		"ARENA_SCENE must point to main_3d.tscn")
+
+
+func test_pause_menu_main_menu_scene_path() -> void:
+	assert_eq(PauseMenu.MAIN_MENU_SCENE, "res://ui/character_select_3d.tscn",
+		"MAIN_MENU_SCENE must point to the character-select (main menu) scene")
+
+
+# ---------------------------------------------------------------------------
+# Main menu (character select) owns the actual Quit Game button
+# ---------------------------------------------------------------------------
+
+func test_character_select_has_quit_button() -> void:
+	var packed := load("res://ui/character_select_3d.tscn") as PackedScene
+	assert_not_null(packed, "character_select_3d.tscn must load")
+	if packed == null: return
+	var cs := packed.instantiate()
+	add_child_autofree(cs)
+	var quit_btn := cs.get_node_or_null("VBox/QuitButton") as Button
+	assert_not_null(quit_btn,
+		"main menu (character select) must have a QuitButton")
+	if quit_btn != null:
+		assert_eq(quit_btn.text, "Quit Game",
+			"main menu QuitButton must be labelled 'Quit Game'")
 
 
 # ---------------------------------------------------------------------------

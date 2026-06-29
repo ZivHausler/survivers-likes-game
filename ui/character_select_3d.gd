@@ -21,6 +21,7 @@ const CHARACTER_PATHS: Array[String] = [
 ]
 
 @onready var _grid: GridContainer = $VBox/Scroll/Grid
+@onready var _quit_btn: Button = $VBox/QuitButton
 
 func _ready() -> void:
 	for path in CHARACTER_PATHS:
@@ -36,6 +37,13 @@ func _ready() -> void:
 		btn.pressed.connect(_pick.bind(path))
 		_grid.add_child(btn)
 
+	# This screen is the game's main menu, so it owns the actual application quit.
+	if _quit_btn:
+		_quit_btn.pressed.connect(_on_quit)
+
 func _pick(path: String) -> void:
 	RunState.selected_character = load(path) as CharacterData
 	get_tree().change_scene_to_file(MAIN_3D_SCENE)
+
+func _on_quit() -> void:
+	get_tree().quit()
