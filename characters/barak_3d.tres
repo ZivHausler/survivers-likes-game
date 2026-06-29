@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=13 format=3]
+
+[ext_resource type="Script" uid="uid://oeuj1jqprh5d" path="res://core/character_data.gd" id="1_char_data"]
+[ext_resource type="Script" uid="uid://0rwxad1au28r" path="res://core/stat_block.gd" id="2_stat_block"]
+[ext_resource type="PackedScene" path="res://weapons/barak_loyal_hounds_3d.tscn" id="3_weapon"]
+[ext_resource type="Resource" path="res://upgrades/barak/signature.tres" id="4_sig"]
+[ext_resource type="Resource" path="res://upgrades/barak/passive.tres" id="5_pas"]
+[ext_resource type="Resource" path="res://upgrades/barak/evolution.tres" id="6_evo"]
+[ext_resource type="PackedScene" uid="uid://dyhmrxu8eu1vp" path="res://art/characters_3d/kenney_blocky_characters/models/character-h.glb" id="7_model"]
+[ext_resource type="Resource" path="res://characters/skills/barak_loyal_hounds.tres" id="8_barak_loyal_hounds"]
+[ext_resource type="Resource" path="res://characters/skills/barak_pack_tactics.tres" id="9_pack_tactics"]
+[ext_resource type="Resource" path="res://characters/skills/barak_howl.tres" id="10_howl"]
+[ext_resource type="Resource" path="res://characters/skills/barak_fetch.tres" id="11_fetch"]
+
+[sub_resource type="Resource" id="Resource_stats"]
+script = ExtResource("2_stat_block")
+max_hp = 105.0
+move_speed = 8.0
+pickup_range = 3.5
+damage_mult = 1.0
+fire_rate_mult = 1.0
+armor = 0.0
+
+[resource]
+script = ExtResource("1_char_data")
+id = &"barak"
+display_name = "Barak"
+color = Color(0.6, 0.35, 0.1, 1.0)
+base_stats = SubResource("Resource_stats")
+weapon_scene = ExtResource("3_weapon")
+passive_id = &"barak_passive"
+evolution_id = &"barak_evolution"
+max_signature_level = 5
+signature_upgrade = ExtResource("4_sig")
+passive_upgrade = ExtResource("5_pas")
+evolution_upgrade = ExtResource("6_evo")
+model_scene = ExtResource("7_model")
+model_scale = 1.0
+model_tint = Color(1, 1, 1, 1)
+skills = Array[Resource]([ExtResource("8_barak_loyal_hounds"), ExtResource("9_pack_tactics"), ExtResource("10_howl"), ExtResource("11_fetch")])

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"barak_loyal_hounds_synergy"
+display_name = "SYNERGY: Wolf Pack"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "Three hounds become a pack. Orbit count doubles and speed surges."
+stat_text = "Unlocks Wolf Pack"
+skill_id = &"barak_loyal_hounds"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"barak_pack_tactics_synergy"
+display_name = "SYNERGY: Feeding Frenzy"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "The pack enters a frenzy. Orbit doubles and attack speed surges."
+stat_text = "Unlocks Feeding Frenzy"
+skill_id = &"barak_pack_tactics"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"natali_giggle_burst_passive"
+display_name = "Belly Laugh"
+kind = 1
+max_level = 5
+effect_kind = &""
+effect_value = 2.0
+description = "Deeper laughs carry more punch."
+stat_text = "+2 Damage per level"
+skill_id = &"natali_giggle_burst"

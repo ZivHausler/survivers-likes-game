@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"natali_giggle_burst_synergy"
+display_name = "SYNERGY: Riot of Laughter"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "Even the enemies can't help laughing. The burst radius nearly triples."
+stat_text = "Unlocks Riot of Laughter"
+skill_id = &"natali_giggle_burst"
