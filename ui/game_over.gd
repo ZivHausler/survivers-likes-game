@@ -3,8 +3,8 @@ class_name GameOver extends Control
 ## End-of-run screen: shows time survived and kills from RunState.last_run.
 ## Buttons: Retry → arena, Character Select → character select.
 
-const ARENA_SCENE    := "res://game/arena.tscn"
-const SELECT_SCENE   := "res://ui/character_select.tscn"
+const ARENA_SCENE    := "res://game/main_3d.tscn"
+const SELECT_SCENE   := "res://ui/character_select_3d.tscn"
 
 @onready var _time_label:   Label  = $VBox/TimeLabel
 @onready var _kills_label:  Label  = $VBox/KillsLabel

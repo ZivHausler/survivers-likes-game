@@ -11,8 +11,8 @@ class_name HUD extends CanvasLayer
 @onready var _xp_bar:        ProgressBar = $VBox/XPBar
 @onready var _evolve_banner: Label       = $EvolveBanner
 
-var _game_manager: GameManager = null
-var _player: Player = null
+var _game_manager: Node = null  # duck-typed: GameManager (2D) or GameManager3D
+var _player: Node = null        # duck-typed: Player (2D) or Player3D
 var _evolve_tween: Tween = null
 
 func _ready() -> void:
@@ -28,17 +28,33 @@ func _find_siblings() -> void:
 	var parent := get_parent()
 	if parent == null:
 		return
-	_game_manager = parent.get_node_or_null("GameManager") as GameManager
-	_player       = parent.get_node_or_null("Player")      as Player
+	# GameManager: try 2D name, then 3D name, then any sibling with get_elapsed().
+	_game_manager = parent.get_node_or_null("GameManager")
+	if _game_manager == null:
+		_game_manager = parent.get_node_or_null("GameManager3D")
+	if _game_manager == null:
+		for child in parent.get_children():
+			if child.has_method("get_elapsed"):
+				_game_manager = child
+				break
+	# Player: prefer the "player" group (both Player and Player3D are in it),
+	# fall back to a sibling named "Player".
+	_player = get_tree().get_first_node_in_group("player")
+	if _player == null:
+		_player = parent.get_node_or_null("Player")
 
 func _process(_dt: float) -> void:
-	if _game_manager:
-		var secs := int(_game_manager.get_elapsed())
-		_timer_label.text = "%d:%02d" % [secs / 60, secs % 60]
-		_kills_label.text = "Kills: %d" % _game_manager.get_kills()
-	if _player:
-		_xp_bar.max_value = _player.xp_to_next(_player.level)
-		_xp_bar.value     = _player.xp
+	if _game_manager and is_instance_valid(_game_manager):
+		if _game_manager.has_method("get_elapsed"):
+			var secs := int(_game_manager.get_elapsed())
+			_timer_label.text = "%d:%02d" % [secs / 60, secs % 60]
+		if _game_manager.has_method("get_kills"):
+			_kills_label.text = "Kills: %d" % _game_manager.get_kills()
+	if _player and is_instance_valid(_player):
+		if _player.has_method("xp_to_next") and "level" in _player:
+			_xp_bar.max_value = _player.xp_to_next(_player.get("level"))
+		if "xp" in _player:
+			_xp_bar.value = _player.get("xp")
 
 func _on_hp_changed(current: float, max_hp: float) -> void:
 	_hp_bar.max_value = max_hp
