@@ -1,10 +1,13 @@
 ## Orbitable follow camera for the 3D arena.
 class_name GameCamera3D extends Camera3D
-## The camera sits on a sphere of `distance` (radius) around `target`. Left-drag orbits
-## (yaw) and tilts (pitch) by moving the camera around that sphere; the camera always
-## look_at()s the target, so the target stays perfectly centered from any angle.
+## The camera follows the target by smoothly tracking a `_pivot` toward the target's
+## position, then sits on a sphere of `distance` (radius) around that pivot. CRUCIALLY,
+## the SAME pivot drives both the camera position and look_at(), so following is pure
+## translation — moving the player never tilts or swivels the view. Orientation changes
+## ONLY when dragging: left-drag orbits (yaw) and tilts (pitch) around the sphere.
 ## Middle-click resets to the default view; the mouse wheel zooms (scales the radius).
-## Supports trauma-based screen shake via add_trauma().
+## Supports trauma-based screen shake via add_trauma() (transient, fired on hits — not
+## by movement).
 ##
 ## The math helpers (compute_position / clamp_pitch / clamp_zoom / shake_offset /
 ## decay_trauma) are pure & static, so they are unit-testable without a live camera.
@@ -20,6 +23,7 @@ class_name GameCamera3D extends Camera3D
 ## Orbit radius: straight-line distance from the target to the camera. At pitch -65°
 ## this gives ≈ height 14 / pull-back 6.5 — the approved framing.
 @export var distance: float = 15.4
+## How fast the pivot eases toward the target each second (higher = tighter follow).
 @export var follow_speed: float = 10.0
 ## Current zoom multiplier applied to the orbit radius; 1.0 = default.
 @export var zoom: float = 1.0
@@ -46,37 +50,41 @@ const DEFAULT_PITCH: float = -65.0
 const DEFAULT_YAW: float = 0.0
 
 var _trauma: float = 0.0
-## Tracks the smooth-follow base position separately so shake offset is layered on top
-## without feeding back into the lerp next frame.
-var _base_position: Vector3 = Vector3.ZERO
-## True once we've snapped to the target at least once; prevents lerping from origin
-## when target is assigned after _ready() (e.g. assigned by GameManager3D in code).
+## The point the camera orbits and look_at()s. Eases toward the target each frame, so
+## the camera follows by pure translation; the same pivot drives position AND look_at,
+## so movement never rotates the view. Only drag changes the orbit angles.
+var _pivot: Vector3 = Vector3.ZERO
+## True once the pivot has snapped to a valid target. Avoids easing in from the origin
+## when target is assigned after _ready() (e.g. by GameManager3D in code).
 var _snapped: bool = false
 ## True while the left mouse button is held (orbit/tilt drag in progress).
 var _dragging: bool = false
 
 func _ready() -> void:
 	if target:
-		_base_position = compute_position(target.global_position, distance * zoom, pitch_degrees, yaw_degrees)
-		global_position = _base_position
+		_pivot = target.global_position
 		_snapped = true
-		look_at(target.global_position, Vector3.UP)
+		_apply_orbit()
 
 func _physics_process(delta: float) -> void:
 	if not target:
 		return
-	var desired := compute_position(target.global_position, distance * zoom, pitch_degrees, yaw_degrees)
-	# Snap on the first frame the target is valid (avoids lerping from origin when
-	# target is assigned after _ready, e.g. by GameManager3D).
+	# Snap on the first valid frame (avoids easing from the origin when target is
+	# assigned after _ready), then ease the pivot toward the target — pure translation.
 	if not _snapped:
 		_snapped = true
-		_base_position = desired
-	_base_position = _base_position.lerp(desired, clampf(follow_speed * delta, 0.0, 1.0))
-	# Decay trauma and apply shake offset layered on top of the base follow position.
+		_pivot = target.global_position
+	_pivot = _pivot.lerp(target.global_position, clampf(follow_speed * delta, 0.0, 1.0))
 	_trauma = decay_trauma(_trauma, delta)
-	global_position = _base_position + shake_offset(_trauma, Time.get_ticks_msec() * 0.001)
-	# Always aim at the target so it stays centered, regardless of follow lag / orbit.
-	look_at(target.global_position, Vector3.UP)
+	_apply_orbit()
+
+## Place the camera on the orbit sphere around the current pivot and aim at it. Both the
+## position and look_at use the same pivot, so following is rotation-free; shake offset
+## is layered onto the position only (so a hit jolts the view without moving the pivot).
+func _apply_orbit() -> void:
+	global_position = compute_position(_pivot, distance * zoom, pitch_degrees, yaw_degrees) \
+		+ shake_offset(_trauma, Time.get_ticks_msec() * 0.001)
+	look_at(_pivot, Vector3.UP)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
