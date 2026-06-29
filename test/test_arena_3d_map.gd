@@ -50,3 +50,15 @@ func test_arena_contains_water() -> void:
 			break
 	assert_true(found, "arena must contain at least one Water3D body")
 	root.free()
+
+func test_scatter_spawns_obstacles_at_runtime() -> void:
+	var root: Node = autofree(_instantiate())
+	add_child(root)   # entering the tree runs the spawner's _ready
+	await get_tree().process_frame
+	var obstacles := root.get_node_or_null("Obstacles")
+	assert_not_null(obstacles, "arena must have an Obstacles container")
+	var count := 0
+	for child in obstacles.get_children():
+		if child is Obstacle3D:
+			count += 1
+	assert_true(count > 0, "scatter must spawn at least one Obstacle3D at runtime")

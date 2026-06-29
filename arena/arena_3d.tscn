@@ -1,6 +1,7 @@
-[gd_scene load_steps=14 format=3 uid="uid://bq6n3f8p5xm2kw"]
+[gd_scene load_steps=15 format=3 uid="uid://bq6n3f8p5xm2kw"]
 
 [ext_resource type="PackedScene" uid="uid://cw4t3rpond3dv1" path="res://obstacles/water_3d.tscn" id="5_water"]
+[ext_resource type="Script" uid="uid://d3yhcfccvtnu2" path="res://arena/arena_scatter.gd" id="6_scatter"]
 [ext_resource type="Texture2D" uid="uid://x77lbs8pj4p2" path="res://art/textures/grass_diff_2k.jpg" id="1_grass_diff"]
 [ext_resource type="Texture2D" uid="uid://c6322ugkte1ja" path="res://art/textures/grass_nor_2k.jpg" id="2_grass_nor"]
 [ext_resource type="Texture2D" uid="uid://blxfo7uylgbta" path="res://art/textures/grass_rough_2k.jpg" id="3_grass_rough"]
@@ -100,3 +101,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 0, -30)
 
 [node name="WaterPond2" parent="." instance=ExtResource("5_water")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0, 45)
+
+[node name="ObstacleSpawner" type="Node" parent="."]
+script = ExtResource("6_scatter")

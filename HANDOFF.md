@@ -28,6 +28,16 @@ A **Godot 4.7 (GDScript) 3D horde-survivor** ("Vampire Survivors"–style) with 
 7. **Exp-orb colors** — `XPGem3D.tier_color(value)` (5 tiers blue→magenta); normal-enemy XP grows over the run (`Spawner3D.xp_time_mult`).
 8. **Skill VFX** — decoupled `SkillVFX` autoload reacting to additive `GameEvents.skill_cast`/`skill_hit` (emitted uniformly by `Weapon3D._fire_internal` + archetypes/signatures); colored GPUParticles3D bursts. General juice (shake/hit-flash/damage-numbers/death-pops) via `Juice3D`.
 
+## Realistic arena map (feature: realistic-arena-map)
+`arena/arena_3d.tscn` is now a proper environment instead of a bare plane:
+- **PBR grass ground + HDRI sky** — `StandardMaterial3D` (albedo/normal/roughness, Poly Haven *aerial_grass_rock*, CC0) on the 200×200 plane; `WorldEnvironment` Sky background from an HDRI panorama (Poly Haven *kloofendal_43d_clear_puresky*, CC0).
+- **Border walls** — 4 `StaticBody3D` walls on the Obstacles layer (16) enclosing the arena so the player can't leave.
+- **Water** — `Water3D` ponds: decorative translucent surface that also blocks movement (layer 16 + `NavigationObstacle3D`).
+- **Collidable tree/rock props via seeded scatter** — an `ObstacleSpawner` (`arena/arena_scatter.gd`) runs at `_ready`, calls the deterministic static `ArenaScatter.compute_positions(...)`, and spawns real CC0 nature gltf models (`art/models/nature/fir_tree_01`, `boulder_01`) as `Obstacle3D` props under an `Obstacles` node. Props use `Obstacle3D.set_model()` (adds the multi-mesh gltf as a child visual + sizes a `CylinderShape3D`/nav footprint) and sit on layer 16; the container is attached via `add_child.call_deferred` (parent is busy during scene entry). Asset-load failure falls back to a `BoxMesh` (`configure()`) with a warning — never crashes.
+- **Tunable scatter params** (exported on `ObstacleSpawner`): `obstacle_count=35`, `rng_seed=1`, `extent=88.0`, `clear_radius=14.0`, `min_separation=7.0`, per-prop `tree_/rock_footprint_radius`+`_height`, `model_scale=1.0`.
+- **Enemy RVO avoidance** — `Enemy3D` carries a `NavigationAgent3D`/avoidance so the swarm flows around walls, water, and props instead of bunching. Skills never mask layer 16, so projectiles pass over props unchanged.
+- Docs: `docs/notes/arena-map.md` (full detail), `docs/notes/asset-licenses.md` (CC0 sources). **Visuals (prop scale/placement, sky sun angle) are playtest-tunable** via the exported params above.
+
 ## Architecture (3D)
 - **Data-driven characters:** a friend = `CharacterData` (`core/character_data.gd`) → world-scale `StatBlock` + model + `skills: Array[SkillData]`. A `SkillData` (`core/skill_data.gd`) = weapon scene + 3 upgrades (SKILL/PASSIVE/SYNERGY) + is_signature.
 - **Skills:** `Weapon3D` base (`core/weapon_3d.gd`, Timer-driven auto-fire). Bespoke signatures: Ziv beam+charm, Avihay bubbles. Two reusable archetypes: `OrbitWeapon3D` (orbiting hitboxes) and `NovaWeapon3D` (XZ AoE pulse, optional charm/heal/DoT via subclass overrides — e.g. Ido DoT, Natali heal). The 8 new friends' skills are themed archetype subclasses.

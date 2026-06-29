@@ -21,3 +21,11 @@ func configure(mesh: Mesh, footprint_radius: float, height: float) -> void:
 	cyl.height = height
 	_shape.shape = cyl
 	_nav.radius = footprint_radius
+
+## Use a full multi-mesh prop scene (e.g. a Poly Haven gltf with several
+## MeshInstance3D children) as the visual: add it as a child, hide the empty
+## placeholder, and size the collision + avoidance footprint via configure().
+func set_model(model: Node3D, footprint_radius: float, height: float) -> void:
+	configure(null, footprint_radius, height)  # sizes shape + nav; clears placeholder mesh
+	_mesh.visible = false  # ignore the empty placeholder; the model is the visual
+	add_child(model)

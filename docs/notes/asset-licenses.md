@@ -10,6 +10,8 @@
 | `art/enemies_3d/` | MDA Hatchery CP1 (user's Downloads) | ⚠️ Commercial — prototype only | N/A |
 | `art/textures/grass_*` | https://polyhaven.com/a/aerial_grass_rock (Poly Haven "aerial_grass_rock") | CC0 1.0 Universal | No |
 | `art/hdri/sky_2k.hdr` | https://polyhaven.com/a/kloofendal_43d_clear_puresky (Poly Haven "kloofendal_43d_clear_puresky") | CC0 1.0 Universal | No |
+| `art/models/nature/fir_tree_01/` | https://polyhaven.com/a/fir_tree_01 (Poly Haven "fir_tree_01", 1k gltf) | CC0 1.0 Universal | No |
+| `art/models/nature/boulder_01/` | https://polyhaven.com/a/boulder_01 (Poly Haven "boulder_01", 1k gltf) | CC0 1.0 Universal | No |
 
 ## Character tile choices (Task B1)
 

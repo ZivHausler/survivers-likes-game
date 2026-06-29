@@ -35,3 +35,17 @@ func test_configure_sets_footprint_and_nav_radius() -> void:
 	assert_almost_eq(shape.height, 6.0, 0.001, "collision height must match")
 	var nav: NavigationObstacle3D = o.get_node("NavigationObstacle3D")
 	assert_almost_eq(nav.radius, 2.5, 0.001, "nav obstacle radius must match footprint")
+
+func test_set_model_adds_visual_and_sizes_footprint() -> void:
+	var o: Obstacle3D = add_child_autofree(Scene.instantiate())
+	var model := Node3D.new()
+	model.name = "PropModel"
+	o.set_model(model, 1.4, 2.0)
+	assert_eq(model.get_parent(), o, "set_model must add the model as a child of the obstacle")
+	var mi: MeshInstance3D = o.get_node("MeshInstance3D")
+	assert_false(mi.visible, "placeholder MeshInstance3D must be hidden when a model is set")
+	var shape: CylinderShape3D = (o.get_node("CollisionShape3D") as CollisionShape3D).shape
+	assert_almost_eq(shape.radius, 1.4, 0.001, "collision radius must match footprint")
+	assert_almost_eq(shape.height, 2.0, 0.001, "collision height must match")
+	var nav: NavigationObstacle3D = o.get_node("NavigationObstacle3D")
+	assert_almost_eq(nav.radius, 1.4, 0.001, "nav obstacle radius must match footprint")
