@@ -23,6 +23,10 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[game-manager-3d]] — `GameManager3D` (`Node`): full 3D run loop — CharacterData setup, SkillSystem (or legacy UpgradeSystem), level-up queue, routing via `_route_skill_upgrade` (SKILL/PASSIVE/SYNERGY/GENERIC) or `_apply_upgrade` (legacy), death → game_over; grants `LEVELUP_INVULN` (2.0 s) to player on final level-up resolution
 - [[character-select-3d]] — `CharacterSelect3D` (`Control`): 3D entry screen; data-driven list of all 10 friends (CHARACTER_PATHS const, one Button per CharacterData, tinted by color, ScrollContainer/GridContainer so all 10 fit); sets RunState then → main_3d.tscn; boots at project start
 
+## Task 2 — Ranged & Dasher Enemies
+
+- [[enemy-projectile-3d]] — `EnemyProjectile3D` (`Area3D`): traveling enemy attack fired by ranged enemies; moves along XZ direction, damages player hurtbox on contact, despawns on terrain (layer 16) for cover mechanic; lifetime cap = 6s
+
 ## 3D Characters (Phase 5 — all 10 friends)
 
 - [[char-avinoam]] — Avinoam "Divine Smite": holy/gold, NovaWeapon3D signature (Holy Smite), OrbitWeapon3D (Smite Orbs), Radiant Pulse, Judgment; model character-c.glb
