@@ -22,3 +22,8 @@ class_name CharacterData extends Resource
 ## 3-D skill roster — 4 SkillData entries for 3D characters; 2D characters leave empty.
 ## See docs/notes/skill-system.md for full model description.
 @export var skills: Array[SkillData] = []
+## 1–2 type ids this character can roll type-gated weapons from. Empty = natural only.
+@export var types: Array[StringName] = []
+## This character's exclusive ultimate (its SkillData.is_signature must be true).
+## Auto-granted at run start; never offered to other characters.
+@export var ultimate: SkillData

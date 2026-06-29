@@ -23,11 +23,14 @@ var synergized: Dictionary = {}
 
 var _skills: Array          # Array[SkillData]
 var _generic_pool: Array    # Array[Upgrade]
+## Max simultaneously-owned non-signature weapons. <= 0 = unlimited.
+var _weapon_cap: int = 6
 
 
-func _init(skills: Array, generic_pool: Array) -> void:
+func _init(skills: Array, generic_pool: Array, weapon_cap: int = 6) -> void:
 	_skills = skills
 	_generic_pool = generic_pool
+	_weapon_cap = weapon_cap
 	# Initialise the signature skill as owned (level 1).
 	for skill in _skills:
 		if skill.is_signature:
@@ -42,6 +45,15 @@ func _init(skills: Array, generic_pool: Array) -> void:
 ## Returns true iff the skill's SKILL upgrade level is ≥ 1 (acquired).
 func is_owned(skill: SkillData) -> bool:
 	return levels.get(skill.skill_upgrade.id, 0) >= 1
+
+
+## Count of owned (level ≥ 1), non-signature weapons — what the cap limits.
+func owned_weapon_count() -> int:
+	var n := 0
+	for skill in _skills:
+		if not skill.is_signature and levels.get(skill.skill_upgrade.id, 0) >= 1:
+			n += 1
+	return n
 
 
 ## Current level of the SKILL upgrade for `skill_id`. 0 = not owned.
@@ -147,12 +159,17 @@ func apply(u: Upgrade) -> void:
 ## Collect all non-maxed upgrades eligible for the normal (non-synergy) pool.
 func _normal_pool() -> Array[Upgrade]:
 	var pool: Array[Upgrade] = []
+	var at_cap := _weapon_cap > 0 and owned_weapon_count() >= _weapon_cap
 	for skill in _skills:
-		# SKILL upgrade: offered if not maxed (level 0 = acquire, 1-4 = level up)
+		var owned := is_owned(skill)
+		# SKILL upgrade: acquire (level 0) or level-up (1-4). At cap, suppress
+		# acquiring NEW non-signature weapons; owned level-ups always allowed.
 		if not is_maxed(skill.skill_upgrade):
-			pool.append(skill.skill_upgrade)
+			var is_new_weapon: bool = not owned and not skill.is_signature
+			if not (is_new_weapon and at_cap):
+				pool.append(skill.skill_upgrade)
 		# PASSIVE upgrade: offered only if skill is owned AND passive not maxed
-		if is_owned(skill) and not is_maxed(skill.passive_upgrade):
+		if owned and not is_maxed(skill.passive_upgrade):
 			pool.append(skill.passive_upgrade)
 	# Generic upgrades
 	for g in _generic_pool:

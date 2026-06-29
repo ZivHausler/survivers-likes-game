@@ -23,3 +23,7 @@ class_name SkillData extends Resource
 @export var synergy_upgrade: Upgrade
 @export var description: String = ""
 @export var icon: Texture2D
+## Weapon type for pool filtering. &"natural" = offered to every character;
+## otherwise one themed type id (&"charm", &"holy", …). Ultimates carry their
+## owner's primary type for tagging consistency.
+@export var type: StringName = &"natural"
