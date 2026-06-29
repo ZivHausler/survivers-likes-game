@@ -24,7 +24,7 @@ transition; 2D cleanup is a later task.
 | `Model` | `Node3D` | Model root; Phase 2 swaps real mesh in |
 | `Model/MeshInstance3D` | `SphereMesh` r=0.5 | Placeholder; tinted by `data.color` |
 
-**Collision**: `layer = 3`, `mask = 0` (enemies pass through each other — swarm).
+**Collision**: `layer = 8` (physics layer 4 — dedicated enemy layer, separate from player layer 1 so XP gem pickup can target the player cleanly), `mask = 0` (enemies pass through each other — swarm).
 
 ## Script API
 
