@@ -4,8 +4,9 @@
 
 ## 🚧 3D PIVOT IN PROGRESS (plan: docs/superpowers/plans/2026-06-29-3d-pivot-and-feature-expansion.md)
 The 2D→3D conversion + 8-item feature expansion is **underway** (subagent-driven, review-gated; ledger in `.superpowers/sdd/progress.md`). Decisions locked: tilted perspective `Camera3D` @ -55° on the XZ plane; players = Kenney Blocky Characters (CC0); enemies = user's MDA Downloads monster pack (FBX→glTF via FBX2glTF; ⚠️ license unconfirmed). Plan phases: 1 core 3D · A assets · 2 model integration · 3 four-skills + invuln + orb-colors · 4 per-skill synergy · 4.5 skill VFX · 5 all 10 friends · 6 integration.
-**Done so far:** Track A assets (merged) · Task 1.1 world/camera/ground/`main_3d.tscn` (230/230). Main scene now boots into 3D. 2D scenes/tests left intact during transition.
-**Next:** Task 1.2 Player→CharacterBody3D.
+**Done so far:** Track A assets (merged) · 1.1 world/camera/ground/`main_3d.tscn` · 1.2 Player3D (CharacterBody3D, XZ move, logic ported) · 1.3 Enemy3D (CharacterBody3D, steering/charm/contact, `enemy_killed_3d` signal, enemy physics layer 4). Suite 280/280. 2D scenes/tests intact during transition.
+**World scale:** 1 unit ≈ 16 px (rescale spatial constants /16, logic identical).
+**Next:** 1.4a weapons (Weapon3D + Ziv3D/Avihay3D/Bubble3D) → 1.4b spawner+gems+playable wiring.
 
 ## What this is
 A **Godot 4.7 (GDScript) 2D horde-survivor game** ("Vampire Survivors"–style): move-only control, auto-firing signature ability, enemies swarm, XP gems → level-up → pick 1-of-3 upgrades, with a synergy/evolution system (signature maxed + dedicated passive owned → golden EVOLVE). Each playable character is based on one of the owner's real friends.
