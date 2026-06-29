@@ -13,14 +13,8 @@ const SHIELD_DURATION := 3.0
 const KNOCKBACK_DIST := 2.0
 ## Number of helper blips summoned.
 const HELPER_COUNT := 2
-## Seconds helpers stay alive before auto-freeing.
-const HELPER_DURATION := 6.0
 ## Base damage-per-second for each helper (distributed via contact ticks).
 const HELPER_DAMAGE := 15.0
-## Movement speed of each helper blip.
-const HELPER_SPEED := 5.0
-## Proximity at which a helper deals a damage tick.
-const HELPER_CONTACT_RANGE := 1.5
 ## Blue summon-ring colour.
 const RING_COLOR := Color(0.2, 0.5, 1.0, 0.80)
 

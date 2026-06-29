@@ -278,3 +278,10 @@ func _update_cooldown_bars() -> void:
 				_passives_box.add_child(panel)
 				_passive_panels.append(panel)
 			_passive_last_count = passive_entries.size()
+		# Always refresh level labels in-place so a level-up (count unchanged) is shown.
+		for i in passive_entries.size():
+			if i >= _passive_panels.size():
+				break
+			var lvl_lbl: Label = _passive_panels[i].get_node_or_null("LevelLabel")
+			if lvl_lbl:
+				lvl_lbl.text = "x%d" % passive_entries[i]["level"]

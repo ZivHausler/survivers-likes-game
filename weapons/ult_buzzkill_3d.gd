@@ -16,10 +16,15 @@ const AURA_COLOR := Color(1.0, 0.4, 0.1)
 ## True while the buff is active — prevents double-application.
 var _buff_active: bool = false
 
-## Original stat values stored at apply time for exact revert.
-var _orig_damage_mult: float   = 0.0
-var _orig_move_speed: float    = 0.0
-var _orig_fire_rate_mult: float = 0.0
+## Additive deltas stored at apply time for exact revert.
+## Using deltas (not snapshots) means concurrent stat upgrades survive revert.
+var _delta_damage_mult: float   = 0.0
+var _delta_move_speed: float    = 0.0
+var _delta_fire_rate_mult: float = 0.0
+
+## Team debuff deltas per other player (empty in solo — no-op).
+## Each entry: { "player": Node, "move_speed": float, "fire_rate_mult": float }
+var _team_debuff_deltas: Array = []
 
 ## Reference to the aura Node3D so we can remove it on revert.
 var _aura_holder: Node3D = null
@@ -31,21 +36,13 @@ func _ready() -> void:
 	super()
 
 func _do_ult() -> void:
+	if not is_inside_tree():
+		return
 	_apply_buff()
 	# Schedule revert after BUFF_DURATION seconds.
 	get_tree().create_timer(BUFF_DURATION).timeout.connect(_revert_buff, CONNECT_ONE_SHOT)
-	# Debuff other players (no-op in solo — the loop iterates an empty set).
-	if is_inside_tree():
-		for p in get_tree().get_nodes_in_group("players"):
-			if not is_instance_valid(p) or p == _player_ref:
-				continue
-			var ps: StatBlock = p.get("stats") as StatBlock
-			if ps == null:
-				continue
-			ps.move_speed    *= 0.7
-			ps.fire_rate_mult *= 0.75
 
-## Store originals, multiply stats up, refresh weapon cooldowns, spawn aura.
+## Store additive deltas, apply them to stats, apply team debuff, refresh weapon cooldowns, spawn aura.
 ## Public so unit tests can call it directly without a running timer.
 ## When _player_ref is null (unit-test mode) falls back to the `stats` field.
 func _apply_buff() -> void:
@@ -58,21 +55,39 @@ func _apply_buff() -> void:
 		s = stats
 	if s == null:
 		return
-	# Store originals for exact revert.
-	_orig_damage_mult    = s.damage_mult
-	_orig_move_speed     = s.move_speed
-	_orig_fire_rate_mult = s.fire_rate_mult
-	# Apply buff multipliers.
-	s.damage_mult    *= DAMAGE_MULT
-	s.move_speed     *= SPEED_MULT
-	s.fire_rate_mult *= FIRE_RATE_MULT
+	# Compute additive deltas from current base values.
+	# Storing the delta (not the original) means concurrent += upgrades are preserved on revert.
+	_delta_damage_mult    = s.damage_mult    * (DAMAGE_MULT    - 1.0)
+	_delta_move_speed     = s.move_speed     * (SPEED_MULT     - 1.0)
+	_delta_fire_rate_mult = s.fire_rate_mult * (FIRE_RATE_MULT - 1.0)
+	# Apply buff as additive deltas.
+	s.damage_mult    += _delta_damage_mult
+	s.move_speed     += _delta_move_speed
+	s.fire_rate_mult += _delta_fire_rate_mult
 	_buff_active = true
+	# Debuff other players at apply time (no-op in solo — players group contains only self).
+	_team_debuff_deltas.clear()
+	if is_inside_tree():
+		for p in get_tree().get_nodes_in_group("players"):
+			if not is_instance_valid(p) or p == _player_ref:
+				continue
+			var ps: StatBlock = p.get("stats") as StatBlock
+			if ps == null:
+				continue
+			# slow to 70% → remove 30 % of current value
+			var d_speed: float = ps.move_speed    * (1.0 - 0.7)
+			# reduce fire rate to 75% → remove 25 % of current value
+			var d_fire: float  = ps.fire_rate_mult * (1.0 - 0.75)
+			ps.move_speed    -= d_speed
+			ps.fire_rate_mult -= d_fire
+			_team_debuff_deltas.append({ "player": p, "move_speed": d_speed, "fire_rate_mult": d_fire })
 	# Refresh weapon cooldowns so faster fire rate takes effect immediately.
 	_refresh_weapons()
 	# Spawn visual aura on the player.
 	_spawn_aura()
 
-## Restore original stats, refresh cooldowns, destroy aura.
+## Restore stats by subtracting the stored additive deltas (concurrent += upgrades survive).
+## Undo team debuffs by adding back the exact deltas subtracted at apply time.
 ## Public so unit tests can call it directly.
 func _revert_buff() -> void:
 	if not _buff_active:
@@ -83,10 +98,21 @@ func _revert_buff() -> void:
 	if s == null:
 		s = stats
 	if s != null:
-		s.damage_mult    = _orig_damage_mult
-		s.move_speed     = _orig_move_speed
-		s.fire_rate_mult = _orig_fire_rate_mult
+		s.damage_mult    -= _delta_damage_mult
+		s.move_speed     -= _delta_move_speed
+		s.fire_rate_mult -= _delta_fire_rate_mult
 	_buff_active = false
+	# Undo team debuffs by adding back the exact deltas subtracted at apply time.
+	for entry in _team_debuff_deltas:
+		var p = entry["player"]
+		if not is_instance_valid(p):
+			continue
+		var ps: StatBlock = p.get("stats") as StatBlock
+		if ps == null:
+			continue
+		ps.move_speed    += entry["move_speed"]
+		ps.fire_rate_mult += entry["fire_rate_mult"]
+	_team_debuff_deltas.clear()
 	_refresh_weapons()
 	# Remove visual aura.
 	if is_instance_valid(_aura_holder):
