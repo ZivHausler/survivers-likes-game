@@ -1,9 +1,8 @@
 # See docs/notes/game-manager-3d.md
 class_name GameManager3D extends Node
 ## Owns the 3D run: timer, kill counter, XP gem spawning, level-up flow, death routing.
-## Lives inside main_3d.tscn as a Node child of the scene root.
-## Uses SkillSystem when char_data.skills is non-empty (3D multi-weapon flow).
-## Falls back to UpgradeSystem when char_data.skills is empty (legacy / test-injection path).
+## Constructs run skills in priority: (1) type-gated pool (ultimate + type-filtered shared pool);
+## (2) char-specific SkillSystem roster; (3) legacy UpgradeSystem (signature/passive/evolution).
 
 ## Seconds of invulnerability granted to the player when the level-up card flow resolves.
 const LEVELUP_INVULN := 2.0
