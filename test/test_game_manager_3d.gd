@@ -255,6 +255,8 @@ func test_3d_stacked_levelups_resolve_in_sequence_and_unpause() -> void:
 	manager._upgrade_ui = ui
 	ui.chosen.connect(manager._on_upgrade_chosen)
 
+	# Clear skill_system so the legacy UpgradeSystem path is exercised by this test.
+	manager.skill_system = null
 	manager.upgrade_system = _make_upgrade_system_3d()
 
 	var u1 := _make_upgrade_3d(Upgrade.Kind.GENERIC, &"move_speed", 1.0, &"m1")
@@ -291,7 +293,9 @@ func test_3d_softlock_guard_grants_bonus_when_all_maxed() -> void:
 	add_child_autofree(ui)
 	manager._upgrade_ui = ui
 
+	# Clear skill_system so the legacy UpgradeSystem path is exercised.
 	# Build a system where everything is maxed → has_available_choices() = false.
+	manager.skill_system = null
 	var sys := _make_upgrade_system_3d()
 	sys.levels[&"zsig3d"] = 5
 	sys.levels[&"zpas3d"] = 5
@@ -390,3 +394,231 @@ func test_upgrade_system_builds_from_ziv_3d() -> void:
 	var rng := RandomNumberGenerator.new(); rng.seed = 42
 	var choices := sys.build_choices(rng, 3)
 	assert_true(choices.size() > 0, "build_choices must return at least one choice")
+
+# ---------------------------------------------------------------------------
+# SkillSystem helpers
+# ---------------------------------------------------------------------------
+
+## Build a minimal SkillData for testing, with SKILL/PASSIVE/SYNERGY upgrades.
+func _make_test_skill_data(skill_id: StringName, is_sig: bool = false) -> SkillData:
+	var su := Upgrade.new()
+	su.id = StringName(str(skill_id) + "_skill"); su.kind = Upgrade.Kind.SKILL
+	su.max_level = 5; su.skill_id = skill_id
+
+	var pu := Upgrade.new()
+	pu.id = StringName(str(skill_id) + "_passive"); pu.kind = Upgrade.Kind.PASSIVE
+	pu.max_level = 5; pu.skill_id = skill_id; pu.effect_value = 0.5
+
+	var syn := Upgrade.new()
+	syn.id = StringName(str(skill_id) + "_synergy"); syn.kind = Upgrade.Kind.SYNERGY
+	syn.max_level = 1; syn.skill_id = skill_id
+
+	var s := SkillData.new()
+	s.id = skill_id
+	s.skill_upgrade = su; s.passive_upgrade = pu; s.synergy_upgrade = syn
+	s.is_signature = is_sig
+	return s
+
+## Build a minimal SkillSystem with one signature skill and optional generic pool.
+func _make_skill_system_for_test(generics: Array = []) -> SkillSystem:
+	var s := _make_test_skill_data(&"tskill", true)
+	return SkillSystem.new([s], generics)
+
+# ---------------------------------------------------------------------------
+# Stub player that records skill calls
+# ---------------------------------------------------------------------------
+class StubPlayer3D extends Node3D:
+	var acquired: Dictionary = {}   # skill_id → PackedScene
+	var leveled: Array = []
+	var passived: Dictionary = {}   # skill_id → value
+	var evolved: Array = []
+	var stat_upgrades: Dictionary = {}
+
+	var stats: StatBlock
+	var weapon: Node3D = null
+	var level: int = 1
+
+	func acquire_skill(skill_id: StringName, ws) -> void:
+		acquired[skill_id] = ws
+	func level_skill(skill_id: StringName) -> void:
+		leveled.append(skill_id)
+	func apply_skill_passive(skill_id: StringName, v: float) -> void:
+		passived[skill_id] = v
+	func evolve_skill(skill_id: StringName) -> void:
+		evolved.append(skill_id)
+	# Note: apply_stat_upgrade is defined so Object.has_method("apply_stat_upgrade") → true.
+	func apply_stat_upgrade(kind: StringName, v: float) -> void:
+		stat_upgrades[kind] = stat_upgrades.get(kind, 0.0) + v
+
+# ---------------------------------------------------------------------------
+# SkillSystem integration: built at start
+# ---------------------------------------------------------------------------
+
+func test_skill_system_built_from_ziv_3d_at_start() -> void:
+	var root    := _make_run_scene()
+	var manager := root.get_node("GameManager3D") as GameManager3D
+	assert_not_null(manager.skill_system,
+		"SkillSystem must be built from ziv_3d.tres at start (skills array non-empty)")
+
+func test_skill_system_has_available_choices_at_start() -> void:
+	var root    := _make_run_scene()
+	var manager := root.get_node("GameManager3D") as GameManager3D
+	if manager.skill_system == null:
+		fail_test("skill_system is null — prerequisite failed"); return
+	assert_true(manager.skill_system.has_available_choices(),
+		"SkillSystem must have available choices at the start of a run")
+
+func test_signature_acquired_in_player_weapons_at_start() -> void:
+	var root   := _make_run_scene()
+	var player := root.get_node("Player") as Player3D
+	assert_true(player.has_skill(&"ziv_charm"),
+		"Player must have ziv_charm weapon in weapons dict after GameManager start()")
+
+# ---------------------------------------------------------------------------
+# SkillSystem routing via _route_skill_upgrade
+# ---------------------------------------------------------------------------
+
+func _make_manager_with_stub_player_and_skill_system() -> Array:
+	var root := Node3D.new()
+	add_child_autofree(root)
+	var stub := StubPlayer3D.new()
+	stub.name = "StubPlayer"
+	stub.stats = StatBlock.new()
+	root.add_child(stub)
+
+	var manager := GameManager3D.new()
+	manager.name = "GM"
+	# We set _player and skill_system directly, bypassing start().
+	root.add_child(manager)  # triggers _ready → start() but root has no "Player" node of type Player3D
+	# Re-assign after start():
+	manager._player = stub
+	manager.skill_system = _make_skill_system_for_test()
+	manager._skill_by_id[&"tskill"] = _make_test_skill_data(&"tskill", true)
+	return [manager, stub]
+
+
+func test_route_skill_first_acquire_calls_acquire_skill() -> void:
+	var arr     := _make_manager_with_stub_player_and_skill_system()
+	var manager := arr[0] as GameManager3D
+	var stub    := arr[1] as StubPlayer3D
+
+	# Build a SKILL upgrade for a non-signature skill (level 0 initially).
+	# weapon_scene must be non-null so _route_skill_upgrade's guard passes.
+	var non_sig := _make_test_skill_data(&"other", false)
+	non_sig.weapon_scene = load("res://weapons/ziv_stunning_looks_3d.tscn")
+	manager.skill_system = SkillSystem.new([_make_test_skill_data(&"tskill", true), non_sig], [])
+	manager._skill_by_id[&"other"] = non_sig
+
+	var u := non_sig.skill_upgrade
+	# Apply it so level goes 0→1 (acquisition).
+	manager.skill_system.apply(u)
+	manager._route_skill_upgrade(u)
+
+	assert_true(stub.acquired.has(&"other"),
+		"SKILL card at level 1 (first acquire) must call acquire_skill")
+	assert_true(stub.leveled.is_empty(),
+		"First acquire must NOT call level_skill")
+
+
+func test_route_skill_when_owned_calls_level_skill() -> void:
+	var arr     := _make_manager_with_stub_player_and_skill_system()
+	var manager := arr[0] as GameManager3D
+	var stub    := arr[1] as StubPlayer3D
+
+	# Use the signature skill (already at level 1 from SkillSystem init).
+	# Apply the skill upgrade again to go to level 2.
+	var sig := manager.skill_system._skills[0] as SkillData
+	manager.skill_system.apply(sig.skill_upgrade)  # level 1→2
+	manager._route_skill_upgrade(sig.skill_upgrade)
+
+	assert_true(stub.leveled.has(sig.id),
+		"SKILL card at level > 1 must call level_skill, not acquire_skill")
+	assert_false(stub.acquired.has(sig.id),
+		"Level-up must NOT call acquire_skill")
+
+
+func test_route_passive_calls_apply_skill_passive() -> void:
+	var arr     := _make_manager_with_stub_player_and_skill_system()
+	var manager := arr[0] as GameManager3D
+	var stub    := arr[1] as StubPlayer3D
+
+	# Mark skill as owned so PASSIVE is offered.
+	var sig := manager.skill_system._skills[0] as SkillData
+	sig.passive_upgrade.effect_value = 0.75
+	manager.skill_system.apply(sig.passive_upgrade)
+	manager._route_skill_upgrade(sig.passive_upgrade)
+
+	assert_true(stub.passived.has(sig.id),
+		"PASSIVE card must call apply_skill_passive")
+	assert_almost_eq(stub.passived.get(sig.id, 0.0), 0.75, 0.001,
+		"PASSIVE must pass correct effect_value")
+
+
+func test_route_synergy_calls_evolve_skill() -> void:
+	var arr     := _make_manager_with_stub_player_and_skill_system()
+	var manager := arr[0] as GameManager3D
+	var stub    := arr[1] as StubPlayer3D
+
+	var sig := manager.skill_system._skills[0] as SkillData
+	# Artificially mark synergy available state.
+	manager.skill_system.levels[sig.skill_upgrade.id] = 5
+	manager.skill_system.levels[sig.passive_upgrade.id] = 1
+	manager._route_skill_upgrade(sig.synergy_upgrade)
+
+	assert_true(stub.evolved.has(sig.id),
+		"SYNERGY card must call evolve_skill")
+
+
+func test_route_generic_calls_apply_stat_upgrade_via_skill_path() -> void:
+	var arr     := _make_manager_with_stub_player_and_skill_system()
+	var manager := arr[0] as GameManager3D
+	var stub    := arr[1] as StubPlayer3D
+
+	var u := Upgrade.new()
+	u.id = &"ms_test"; u.kind = Upgrade.Kind.GENERIC
+	u.effect_kind = &"move_speed"; u.effect_value = 2.0
+	manager._route_skill_upgrade(u)
+
+	assert_almost_eq(stub.stat_upgrades.get(&"move_speed", 0.0), 2.0, 0.001,
+		"GENERIC via skill path must call apply_stat_upgrade")
+
+# ---------------------------------------------------------------------------
+# Character tres: skills array
+# ---------------------------------------------------------------------------
+
+func test_ziv_3d_has_non_empty_skills_array() -> void:
+	var cd := load("res://characters/ziv_3d.tres") as CharacterData
+	assert_not_null(cd, "ziv_3d.tres must load"); if cd == null: return
+	assert_true(cd.skills.size() > 0, "ziv_3d.skills must be non-empty")
+
+func test_ziv_3d_skills_first_is_signature() -> void:
+	var cd := load("res://characters/ziv_3d.tres") as CharacterData
+	assert_not_null(cd, "ziv_3d.tres must load"); if cd == null: return
+	if cd.skills.is_empty(): fail_test("skills empty"); return
+	var s := cd.skills[0] as SkillData
+	assert_not_null(s, "skills[0] must be a SkillData"); if s == null: return
+	assert_true(s.is_signature, "ziv_3d skills[0] must be marked is_signature")
+	assert_not_null(s.weapon_scene, "ziv_3d signature must have a weapon_scene")
+
+func test_ziv_3d_skill_has_three_upgrades() -> void:
+	var cd := load("res://characters/ziv_3d.tres") as CharacterData
+	assert_not_null(cd); if cd == null or cd.skills.is_empty(): return
+	var s := cd.skills[0] as SkillData
+	if s == null: return
+	assert_eq(s.skill_upgrade.kind,   Upgrade.Kind.SKILL,   "skill_upgrade must be SKILL kind")
+	assert_eq(s.passive_upgrade.kind, Upgrade.Kind.PASSIVE, "passive_upgrade must be PASSIVE kind")
+	assert_eq(s.synergy_upgrade.kind, Upgrade.Kind.SYNERGY, "synergy_upgrade must be SYNERGY kind")
+
+func test_avihay_3d_has_non_empty_skills_array() -> void:
+	var cd := load("res://characters/avihay_3d.tres") as CharacterData
+	assert_not_null(cd, "avihay_3d.tres must load"); if cd == null: return
+	assert_true(cd.skills.size() > 0, "avihay_3d.skills must be non-empty")
+
+func test_avihay_3d_skills_first_is_signature() -> void:
+	var cd := load("res://characters/avihay_3d.tres") as CharacterData
+	assert_not_null(cd, "avihay_3d.tres must load"); if cd == null: return
+	if cd.skills.is_empty(): fail_test("skills empty"); return
+	var s := cd.skills[0] as SkillData
+	assert_not_null(s, "skills[0] must be a SkillData"); if s == null: return
+	assert_true(s.is_signature, "avihay_3d skills[0] must be marked is_signature")
+	assert_not_null(s.weapon_scene, "avihay_3d signature must have a weapon_scene")

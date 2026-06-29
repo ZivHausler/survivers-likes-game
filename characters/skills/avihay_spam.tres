@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=6 format=3]
+
+[ext_resource type="Script" uid="uid://d24b36hfii0n" path="res://core/skill_data.gd" id="1_skilldata"]
+[ext_resource type="PackedScene" path="res://weapons/avihay_chat_spam_3d.tscn" id="2_weapon"]
+[ext_resource type="Resource" path="res://upgrades/avihay/avihay_spam_skill.tres" id="3_skill"]
+[ext_resource type="Resource" path="res://upgrades/avihay/avihay_spam_passive3d.tres" id="4_passive"]
+[ext_resource type="Resource" path="res://upgrades/avihay/avihay_spam_synergy.tres" id="5_synergy"]
+
+[resource]
+script = ExtResource("1_skilldata")
+id = &"avihay_spam"
+display_name = "Chat Spam"
+weapon_scene = ExtResource("2_weapon")
+is_signature = true
+skill_upgrade = ExtResource("3_skill")
+passive_upgrade = ExtResource("4_passive")
+synergy_upgrade = ExtResource("5_synergy")
+description = "Avihay's signature ability. Flood the chat with unstoppable spam."

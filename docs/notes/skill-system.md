@@ -72,7 +72,22 @@ This is reliable because the SKILL upgrade level transitions 0→1 only on the v
 
 `@export var skills: Array[SkillData] = []`
 
-3D characters populate 4 entries; 2D characters leave it empty — the 2D code path is not affected.
+3D characters populate this array; 2D characters leave it empty — the 2D code path is not affected.
+
+**Task 3.2 migration**: `ziv_3d.tres` and `avihay_3d.tres` now carry a 1-element `skills` array
+(the signature skill). The other 3 skills each are authored in Task 3.3.
+
+Each SkillData is stored under `res://characters/skills/<id>.tres`.
+The three Upgrade `.tres` files for each skill live alongside the existing 2D `.tres` files under
+`res://upgrades/<char>/`, with distinct filenames (`*_skill.tres`, `*_passive3d.tres`, `*_synergy.tres`)
+so the 2D upgrades are untouched.
+
+### Current skill IDs
+
+| Character | Skill ID | Weapon scene |
+|---|---|---|
+| Ziv | `ziv_charm` | `res://weapons/ziv_stunning_looks_3d.tscn` |
+| Avihay | `avihay_spam` | `res://weapons/avihay_chat_spam_3d.tscn` |
 
 ---
 

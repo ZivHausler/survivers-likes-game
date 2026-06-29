@@ -9,14 +9,14 @@ Add new notes here as they are created; link by `[[id]]`.
 
 - [[game-camera-3d]] — `GameCamera3D`: tilted perspective Camera3D, follows target on XZ; pure static helpers for unit testing
 - [[arena-3d]] — `arena_3d.tscn`: 3D ground plane (200×200), DirectionalLight3D, WorldEnvironment; gameplay plane = XZ
-- [[player-3d]] — `Player3D` (`CharacterBody3D`): WASD on XZ, HP/XP/level/stat logic ported verbatim from 2D Player; Kenney Blocky Character model with idle/walk animation and movement-facing via `face_angle()`
+- [[player-3d]] — `Player3D` (`CharacterBody3D`): WASD on XZ, HP/XP/level/stat logic; multi-weapon `weapons` dict (skill_id→Weapon3D) + `acquire_skill/level_skill/apply_skill_passive/evolve_skill`; `fire_rate` refreshes all weapons; legacy single-weapon fallback when `skills` empty
 - [[enemy-3d]] — `Enemy3D` (`CharacterBody3D`): steering/charm/contact-damage/death; real monster GLB models (bug/plant/diatryma/serpent); `face_angle()` rotation; best-effort animation; emits `enemy_killed_3d`
 - [[weapon-system-3d]] — `Weapon3D` base class: Node3D port of Weapon; same timer/cooldown/level/evolve contract; 1 unit ≈ 16 px
 - [[weapon-ziv-3d]] — `ZivStunningLooks3D`: 3D beam (Area3D BoxShape) + XZ charm sorting; evolve = Y-rotation + always-on CharmField
 - [[weapon-avihay-3d]] — `AvihayChatSpam3D` + `Bubble3D`: XZ directional bubble spread, pierce, homing on evolve; SPEED=14 units/s
 - [[spawner-3d]] — `Spawner3D` (`Node3D`): ring spawner driven by DifficultyTimeline; bosses use serpent model with texture-preserving tint; pure static helpers for testability; `xp_time_mult` scales normal-enemy XP with elapsed time (+100% per 2 min)
 - [[xp-gem-3d]] — `XPGem3D` (`Area3D`): magnet pickup (XZ plane) that awards XP; orb color reflects XP tier via `tier_color()` (blue→green→yellow→orange→magenta); `magnet_step` static helper
-- [[game-manager-3d]] — `GameManager3D` (`Node`): full 3D run loop — CharacterData setup, UpgradeSystem, level-up queue (pause/cards/unpause), _apply_upgrade routing, death → game_over; mirrors 2D GameManager verbatim
+- [[game-manager-3d]] — `GameManager3D` (`Node`): full 3D run loop — CharacterData setup, SkillSystem (or legacy UpgradeSystem), level-up queue, routing via `_route_skill_upgrade` (SKILL/PASSIVE/SYNERGY/GENERIC) or `_apply_upgrade` (legacy), death → game_over
 - [[character-select-3d]] — `CharacterSelect3D` (`Control`): 3D entry screen; lists ziv_3d.tres / avihay_3d.tres; sets RunState then → main_3d.tscn; boots at project start
 
 ## Systems
@@ -34,7 +34,7 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[weapon-ziv]] — `ZivStunningLooks`: "Stunning Looks" beam + charm; evolution "Absolutely Fabulous"
 - [[weapon-avihay]] — `AvihayChatSpam`: "Chat Spam" homing bubbles + pierce; evolution "Reply-All Apocalypse"
 - [[upgrade-system]] — `UpgradeSystem`: pool generation, `build_choices`, `apply`, level tracking; Wave 3 router + `effect_kind/effect_value`
-- [[skill-system]] — `SkillData` + `SkillSystem` (3D): 4 skills/character, level 0=not-owned, synergy rule (skill maxed + passive ≥ 1), acquisition-detection contract
+- [[skill-system]] — `SkillData` + `SkillSystem` (3D): 4 skills/character (Task 3.2: 1-element array for Ziv/Avihay; Task 3.3 adds remaining 3 each), level 0=not-owned, synergy rule, acquisition-detection contract; ziv_charm + avihay_spam now wired
 - [[player]] — `Player` (`CharacterBody2D`): WASD movement, HP, XP, leveling, weapon spawn, `apply_stat_upgrade`
 - [[enemy]] — `Enemy` (`CharacterBody2D`): steering, contact damage, death; `EnemyData` variants (swarmer, tank, spitter)
 - [[difficulty-timeline]] — `DifficultyTimeline` (`RefCounted`): spawn interval curve, variant thresholds, 300 s boss windows
@@ -43,7 +43,7 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[background]] — Arena ground tile (Sprite2D, texture_repeat) + full-screen vignette shader on CanvasLayer 0
 - [[main-routing]] — `main.tscn` / `main.gd` entry router + `character_select` scene flow
 - [[game-manager]] — `GameManager` (`Node`): run timer, kills, XP gem spawning, level-up pause flow, upgrade-effect router
-- [[upgrade-ui]] — `UpgradeUI` (`CanvasLayer`): level-up overlay with 3 choices; golden EVOLUTION slot
+- [[upgrade-ui]] — `UpgradeUI` (`CanvasLayer`): system-agnostic (accepts UpgradeSystem or SkillSystem); 3 choices; golden EVOLUTION/SYNERGY slot; SKILL/SYNERGY KIND_COLOURS; "NEW" / "Lv X/max" / "EVOLVE" / "SYNERGY" badges
 - [[hud]] — `HUD` (`CanvasLayer`): timer, HP bar, XP bar + level, kill counter
 - [[game-over]] — `GameOver` (`Control`): end-of-run screen with score + retry/select buttons
 

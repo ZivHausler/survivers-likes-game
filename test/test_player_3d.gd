@@ -239,3 +239,148 @@ func test_setup_without_model_anim_player_stays_null() -> void:
 	var player: Player3D = add_child_autofree(Player3DScene.instantiate())
 	player.setup(_make_char_data())  # no model_scene
 	assert_null(player._anim_player, "_anim_player must stay null when model_scene is unset")
+
+# ── multi-weapon (SkillSystem wiring) ────────────────────────────────────────
+
+## Stub weapon: records calls, implements Weapon3D's public interface as Node3D.
+class StubWeapon3D extends Node3D:
+	var level_up_called := false
+	var evolve_called   := false
+	var passive_val     := 0.0
+	var refresh_count   := 0
+	func setup(_p, _s) -> void: pass
+	func level_up()            -> void: level_up_called = true
+	func evolve()              -> void: evolve_called   = true
+	func apply_passive(v: float) -> void: passive_val = v
+	func refresh_cooldown()    -> void: refresh_count += 1
+
+
+func _make_weapon_scene_from_stub() -> PackedScene:
+	var stub := StubWeapon3D.new()
+	var ps   := PackedScene.new()
+	ps.pack(stub)
+	stub.free()
+	return ps
+
+
+func _make_player_with_stats() -> Player3D:
+	var player: Player3D = add_child_autofree(Player3DScene.instantiate())
+	var cd := _make_char_data(100.0)
+	# Use empty skills so setup() doesn't auto-attach a weapon (skills-based flow).
+	player.setup(cd)
+	return player
+
+
+func test_acquire_skill_adds_weapon_to_weapons_dict() -> void:
+	var player := _make_player_with_stats()
+	var ps     := _make_weapon_scene_from_stub()
+	player.acquire_skill(&"test_skill", ps)
+	assert_true(player.weapons.has(&"test_skill"),
+		"acquire_skill must add the weapon to weapons[skill_id]")
+
+
+func test_acquire_skill_sets_convenience_weapon_on_first_call() -> void:
+	var player := _make_player_with_stats()
+	var ps     := _make_weapon_scene_from_stub()
+	player.acquire_skill(&"skill_a", ps)
+	assert_not_null(player.weapon,
+		"weapon convenience pointer must be set after first acquire_skill")
+
+
+func test_acquire_two_skills_both_in_weapons_dict() -> void:
+	var player := _make_player_with_stats()
+	var ps1    := _make_weapon_scene_from_stub()
+	var ps2    := _make_weapon_scene_from_stub()
+	player.acquire_skill(&"alpha", ps1)
+	player.acquire_skill(&"beta",  ps2)
+	assert_true(player.weapons.has(&"alpha"), "weapons must contain alpha")
+	assert_true(player.weapons.has(&"beta"),  "weapons must contain beta")
+	assert_eq(player.weapons.size(), 2, "weapons dict must have exactly 2 entries")
+
+
+func test_acquire_skill_duplicate_is_noop() -> void:
+	var player := _make_player_with_stats()
+	var ps     := _make_weapon_scene_from_stub()
+	player.acquire_skill(&"dup", ps)
+	var first_weapon = player.weapons[&"dup"]  # untyped — Dictionary returns Variant
+	player.acquire_skill(&"dup", ps)
+	assert_eq(player.weapons[&"dup"], first_weapon,
+		"Duplicate acquire_skill must not replace existing weapon")
+	assert_eq(player.weapons.size(), 1, "Duplicate must not add a second entry")
+
+
+func test_has_skill_returns_true_after_acquire() -> void:
+	var player := _make_player_with_stats()
+	var ps     := _make_weapon_scene_from_stub()
+	player.acquire_skill(&"charm", ps)
+	assert_true(player.has_skill(&"charm"), "has_skill must return true after acquire")
+
+
+func test_has_skill_returns_false_before_acquire() -> void:
+	var player := _make_player_with_stats()
+	assert_false(player.has_skill(&"charm"),
+		"has_skill must return false before acquire")
+
+
+func test_level_skill_calls_weapon_level_up() -> void:
+	var player := _make_player_with_stats()
+	var ps     := _make_weapon_scene_from_stub()
+	player.acquire_skill(&"sk", ps)
+	var stub := player.weapons[&"sk"] as StubWeapon3D
+	player.level_skill(&"sk")
+	assert_true(stub.level_up_called, "level_skill must call weapon.level_up()")
+
+
+func test_level_skill_noop_when_not_owned() -> void:
+	var player := _make_player_with_stats()
+	# Should not crash:
+	player.level_skill(&"nonexistent")
+	assert_true(true, "level_skill on unknown skill_id must not crash")
+
+
+func test_apply_skill_passive_calls_apply_passive() -> void:
+	var player := _make_player_with_stats()
+	var ps     := _make_weapon_scene_from_stub()
+	player.acquire_skill(&"sk", ps)
+	var stub := player.weapons[&"sk"] as StubWeapon3D
+	player.apply_skill_passive(&"sk", 0.75)
+	assert_almost_eq(stub.passive_val, 0.75, 0.001,
+		"apply_skill_passive must forward value to weapon.apply_passive()")
+
+
+func test_evolve_skill_calls_evolve() -> void:
+	var player := _make_player_with_stats()
+	var ps     := _make_weapon_scene_from_stub()
+	player.acquire_skill(&"sk", ps)
+	var stub := player.weapons[&"sk"] as StubWeapon3D
+	player.evolve_skill(&"sk")
+	assert_true(stub.evolve_called, "evolve_skill must call weapon.evolve()")
+
+
+func test_fire_rate_stat_upgrade_refreshes_all_weapons() -> void:
+	var player := _make_player_with_stats()
+	var ps1    := _make_weapon_scene_from_stub()
+	var ps2    := _make_weapon_scene_from_stub()
+	player.acquire_skill(&"w1", ps1)
+	player.acquire_skill(&"w2", ps2)
+	var stub1 := player.weapons[&"w1"] as StubWeapon3D
+	var stub2 := player.weapons[&"w2"] as StubWeapon3D
+	player.apply_stat_upgrade(&"fire_rate", 0.5)
+	assert_true(stub1.refresh_count > 0,
+		"fire_rate upgrade must call refresh_cooldown on weapon w1")
+	assert_true(stub2.refresh_count > 0,
+		"fire_rate upgrade must call refresh_cooldown on weapon w2")
+
+
+func test_backward_single_weapon_fallback_when_skills_empty() -> void:
+	# When CharacterData.skills is empty AND weapon_scene is set, the old single-weapon
+	# flow must still work so pre-migration tests and legacy configs stay green.
+	var player: Player3D = add_child_autofree(Player3DScene.instantiate())
+	var cd     := _make_char_data()
+	cd.weapon_scene = load("res://weapons/ziv_stunning_looks_3d.tscn")
+	# skills defaults to [] since we use _make_char_data (no skills set).
+	player.setup(cd)
+	assert_not_null(player.weapon,
+		"Legacy fallback: weapon must be set when skills is empty and weapon_scene is set")
+	assert_true(player.weapon is Node3D,
+		"Legacy fallback weapon must be a Node3D")

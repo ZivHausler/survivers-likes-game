@@ -2,6 +2,8 @@
 class_name GameManager3D extends Node
 ## Owns the 3D run: timer, kill counter, XP gem spawning, level-up flow, death routing.
 ## Lives inside main_3d.tscn as a Node child of the scene root.
+## Uses SkillSystem when char_data.skills is non-empty (3D multi-weapon flow).
+## Falls back to UpgradeSystem when char_data.skills is empty (legacy / test-injection path).
 
 const GEM_SCENE_PATH := "res://pickups/xp_gem_3d.tscn"
 const GAME_OVER_SCENE := "res://ui/game_over.tscn"
@@ -14,16 +16,21 @@ const GENERIC_UPGRADE_PATHS := [
 	"res://upgrades/generic/armor.tres",
 ]
 
-## Public — testable externally.
+## Active SkillSystem — used when char_data.skills is non-empty. Tests may inject directly.
+var skill_system: SkillSystem = null
+## Legacy UpgradeSystem — kept for backward-compat test injection (tests that assign this
+## directly should also null out skill_system to use the old routing path).
 var upgrade_system: UpgradeSystem = null
 
 var elapsed: float = 0.0
 var kills: int = 0
 
-var _player: Player3D = null
+var _player = null  # Player3D at runtime; duck-typed so test stubs work
 var _spawner = null  # Spawner3D at runtime; duck-typed so test stubs work
 var _gem_scene: PackedScene = null
 var _upgrade_ui: Node = null  # UpgradeUI CanvasLayer
+## skill.id → SkillData, built from char_data.skills at start.
+var _skill_by_id: Dictionary = {}
 
 # Level-up queue — mirrors 2D GameManager exactly.
 # player.add_xp() can cross several thresholds in one call, emitting
@@ -59,13 +66,28 @@ func start() -> void:
 	if _spawner != null and _player != null:
 		_spawner.setup(_player)
 
-	# Build UpgradeSystem from character data.
-	if char_data and char_data.signature_upgrade and char_data.passive_upgrade and char_data.evolution_upgrade:
-		var generic_pool: Array = []
-		for path in GENERIC_UPGRADE_PATHS:
-			var u := load(path) as Upgrade
-			if u:
-				generic_pool.append(u)
+	# Build system from character data.
+	var generic_pool: Array = []
+	for path in GENERIC_UPGRADE_PATHS:
+		var u := load(path) as Upgrade
+		if u:
+			generic_pool.append(u)
+
+	if char_data and not char_data.skills.is_empty():
+		# 3D multi-weapon path: SkillSystem from the skills roster.
+		skill_system = SkillSystem.new(char_data.skills, generic_pool)
+		# Build skill-by-id lookup for routing.
+		_skill_by_id.clear()
+		for s in char_data.skills:
+			_skill_by_id[s.id] = s
+		# Acquire the signature skill immediately.
+		if _player:
+			for s in char_data.skills:
+				if s.is_signature:
+					_player.acquire_skill(s.id, s.weapon_scene)
+					break
+	elif char_data and char_data.signature_upgrade and char_data.passive_upgrade and char_data.evolution_upgrade:
+		# Legacy UpgradeSystem path (skills array empty — used by 2D-compatible tests).
 		upgrade_system = UpgradeSystem.new(
 			char_data,
 			generic_pool,
@@ -106,6 +128,14 @@ func get_kills() -> int:
 	return kills
 
 
+# ── System selector ───────────────────────────────────────────────────────────
+
+## Returns the active upgrade system — SkillSystem if available, else UpgradeSystem.
+## Used by level-up flow. Tests that need the legacy path should set skill_system = null.
+func _active_system():
+	return skill_system if skill_system != null else upgrade_system
+
+
 # ── GameEvents handlers ───────────────────────────────────────────────────────
 
 func _on_enemy_killed(pos: Vector3, xp: int) -> void:
@@ -128,7 +158,8 @@ func _on_enemy_killed(pos: Vector3, xp: int) -> void:
 
 
 func _on_player_leveled_up(_level: int) -> void:
-	if upgrade_system == null or _upgrade_ui == null:
+	var sys = _active_system()
+	if sys == null or _upgrade_ui == null:
 		return
 	# If a level-up is already being presented, queue this one and return —
 	# it will be presented after the current choice resolves.
@@ -137,7 +168,7 @@ func _on_player_leveled_up(_level: int) -> void:
 		return
 	# If everything is already maxed there is nothing to pick — never pause on an
 	# empty picker (that softlocks the game). Grant a small bonus and move on.
-	if not upgrade_system.has_available_choices():
+	if not sys.has_available_choices():
 		_grant_max_bonus()
 		return
 	_choosing = true
@@ -146,15 +177,16 @@ func _on_player_leveled_up(_level: int) -> void:
 
 
 ## Present a fresh choice set. build_choices is re-evaluated each call so an
-## evolution that becomes available across stacked level-ups is offered.
+## evolution/synergy that becomes available across stacked level-ups is offered.
 func _present_next() -> void:
+	var sys = _active_system()
 	# A pick earlier in this chain may have exhausted every upgrade; never show an
 	# empty picker (softlock). Grant the maxed bonus and resolve the queue instead.
-	if not upgrade_system.has_available_choices():
+	if sys == null or not sys.has_available_choices():
 		_grant_max_bonus()
 		_resolve_next_or_unpause()
 		return
-	_upgrade_ui.present(upgrade_system, _player)
+	_upgrade_ui.present(sys, _player)
 
 
 func _on_player_died() -> void:
@@ -166,6 +198,32 @@ func _on_player_died() -> void:
 
 # ── Upgrade routing ───────────────────────────────────────────────────────────
 
+## SkillSystem routing: called when skill_system is active.
+## SKILL at skill_level==1 after apply → ACQUIRE (first-time); else LEVEL.
+## PASSIVE → apply_skill_passive. SYNERGY → evolve_skill. GENERIC → apply_stat_upgrade.
+func _route_skill_upgrade(u: Upgrade) -> void:
+	if _player == null:
+		return
+	match u.kind:
+		Upgrade.Kind.SKILL:
+			var sid := u.skill_id
+			if skill_system.skill_level(sid) == 1:
+				# First acquisition (0→1): instantiate weapon and add to player.
+				var skill_data: SkillData = _skill_by_id.get(sid)
+				if skill_data and skill_data.weapon_scene:
+					_player.acquire_skill(sid, skill_data.weapon_scene)
+			else:
+				_player.level_skill(sid)
+		Upgrade.Kind.PASSIVE:
+			_player.apply_skill_passive(u.skill_id, u.effect_value)
+		Upgrade.Kind.SYNERGY:
+			_player.evolve_skill(u.skill_id)
+		Upgrade.Kind.GENERIC:
+			_player.apply_stat_upgrade(u.effect_kind, u.effect_value)
+
+
+## Legacy UpgradeSystem routing: used when upgrade_system is active.
+## Kept for backward compatibility with existing tests and the 2D-compatible flow.
 ## Called AFTER upgrade_system.apply(u) — routes the effect to player/weapon.
 ## Separated so it can be unit-tested without a full scene.
 func _apply_upgrade(u: Upgrade) -> void:
@@ -186,9 +244,12 @@ func _apply_upgrade(u: Upgrade) -> void:
 
 
 func _on_upgrade_chosen(u: Upgrade) -> void:
-	if upgrade_system:
+	if skill_system != null:
+		skill_system.apply(u)
+		_route_skill_upgrade(u)
+	elif upgrade_system != null:
 		upgrade_system.apply(u)
-	_apply_upgrade(u)
+		_apply_upgrade(u)
 	_resolve_next_or_unpause()
 
 

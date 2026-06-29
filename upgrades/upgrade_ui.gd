@@ -1,7 +1,9 @@
 # See docs/notes/upgrade-ui.md
 class_name UpgradeUI extends CanvasLayer
 ## Level-up overlay: shows up to 3 upgrade choice CARDS side-by-side.
-## EVOLUTION cards get golden styling and an "EVOLVE" level badge.
+## EVOLUTION and SYNERGY cards get golden styling and an "EVOLVE"/"SYNERGY" level badge.
+## Accepts both UpgradeSystem (2D) and SkillSystem (3D) via duck-typing — both expose
+## build_choices(rng, count), levels, and is_maxed(u).
 ## process_mode = PROCESS_MODE_WHEN_PAUSED so cards respond while the tree is paused.
 
 signal chosen(upgrade: Upgrade)
@@ -15,9 +17,12 @@ const KIND_COLOURS: Dictionary = {
 	Upgrade.Kind.PASSIVE:   Color(0.2,  0.45, 0.8,  1.0),  # blue
 	Upgrade.Kind.GENERIC:   Color(0.3,  0.55, 0.3,  1.0),  # green
 	Upgrade.Kind.EVOLUTION: Color(1.0,  0.85, 0.1,  1.0),  # gold
+	Upgrade.Kind.SKILL:     Color(0.8,  0.3,  0.1,  1.0),  # orange-red
+	Upgrade.Kind.SYNERGY:   Color(1.0,  0.85, 0.1,  1.0),  # gold
 }
 
-var _system: UpgradeSystem = null
+## Active system — untyped to accept both UpgradeSystem and SkillSystem.
+var _system = null
 var _choices: Array = []
 
 @onready var _panel: Control = $Panel
@@ -65,8 +70,9 @@ func _ready() -> void:
 
 
 ## Called by GameManager when the player levels up.
-## Builds choices from the UpgradeSystem and shows the card panel.
-func present(system: UpgradeSystem, _player: Player) -> void:
+## Accepts both UpgradeSystem (2D) and SkillSystem (3D) — both expose
+## build_choices(rng, count), levels, and is_maxed(u).
+func present(system, _player) -> void:
 	_system = system
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
@@ -76,9 +82,11 @@ func present(system: UpgradeSystem, _player: Player) -> void:
 		var card: Control = _cards[i]
 		if i < _choices.size():
 			var u: Upgrade = _choices[i]
-			var is_evo := (u.kind == Upgrade.Kind.EVOLUTION)
+			var is_evo    := (u.kind == Upgrade.Kind.EVOLUTION)
+			var is_synergy := (u.kind == Upgrade.Kind.SYNERGY)
+			var is_golden := is_evo or is_synergy
 			card.visible = true
-			card.modulate = EVOLUTION_MODULATE if is_evo else NORMAL_MODULATE
+			card.modulate = EVOLUTION_MODULATE if is_golden else NORMAL_MODULATE
 
 			(_name_labels[i] as Label).text = u.display_name
 
@@ -92,6 +100,8 @@ func present(system: UpgradeSystem, _player: Player) -> void:
 			var lbl: Label = _level_labels[i]
 			if is_evo:
 				lbl.text = "EVOLVE"
+			elif is_synergy:
+				lbl.text = "SYNERGY"
 			elif cur_level == 0:
 				lbl.text = "NEW"
 			else:

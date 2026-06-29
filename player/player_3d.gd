@@ -2,6 +2,8 @@
 class_name Player3D extends CharacterBody3D
 ## 3D player actor (CharacterBody3D). Gameplay on XZ plane (Y up).
 ## Owns WASD movement and all HP/XP/level/stat logic — ported verbatim from Player (2D).
+## Multi-weapon: `weapons` dictionary maps skill_id (StringName) → Weapon3D for all acquired
+## skills. Convenience pointer `weapon` tracks the first (signature) weapon for back-compat.
 ## Model rendering: setup() installs the CharacterData model under the Model Node3D child,
 ## hides the capsule placeholder, caches the model's AnimationPlayer, and plays idle/walk.
 ## Face direction is driven by the pure-static face_angle() helper in _physics_process()
@@ -11,6 +13,11 @@ class_name Player3D extends CharacterBody3D
 const WALK_THRESHOLD := 0.05
 
 var stats: StatBlock
+## All acquired skills: skill_id → Weapon3D. Populated by acquire_skill().
+var weapons: Dictionary = {}
+## Convenience back-compat pointer — the first acquired weapon (signature).
+## Set automatically by acquire_skill() on the first call. Also set by the legacy
+## single-weapon fallback in setup() when data.skills is empty and data.weapon_scene is set.
 var weapon: Node3D = null
 var level: int = 1
 var xp: int = 0
@@ -22,12 +29,51 @@ var _anim_player: AnimationPlayer = null
 @onready var _model: Node3D = $Model
 @onready var _placeholder: MeshInstance3D = $Model/MeshInstance3D
 
+## Acquire a skill by skill_id. Instantiates weapon_scene, guards Node3D, adds as child,
+## calls weapon.setup(self, stats), stores in weapons[skill_id]. Sets the convenience
+## `weapon` pointer if this is the first acquired skill. No-op if already owned.
+func acquire_skill(skill_id: StringName, weapon_scene: PackedScene) -> void:
+	if weapons.has(skill_id):
+		return
+	var inst := weapon_scene.instantiate()
+	if not inst is Node3D:
+		inst.free()
+		return
+	add_child(inst)
+	inst.setup(self, stats)
+	weapons[skill_id] = inst
+	if weapon == null:
+		weapon = inst
+
+## Returns true iff the skill_id weapon has been acquired.
+func has_skill(skill_id: StringName) -> bool:
+	return weapons.has(skill_id)
+
+## Level up the weapon for skill_id. No-op if not owned.
+func level_skill(skill_id: StringName) -> void:
+	if weapons.has(skill_id):
+		weapons[skill_id].level_up()
+
+## Apply the passive bonus value to the weapon for skill_id. No-op if not owned.
+func apply_skill_passive(skill_id: StringName, value: float) -> void:
+	if weapons.has(skill_id):
+		weapons[skill_id].apply_passive(value)
+
+## Evolve the weapon for skill_id. No-op if not owned.
+func evolve_skill(skill_id: StringName) -> void:
+	if weapons.has(skill_id):
+		weapons[skill_id].evolve()
+
 func setup(data: CharacterData) -> void:
 	stats = data.base_stats.duplicate_stats()
 	hp = stats.max_hp
-	# Only attach 3D weapons — all current Weapon subclasses extend Node2D and will be
-	# skipped here. Guard prevents crashing when weapon_scene is null OR a 2D scene.
-	if data.weapon_scene:
+
+	# Backward-compat single-weapon fallback:
+	# When data.skills is empty AND data.weapon_scene is set, use the old direct
+	# instantiation path so that test_player_3d.gd and tests without SkillData stay green.
+	# When data.skills is non-empty, GameManager3D will call acquire_skill() for the
+	# signature after setup() returns — do NOT auto-instantiate here.
+	if data.skills.is_empty() and data.weapon_scene:
 		var inst := data.weapon_scene.instantiate()
 		if inst is Node3D:
 			weapon = inst
@@ -138,7 +184,7 @@ func get_pickup_range() -> float:
 	return stats.pickup_range
 
 ## Apply a per-level stat delta from a GENERIC upgrade.
-## Mirrors Player.apply_stat_upgrade exactly; weapon.refresh_cooldown() guard preserved.
+## fire_rate refreshes ALL acquired weapons so every weapon benefits from the cooldown change.
 func apply_stat_upgrade(kind: StringName, value: float) -> void:
 	match kind:
 		&"move_speed":
@@ -151,7 +197,12 @@ func apply_stat_upgrade(kind: StringName, value: float) -> void:
 			stats.pickup_range += value
 		&"fire_rate":
 			stats.fire_rate_mult += value
-			if weapon:
+			# Refresh ALL acquired weapons in the multi-weapon flow.
+			# In the legacy single-weapon flow, weapons is empty and weapon is set directly.
+			if not weapons.is_empty():
+				for w in weapons.values():
+					w.refresh_cooldown()
+			elif weapon != null:
 				weapon.refresh_cooldown()
 		&"damage":
 			stats.damage_mult += value

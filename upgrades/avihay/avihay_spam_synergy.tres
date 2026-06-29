@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"avihay_spam_synergy"
+display_name = "SYNERGY: Reply-All Apocalypse"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "Everyone gets a message. Transform Chat Spam into the ultimate reply-all barrage."
+stat_text = "Unleashes Reply-All Apocalypse"
+skill_id = &"avihay_spam"

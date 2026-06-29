@@ -39,10 +39,16 @@ and follows the Player3D node via its `target` export.
 
 | Symbol | Type | Description |
 |---|---|---|
-| `setup(data: CharacterData)` | `func` | Apply stats, optionally spawn weapon/model, emit initial `player_hp_changed` |
+| `setup(data: CharacterData)` | `func` | Apply stats, optionally spawn weapon/model, emit initial `player_hp_changed`. When `data.skills` is non-empty the 3D SkillSystem flow is used (GameManager calls `acquire_skill` for the signature); when `data.skills` is empty AND `data.weapon_scene` is set the legacy single-weapon path runs. |
+| `acquire_skill(skill_id, weapon_scene)` | `func` | Instantiate and register a weapon by skill_id. Sets `weapon` convenience pointer on first call. No-op if already owned. |
+| `has_skill(skill_id)` | `func → bool` | True iff the skill has been acquired. |
+| `level_skill(skill_id)` | `func` | Call `level_up()` on the weapon for skill_id. No-op if not owned. |
+| `apply_skill_passive(skill_id, value)` | `func` | Call `apply_passive(value)` on the weapon for skill_id. |
+| `evolve_skill(skill_id)` | `func` | Call `evolve()` on the weapon for skill_id. |
+| `weapons` | `Dictionary` | `StringName skill_id → Weapon3D`. All acquired skills. |
+| `weapon` | `Node3D` | Convenience pointer to the first acquired weapon (signature). Back-compat. |
 | `move_to_velocity(dir, speed)` | `static func` | Pure XZ mapping helper; unit-testable without Input/tree |
 | `face_angle(velocity: Vector3) -> float` | `static func` | Y-axis heading (radians) for a velocity; returns 0 for zero vector (never NaN) |
-| `weapon` | `Weapon` | Null until a 3D weapon scene is wired (future task) |
 | `level` | `int` | Current level (starts 1) |
 | `xp` | `int` | XP accumulated toward next level |
 | `hp` | `float` | Current HP |
@@ -50,7 +56,7 @@ and follows the Player3D node via its `target` export.
 | `take_damage(amount: float)` | `func` | Subtract `max(0, amount − armor)`; emit death if hp ≤ 0 |
 | `get_pickup_range()` | `func` | Returns `stats.pickup_range` |
 | `xp_to_next(lvl: int) -> int` | `func` | XP curve: `5 + lvl*3 + lvl²*2` |
-| `apply_stat_upgrade(kind, value)` | `func` | Mutates the matching stat (mirrors 2D Player exactly) |
+| `apply_stat_upgrade(kind, value)` | `func` | Mutates the matching stat. `fire_rate` refreshes all weapons in the `weapons` dict (legacy path refreshes the `weapon` pointer). |
 
 ## Movement mapping
 
