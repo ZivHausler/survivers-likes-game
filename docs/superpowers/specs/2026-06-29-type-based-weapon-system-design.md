@@ -86,13 +86,14 @@ the one `is_signature` entry as owned-at-start (`core/skill_system.gd:28-35`,
 
 ```gdscript
 var pool := SkillPool.for_types(character.types)   # 10 natural + ~2 typed
-var run_skills := [character.ultimate] + pool       # ultimate is the is_signature entry
-skill_system = SkillSystem.new(run_skills, generic_pool)
+skill_system = SkillSystem.new(pool, generic_pool) # ultimate is NOT in this pool
 ```
 
-GameManager already grants/instantiates the signature weapon at start and routes
-SKILL/PASSIVE/SYNERGY/GENERIC upgrades to `Player3D`; that logic is unchanged. The ultimate
-is just a signature weapon with a large `base_cooldown`.
+The auto-firing weapon pool routes SKILL/PASSIVE/SYNERGY/GENERIC upgrades to `Player3D` as
+before. The **ultimate is handled separately** (see §7 / §7a): it is a manual, SPACE-activated
+ability granted into its own dedicated slot — never added to the weapon pool, never offered as
+a level-up card, never upgraded. (This supersedes the earlier "ultimate = auto-firing
+`is_signature` weapon" sketch: ultimates do not auto-fire and do not level.)
 
 **`SkillSystem` change:** none required for filtering. (Optional: a guard so a weapon's
 `type` is never re-checked at runtime — not needed for v1.)
@@ -133,8 +134,11 @@ projectile pattern, or a new `custom` subclass of `Weapon3D`).
 
 ## 7. The 10 Exclusive Ultimates
 
-One per friend, `is_signature = true`, large `base_cooldown` (target ~30–60s, tuned later).
-Each carries its owner's **primary type** for tagging consistency. O = offensive, D = defensive.
+One per friend, held in a **dedicated ultimate slot** (NOT in the weapon pool). Ultimates are
+**manually activated by pressing SPACE**, gated by a large per-ult cooldown (target ~20–45s,
+tuned later); they do **not** auto-fire, are **never offered as level-up cards, and cannot be
+upgraded** (fixed power). Each carries its owner's **primary type** for tagging consistency
+only. O = offensive, D = defensive.
 
 | Friend | Ultimate | O/D | Mechanic | Archetype |
 |---|---|---|---|---|
@@ -148,6 +152,31 @@ Each carries its owner's **primary type** for tagging consistency. O = offensive
 | Yinon | Carpet Bomb | O | screen-wide barrage over a few seconds | custom (sequenced Nova strikes) |
 | Yoav | Express Delivery | O | repeated plow-through dashes in lines | custom (mobility/line hits) |
 | Yuval | Bass Drop | O | massive shockwave, damage + knockback | Nova + knockback |
+
+## 7a. Activation model + cooldown HUD
+
+**Manual activation (SPACE).** A new input action `ultimate` is bound to **SPACE**
+(`project.godot`). On press, `Player3D` activates its equipped ultimate iff the ult is off
+cooldown; otherwise nothing happens (a brief "not ready" cue). The ult is granted at run start
+from `CharacterData.ultimate` into a dedicated slot, separate from the auto-firing weapon pool,
+so it is never offered as a level-up card and never levels.
+
+**Architecture.** New `UltimateWeapon3D` base (extends `Weapon3D`) that does NOT start the
+auto-fire timer; instead it exposes `activate()` and tracks its own `cooldown_remaining`. The
+ultimate weapon is granted in this manual mode by `GameManager3D` for any character whose
+`ultimate` is set, on either the legacy or type-gated path. `CharacterData.ultimate.is_signature`
+is therefore no longer required for ultimates (they are not pool signatures).
+
+**Cooldown HUD — for ALL skills, not just the ult.** The HUD shows a per-skill cooldown
+indicator for **every** active ability: each auto-firing weapon AND the ultimate.
+- Each `Weapon3D` exposes a read-only `cooldown_fraction() -> float` (0 = just fired … 1 = ready)
+  derived from its fire timer; `UltimateWeapon3D` overrides it for its manual cooldown.
+- The HUD (`ui/hud`) reads the player's live weapons + ultimate each frame and lays out one
+  indicator per skill (icon/color + radial-or-bar overlay). Auto weapons cycle every
+  `wait_time` (visualising fire cadence); the ult shows a long sweep that empties on use and
+  refills over its cooldown, with a clear **READY** state.
+- Team-effect ults (Buzzkill / Conference Call / Comic Relief) target a `players` group and
+  no-op their team portion in solo (self-effects still apply), per §10.
 
 ## 8. Friend → Types → Pool
 
