@@ -1,22 +1,14 @@
 # See docs/notes/game-camera-3d.md
 extends Node3D
 ## 3D main scene root for the vertical slice.
-## Provides minimal WASD movement on the PlayerPlaceholder so the tilted
-## camera follow can be verified interactively. Full player logic is Task 1.2.
+## Builds a minimal CharacterData (null weapon_scene) and hands it to Player3D so
+## WASD movement works immediately. Camera follow is wired via the scene's NodePath.
 
-const MOVE_SPEED := 8.0
+@onready var _player: Player3D = $Player
 
-@onready var _placeholder: CharacterBody3D = $PlayerPlaceholder
-
-func _physics_process(_delta: float) -> void:
-	if not _placeholder:
-		return
-	var dir := Vector3.ZERO
-	if Input.is_action_pressed("move_left"):  dir.x -= 1.0
-	if Input.is_action_pressed("move_right"): dir.x += 1.0
-	if Input.is_action_pressed("move_up"):    dir.z -= 1.0
-	if Input.is_action_pressed("move_down"):  dir.z += 1.0
-	if dir.length_squared() > 0.0:
-		dir = dir.normalized()
-	_placeholder.velocity = dir * MOVE_SPEED
-	_placeholder.move_and_slide()
+func _ready() -> void:
+	var sb := StatBlock.new()
+	var cd := CharacterData.new()
+	cd.base_stats = sb
+	# weapon_scene is intentionally null — no 3D weapons exist yet
+	_player.setup(cd)
