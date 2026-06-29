@@ -62,3 +62,36 @@ offset_bottom = 40.0
 text = "EVOLVE!"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 48
+
+[node name="BossBar" type="VBoxContainer" parent="."]
+visible = false
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -320.0
+offset_top = 10.0
+offset_right = 320.0
+offset_bottom = 64.0
+grow_horizontal = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="BossNameLabel" type="Label" parent="BossBar"]
+text = "Boss"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 20
+
+[node name="BossHPBar" type="ProgressBar" parent="BossBar"]
+custom_minimum_size = Vector2(640, 26)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_styles/background = SubResource("StyleBoxFlat_hpbg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hpfill")
+
+[node name="BossHPText" type="Label" parent="BossBar/BossHPBar"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+text = "0 / 0"
+horizontal_alignment = 1
+vertical_alignment = 1

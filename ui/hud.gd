@@ -10,6 +10,10 @@ class_name HUD extends CanvasLayer
 @onready var _hp_bar:        ProgressBar = $VBox/HPBar
 @onready var _xp_bar:        ProgressBar = $VBox/XPBar
 @onready var _evolve_banner: Label       = $EvolveBanner
+@onready var _boss_bar:      Control     = $BossBar
+@onready var _boss_name:     Label       = $BossBar/BossNameLabel
+@onready var _boss_hp_bar:   ProgressBar = $BossBar/BossHPBar
+@onready var _boss_hp_text:  Label       = $BossBar/BossHPBar/BossHPText
 
 var _game_manager: Node = null  # duck-typed: GameManager (2D) or GameManager3D
 var _player: Node = null        # duck-typed: Player (2D) or Player3D
@@ -20,6 +24,9 @@ func _ready() -> void:
 	GameEvents.player_hp_changed.connect(_on_hp_changed)
 	GameEvents.player_leveled_up.connect(_on_leveled_up)
 	GameEvents.evolution_unlocked.connect(_on_evolution_unlocked)
+	GameEvents.boss_spawned.connect(_on_boss_spawned)
+	GameEvents.boss_hp_changed.connect(_on_boss_hp_changed)
+	GameEvents.boss_died.connect(_on_boss_died)
 
 	# Defer finding siblings so the full scene tree is ready
 	call_deferred("_find_siblings")
@@ -73,3 +80,18 @@ func _on_evolution_unlocked(_weapon_id: StringName) -> void:
 	_evolve_tween = create_tween()
 	_evolve_tween.tween_property(_evolve_banner, "modulate:a", 0.0, 2.0).set_delay(0.5)
 	_evolve_tween.tween_callback(func(): _evolve_banner.visible = false)
+
+func _on_boss_spawned(boss_name: String, max_hp: float) -> void:
+	_boss_name.text = boss_name
+	_boss_hp_bar.max_value = max_hp
+	_boss_hp_bar.value = max_hp
+	_boss_hp_text.text = "%d / %d" % [int(max_hp), int(max_hp)]
+	_boss_bar.visible = true
+
+func _on_boss_hp_changed(current: float, max_hp: float) -> void:
+	_boss_hp_bar.max_value = max_hp
+	_boss_hp_bar.value = current
+	_boss_hp_text.text = "%d / %d" % [int(max(current, 0.0)), int(max_hp)]
+
+func _on_boss_died() -> void:
+	_boss_bar.visible = false
