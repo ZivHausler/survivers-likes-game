@@ -24,6 +24,7 @@ class_name CharacterData extends Resource
 @export var skills: Array[SkillData] = []
 ## 1–2 type ids this character can roll type-gated weapons from. Empty = natural only.
 @export var types: Array[StringName] = []
-## This character's exclusive ultimate (its SkillData.is_signature must be true).
-## Auto-granted at run start; never offered to other characters.
+## This character's exclusive ultimate — granted at run start into a dedicated
+## manual SPACE slot (not the weapon upgrade pool). Activated by the player via
+## SPACE; never offered as a level-up card, never upgraded. is_signature not required.
 @export var ultimate: SkillData

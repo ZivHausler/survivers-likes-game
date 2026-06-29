@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://d24b36hfii0n" path="res://core/skill_data.gd" id="1_skilldata"]
+[ext_resource type="PackedScene" path="res://weapons/ult_main_character_3d.tscn" id="2_weapon"]
+
+[resource]
+script = ExtResource("1_skilldata")
+id = &"ziv_main_character"
+display_name = "Main Character Moment"
+weapon_scene = ExtResource("2_weapon")
+is_signature = false
+type = &"charm"
+description = "Ziv's ultimate. Charms all nearby enemies for 3 seconds."

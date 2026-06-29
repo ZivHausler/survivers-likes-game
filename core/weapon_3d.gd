@@ -69,3 +69,15 @@ func _refresh_cooldown() -> void:
 	if not stats:
 		return
 	_timer.wait_time = max(0.05, base_cooldown / stats.fire_rate_mult)
+
+## Pure cooldown fraction: 0.0 = just fired, 1.0 = ready. Static for testability.
+static func cooldown_fraction_of(time_left: float, wait_time: float) -> float:
+	if wait_time <= 0.0:
+		return 1.0
+	return clampf(1.0 - time_left / wait_time, 0.0, 1.0)
+
+## Live cooldown fraction for the HUD (0.0 just fired … 1.0 ready).
+func cooldown_fraction() -> float:
+	if not _timer or _timer.is_stopped():
+		return 1.0
+	return cooldown_fraction_of(_timer.time_left, _timer.wait_time)

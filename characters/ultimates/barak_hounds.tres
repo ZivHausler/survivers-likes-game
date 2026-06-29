@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://d24b36hfii0n" path="res://core/skill_data.gd" id="1_skilldata"]
+[ext_resource type="PackedScene" path="res://weapons/ult_hounds_3d.tscn" id="2_weapon"]
+
+[resource]
+script = ExtResource("1_skilldata")
+id = &"barak_hounds"
+display_name = "Release the Hounds"
+weapon_scene = ExtResource("2_weapon")
+is_signature = false
+type = &"pack"
+description = "Barak's ultimate. Releases three loyal hounds that chase and bite nearby enemies."

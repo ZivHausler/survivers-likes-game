@@ -22,6 +22,10 @@ var weapons: Dictionary = {}
 ## Set automatically by acquire_skill() on the first call. Also set by the legacy
 ## single-weapon fallback in setup() when data.skills is empty and data.weapon_scene is set.
 var weapon: Node3D = null
+## Dedicated ultimate slot (manual, SPACE). Separate from the weapon pool.
+var ultimate: UltimateWeapon3D = null
+## Acquired passive upgrades: skill_id → level (count of times applied). For the HUD.
+var passives: Dictionary = {}
 var level: int = 1
 var xp: int = 0
 var hp: float = 0.0
@@ -31,6 +35,24 @@ var _anim_player: AnimationPlayer = null
 
 @onready var _model: Node3D = $Model
 @onready var _placeholder: MeshInstance3D = $Model/MeshInstance3D
+
+## Instantiate and hold the character's ultimate. Manual mode (no auto-fire).
+func grant_ultimate(scene: PackedScene) -> void:
+	if scene == null:
+		return
+	var u := scene.instantiate()
+	if not (u is UltimateWeapon3D):
+		u.queue_free()
+		return
+	ultimate = u
+	add_child(ultimate)               # add BEFORE setup (Weapon3D contract)
+	ultimate.setup(self, stats)
+
+## Fire the ultimate if present and ready. Returns true if it activated.
+func activate_ultimate() -> bool:
+	if ultimate == null:
+		return false
+	return ultimate.activate()
 
 ## Acquire a skill by skill_id. Instantiates weapon_scene, guards Node3D, adds as child,
 ## calls weapon.setup(self, stats), stores in weapons[skill_id]. Sets the convenience
@@ -68,6 +90,7 @@ func level_skill(skill_id: StringName) -> void:
 
 ## Apply the passive bonus value to the weapon for skill_id. No-op if not owned.
 func apply_skill_passive(skill_id: StringName, value: float) -> void:
+	passives[skill_id] = int(passives.get(skill_id, 0)) + 1
 	if weapons.has(skill_id):
 		weapons[skill_id].apply_passive(value)
 
@@ -177,6 +200,8 @@ func _physics_process(dt: float) -> void:
 	elif was_invuln:
 		# Timer just reached 0 — guarantee the model is visible again.
 		_model.visible = true
+	if Input.is_action_just_pressed("ultimate"):
+		activate_ultimate()
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	# Move relative to the camera's orbit so "up" always heads toward screen-top.
 	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null

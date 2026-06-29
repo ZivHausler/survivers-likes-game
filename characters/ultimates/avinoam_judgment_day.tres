@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://d24b36hfii0n" path="res://core/skill_data.gd" id="1_skilldata"]
+[ext_resource type="PackedScene" path="res://weapons/ult_judgment_day_3d.tscn" id="2_weapon"]
+
+[resource]
+script = ExtResource("1_skilldata")
+id = &"avinoam_judgment_day"
+display_name = "Judgment Day"
+weapon_scene = ExtResource("2_weapon")
+is_signature = false
+type = &"holy"
+description = "Avinoam's ultimate. A holy strike smites all nearby enemies."
