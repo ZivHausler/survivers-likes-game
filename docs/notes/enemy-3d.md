@@ -102,6 +102,29 @@ both working:
 Never remove the synchronous `velocity = ...` assignments in `_physics_process`;
 `test_enemy_3d.gd` and `test_enemy_3d_avoidance.gd` lock this in.
 
+### First-frame warmup fallback (FIX 1)
+
+The NavigationServer takes one or more frames to join a newly spawned agent to a
+navigation map before it starts emitting `velocity_computed`. Until the first
+callback fires, `_avoidance_active` is `false`. While false, `_apply_movement`
+calls **both** `_agent.set_velocity()` (to start the handshake) **and**
+`move_and_slide()` directly (so the enemy moves with its desired velocity rather
+than freezing). Once `_on_velocity_computed` is received for the first time,
+`_avoidance_active` is set `true` and the direct `move_and_slide()` call is
+suppressed — only the callback moves the character, preventing double-moves in
+the steady state.
+
+### Stale-velocity callback guard (FIX 2)
+
+`_on_velocity_computed` returns early (no-op) when `data == null`. This guards
+against a queued callback arriving before `setup()` or after the enemy is freed.
+
+### max_speed coupling (FIX 3)
+
+`setup()` raises `_agent.max_speed` to `max(current, data.move_speed)` so fast
+enemies (move_speed > tscn default 12.0) are not RVO-clamped. Guarded for null
+agent / null data.
+
 ## Tuning Constants
 
 | Constant | Value | Replaces 2D |

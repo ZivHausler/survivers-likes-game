@@ -38,6 +38,11 @@ var _anim_loaded: bool = false
 ## Phase accumulator (radians) for the procedural alive-bob; advances each physics frame.
 var _bob_phase: float = 0.0
 
+## True once the first velocity_computed callback has been received.
+## False on warmup frames (NavigationServer not yet joined); used by _apply_movement
+## to fall back to a direct move_and_slide() so enemies never freeze on the first frame.
+var _avoidance_active := false
+
 ## Boss classification — set by Spawner3D via configure_boss() after setup().
 enum BossKind { NONE, MINI, BIG }
 var boss_kind: int = BossKind.NONE
@@ -61,6 +66,10 @@ func setup(p_data: EnemyData, p_target: Node3D) -> void:
 	data = p_data
 	target = p_target
 	hp = data.max_hp
+	# FIX 3: raise the NavigationAgent3D speed cap to match the enemy's actual move_speed
+	# so fast enemies (move_speed > tscn default 12.0) are not RVO-clamped.
+	if _agent and data:
+		_agent.max_speed = max(_agent.max_speed, data.move_speed)
 
 	if data.model_scene:
 		# Hide the sphere placeholder — real monster model takes over.
@@ -117,15 +126,28 @@ func charm(duration: float) -> void:
 ## actual move_and_slide() then happens in _on_velocity_computed. Falls back to a
 ## direct move when there is no agent or we are outside the scene tree (headless
 ## unit tests), preserving the original synchronous behavior.
+##
+## FIX 1 — first-frame/warmup fallback: until the NavigationServer has joined the
+## agent to a map and emitted the first velocity_computed callback (_avoidance_active
+## is false), we also call move_and_slide() directly so the enemy moves with its
+## desired velocity. Once active, only the callback's move_and_slide() runs — never
+## double-moving in the steady state.
 func _apply_movement(_dt: float) -> void:
 	if _agent and _agent.avoidance_enabled and is_inside_tree():
 		_agent.set_velocity(velocity)
+		if not _avoidance_active:
+			move_and_slide()   # warmup fallback: desired velocity until first callback
 	else:
 		move_and_slide()
 
 ## Avoidance result: the navigation server's collision-free velocity. Apply it and
 ## perform the real move. velocity_computed fires during the physics step.
+## FIX 2 — stale-velocity guard: no-op when data is null (e.g. a queued callback
+## arrives after setup() hasn't run, or the enemy was freed mid-frame).
 func _on_velocity_computed(safe_velocity: Vector3) -> void:
+	if data == null:
+		return
+	_avoidance_active = true
 	velocity = safe_velocity
 	move_and_slide()
 
