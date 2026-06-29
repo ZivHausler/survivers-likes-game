@@ -524,3 +524,65 @@ func test_upgrade_existing_kind_values_unchanged():
 func test_upgrade_skill_id_field_exists():
 	var u := Upgrade.new()
 	assert_eq(u.skill_id, &"")
+
+
+# ---------------------------------------------------------------------------
+# New tests for code-review fixes
+# ---------------------------------------------------------------------------
+
+## (3a) Second apply of a SKILL upgrade takes level from 1 → 2, confirming
+## GameManager's acquisition detection (level==1) fires only on the first apply.
+func test_second_apply_increments_skill_to_2():
+	var sys := _make_sys()
+	var sk_a := _skill_of(sys, &"skill_a")
+	sys.apply(sk_a.skill_upgrade)           # 0 → 1
+	assert_eq(sys.skill_level(&"skill_a"), 1)
+	sys.apply(sk_a.skill_upgrade)           # 1 → 2
+	assert_eq(sys.skill_level(&"skill_a"), 2)
+
+
+## (3b) Strengthen no-duplicate-ids: mutate state between shuffle trials and
+## verify build_choices never returns duplicates or exceeds the requested count.
+func test_no_duplicate_ids_heterogeneous_states():
+	var sys := _make_sys()
+	var rng := _rng(77)
+	var sk_a := _skill_of(sys, &"skill_a")
+	var sig  := _skill_of(sys, &"sig_skill")
+
+	# Acquire skill_a and apply a few upgrades to create a mixed state.
+	sys.apply(sk_a.skill_upgrade)           # acquire
+	sys.apply(sk_a.passive_upgrade)         # passive level 1
+	# Give sig a passive so a synergy becomes available mid-loop.
+	for _i in 4:
+		sys.apply(sig.skill_upgrade)        # sig: 1 → 5
+	sys.apply(sig.passive_upgrade)          # synergy now available
+
+	var count := 3
+	for _trial in 30:
+		var choices := sys.build_choices(rng, count)
+		# Must not exceed requested count.
+		assert_true(choices.size() <= count)
+		# Must have no duplicate ids.
+		var ids: Dictionary = {}
+		for u in choices:
+			assert_false(ids.has(u.id),
+				"Duplicate id in choices (heterogeneous state): " + str(u.id))
+			ids[u.id] = true
+
+
+## (3c) synergy_available returns false for a skill that has never been acquired.
+func test_synergy_not_available_for_level_0_skill():
+	var sys := _make_sys()
+	var sk_b := _skill_of(sys, &"skill_b")
+	# skill_b starts at level 0 — synergy must be unavailable.
+	assert_false(sys.synergy_available(sk_b))
+
+
+## (3d) Over-applying a maxed upgrade must NOT push its level past max_level.
+func test_over_apply_does_not_exceed_max_level():
+	var sys := _make_sys()
+	var sk_a := _skill_of(sys, &"skill_a")
+	# Apply one more than max (max_level == 5).
+	for _i in 6:
+		sys.apply(sk_a.skill_upgrade)
+	assert_eq(sys.levels.get(sk_a.skill_upgrade.id, 0), sk_a.skill_upgrade.max_level)

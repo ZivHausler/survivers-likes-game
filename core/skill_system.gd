@@ -125,15 +125,19 @@ func has_available_choices() -> bool:
 
 
 ## Apply upgrade `u` to state.
-## SKILL / PASSIVE / GENERIC → increment levels[u.id].
-## SYNERGY → mark synergized[u.skill_id] = true and emit GameEvents.evolution_unlocked.
+## SKILL / PASSIVE / GENERIC → increment levels[u.id], capped at u.max_level.
+## SYNERGY → mark synergized[u.skill_id] = true and emit GameEvents.evolution_unlocked,
+##           but only if the synergy is actually available for the skill.
+##           (build_choices is the normal gate; this guard is a defensive backstop.)
 func apply(u: Upgrade) -> void:
 	match u.kind:
 		Upgrade.Kind.SKILL, Upgrade.Kind.PASSIVE, Upgrade.Kind.GENERIC:
-			levels[u.id] = levels.get(u.id, 0) + 1
+			levels[u.id] = min(levels.get(u.id, 0) + 1, u.max_level)
 		Upgrade.Kind.SYNERGY:
-			synergized[u.skill_id] = true
-			GameEvents.evolution_unlocked.emit(u.skill_id)
+			var skill := _find_skill(u.skill_id)
+			if skill != null and synergy_available(skill):
+				synergized[u.skill_id] = true
+				GameEvents.evolution_unlocked.emit(u.skill_id)
 
 
 # ---------------------------------------------------------------------------
