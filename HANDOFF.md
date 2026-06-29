@@ -1,13 +1,14 @@
 # Friends Swarm — Session Handoff
 
 > Last updated: 2026-06-29. Read this first to resume work.
+> **Status:** `feature/v1-vertical-slice` merged to **`main`** (clean fast-forward; both are at the same commit). No git remote configured (local only).
 
 ## What this is
 A **Godot 4.7 (GDScript) 3D horde-survivor** ("Vampire Survivors"–style) with a **tilted top-down view**: move-only control, auto-firing skills, monsters swarm, XP orbs → level-up → pick 1-of-3 upgrade cards, with a per-skill synergy/evolution system. Each playable character is one of the owner's real friends. **The 2D→3D pivot + the full 8-item feature expansion are COMPLETE.**
 
-- **Repo:** `~/friends-swarm` — branch **`feature/v1-vertical-slice`**.
+- **Repo:** `~/friends-swarm` — branch **`feature/v1-vertical-slice`** (== **`main`** after this session's merge).
 - **Run it:** `godot --path ~/friends-swarm` → boots to **character select (3D)** → pick 1 of 10 friends → 3D run. Headless boot: `godot --headless --quit`.
-- **Tests:** `godot --headless --import && godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://test -gexit` → **1047/1047 green**. (⚠️ GUT 9.7.0 **silently skips** any test file using `assert_le`/`assert_ge` — always use `assert_true(x <= y)`; watch that the test count rises as expected.)
+- **Tests:** `godot --headless --import && godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://test -gexit` → **1049/1049 green**. (⚠️ GUT 9.7.0 **silently skips** any test file using `assert_le`/`assert_ge` — always use `assert_true(x <= y)`; watch that the test count rises as expected.)
 
 ## Playtest round 1 — fixes applied (after first user run)
 - **Camera was invisible (CRITICAL):** `GameCamera3D.target` never resolved from the `.tscn` `NodePath` → camera stuck at origin. Now set in code (`GameManager3D.start()` assigns `cam.target = player`); regression-tested.
@@ -49,7 +50,7 @@ A **Godot 4.7 (GDScript) 3D horde-survivor** ("Vampire Survivors"–style) with 
 ## How work was run (process)
 Subagent-driven, review-gated: each task = implementer subagent → reviewer subagent (spec + quality) → fix loop, suite kept green, atomic commits. Phase 5 (8 characters) + several features fanned out across parallel git-worktree agents, merged sequentially. **The user runs the actual game for visual/feel verification** (headless can't see pixels).
 
-## Ranged & Dasher enemy archetypes (feature: ranged-and-dasher-enemies)
+## Ranged & Dasher enemy archetypes (feature: ranged-and-dasher-enemies) — COMPLETE & merged
 
 Three new enemy variants are now registered in the spawner and gated by difficulty time:
 
@@ -61,10 +62,10 @@ Three new enemy variants are now registered in the spawner and gated by difficul
 | `magician`| RANGED      | `enemies/magician.tres`  | t ≥ 240 s  |
 
 ### Attack-strategy system
-`Enemy3D` now delegates movement and attacks to an `EnemyAttack` strategy object (created from `EnemyData.attack_kind` via `_make_attack()`):
-- **MELEE** — `MeleeAttack`: charge at target, deal damage on contact (unchanged swarmer/tank behaviour).
-- **RANGED** — `RangedAttack`: kite at standoff distance (`RANGED_STANDOFF = 6.0`), advance while outside LOS or out of range, telegraph and fire an `EnemyProjectile3D` (terrain-blocked, ignores enemies; collision mask 18 = layers 2 + 16).
-- **DASHER** — `DashAttack`: approach target, windup telegraph, dash lunge, cooldown; telegraphs before any damage for fairness.
+`Enemy3D` delegates non-melee movement+attacks to an `EnemyAttack` strategy object (`enemies/attacks/`, created from `EnemyData.attack_kind` via `_make_attack()`). **MELEE is the inline default** — `_attack == null`, so Enemy3D's original chase + `CONTACT_RANGE` contact-damage runs byte-unchanged (there is no `MeleeAttack` class). Legacy `is_ranged == true` maps to RANGED.
+- **RANGED** — `RangedAttack`: **approach to `attack_range`, then HOLD and keep firing** (per owner directive — NO kiting/retreat). Fires an `EnemyProjectile3D` only with line-of-sight (terrain on layer 16 blocks the ray = cover) and off cooldown, after a `windup_time` telegraph. `attack_range` is per-`.tres` (spitter 12, archer 14, magician 18); the legacy `RANGED_STANDOFF = 6.0` is no longer used for ranged movement.
+- **DASHER** — `DashAttack`: approach → windup telegraph → dash to the *locked* target position → cooldown; telegraphs before any damage for fairness.
+- **`EnemyProjectile3D`** (`enemies/enemy_projectile_3d.*`, Area3D, mask 18 = player hurtbox layer 2 + terrain layer 16): damages the player on hurtbox hit (i-frames respected), is destroyed by terrain (cover), ignores other enemies (not masking layer 8) and the ground (layer 1); lifetime cap. Spawned via `add_child` **then** position-set — the spawn-at-origin ordering bug (every arrow flying from map center) was caught in final review and fixed + regression-tested.
 
 ### Difficulty thresholds (full table)
 | t (s) | Variants in pool                                     |
@@ -76,10 +77,15 @@ Three new enemy variants are now registered in the spawner and gated by difficul
 | 180–239| swarmer, tank, spitter, archer, **dasher**         |
 | 240+  | swarmer, tank, spitter, archer, dasher, **magician**|
 
-### Files changed
+### Files
+- `enemies/enemy_data.gd` — `AttackKind` enum (MELEE/RANGED/DASHER) + ranged params (`attack_range`, `attack_cooldown`, `windup_time`, `projectile_speed`, `projectile_damage`) + dash params (`dash_trigger_range`, `dash_windup`, `dash_speed`, `dash_duration`, `dash_cooldown`).
+- `enemies/attacks/{enemy_attack,ranged_attack,dash_attack}.gd` — strategy base + the two behaviours.
+- `enemies/enemy_projectile_3d.{gd,tscn}` — the enemy projectile.
+- `enemies/enemy_3d.gd` — `_attack` field + `_make_attack()` + the `if _attack / else (inline melee)` delegation in `_physics_process`.
+- `enemies/{spitter,archer,magician,dasher}.tres` — spitter upgraded to RANGED; three new variants (CC0 **placeholder** models — see open item).
 - `spawning/spawner_3d.gd` — `ARCHER_PATH`/`MAGICIAN_PATH`/`DASHER_PATH` consts + three `_variants` entries in `setup()`.
 - `spawning/difficulty_timeline.gd` — `ARCHER_THRESHOLD`/`DASHER_THRESHOLD`/`MAGICIAN_THRESHOLD` consts + three `variants.append` calls in `state_at()`.
-- `test/test_enemy_variant_gating.gd` — 4 gating tests covering all three thresholds + early-game invariant.
+- Tests: `test_enemy_attack_data`, `test_enemy_projectile_3d`, `test_enemy_attack_wiring`, `test_ranged_attack`, `test_dash_attack`, `test_enemy_variant_gating`. Docs: `docs/notes/enemy-attacks.md`, `docs/notes/enemy-projectile-3d.md`.
 
 ## ⚠️ Open / deferred (next session)
 1. **2D code still present** — the old 2D scenes/scripts/tests were kept intact as a fallback during the pivot (Option B). A **cleanup task to delete 2D** (`game/main.tscn`, 2D player/enemy/weapons/spawner/gem, `game/game_manager.gd`, `ui/character_select.tscn`, 2D-only tests, `autoload/Juice` 2D) is **deferred until the user confirms the 3D build in a playtest**. `project.godot` main scene is already `character_select_3d`.
@@ -87,7 +93,7 @@ Three new enemy variants are now registered in the spawner and gated by difficul
 3. **Playtest tuning** — enemy `model_scale`/`model_y_offset` (converted FBX may import large/offset; bosses compound body-scale × model-scale), camera-shake magnitude, skill balance (e.g. Ido DoT cd 1.0 at high damage_mult), orb-color readability, VFX visibility/perf with many enemies.
 4. **Accumulated Minor review notes** (non-blocking) are listed per-task in `.superpowers/sdd/progress.md` — triage before any release.
 5. **Asset license** — the MDA monster pack is a 2016 commercial Unity asset with **no bundled license**: fine for a personal prototype, rights UNCONFIRMED before distribution (`docs/notes/asset-licenses.md`). Player models (Kenney) + VFX lib are CC0/MIT.
-6. **⚠️ BUG — ranged enemies (blue spitters) are frozen + ranged attacks need a real attack range** (in-progress *enemy-attacks* workstream). `Enemy3D` now routes movement through an `EnemyAttack` strategy (`enemies/attacks/`). `RangedAttack` (`enemies/attacks/ranged_attack.gd`) is an explicit **STUB** that inherits the base `desired_velocity()` → `Vector3.ZERO`, so **every spitter stands completely still** (confirmed in-game by the user). This also fails one test (`test_ranged_enemy_outside_standoff_moves_toward_target` in `test/test_enemy_3d.gd` → suite is **1032/1033**). **Design requirement (from the owner):** a ranged monster must have a defined **attack range** — it cannot hit from anywhere. Task 4 should make the spitter **advance toward the target until it is within attack range, fire from there, and hold a minimum stand-off** (`RANGED_STANDOFF = 6.0` in `enemy_3d.gd` is the existing knob), instead of attacking from any distance or freezing. NOT YET IMPLEMENTED — left for whoever owns the enemy-attacks feature (`docs/notes/enemy-attacks.md`, `enemy_projectile_3d`). Deliberately not patched this session per the owner's instruction to flag only.
+6. **Ranged & dasher enemies — DONE this session** (this resolves the earlier frozen-spitter bug). Spitter now fires; archer/magician/dasher added with difficulty gating (see the "Ranged & Dasher" section). Ranged enemies approach to their attack range then hold & fire (owner directive); the spawn-at-origin projectile bug was caught in final review and fixed. Suite green at **1049/1049**. **Two follow-ups:** (a) the new variants use **CC0 PLACEHOLDER models** — tinted Kenney character meshes (archer/magician) + the bug mesh (dasher); reliable headless download of bespoke rigged archer/magician art wasn't feasible — swap for dedicated art when available; the dasher's bug mesh is the same unconfirmed-license MDA asset as swarmer (item 5). (b) **Owner playtest pending** for feel/balance — projectile dodging, terrain-as-cover, dash timing, spawn cadence — since headless can't render or simulate RVO. Tuning lives in the `enemies/*.tres` (ranges/cooldowns/damage/windups). Deferred Minor cleanups (e.g. a now-dead `is_ranged` branch in `enemy_3d.gd`) are logged in `.superpowers/sdd/progress.md`.
 7. **HP regen added (NEW this session)** — `StatBlock.hp_regen` (HP/sec, per-character; applied in `Player3D._physics_process`, no overheal / no reviving the dead). Values vary 0.4 (Yoav) → 2.0 (Natali) in each `characters/<name>_3d.tres`. Covered by tests in `test_player_3d.gd`.
 
 When resuming: read this file, then `.superpowers/sdd/progress.md`, `git log --oneline`, `docs/notes/INDEX.md`.
