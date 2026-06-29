@@ -235,6 +235,26 @@ func test_voice_blast_initial_radius() -> void:
 	assert_almost_eq(w.radius, 6.0, 0.001, "VoiceBlast radius must start at 6.0")
 
 # ═════════════════════════════════════════════════════════════════════════════
+# Per-skill base_cooldown — subclass values must not be clobbered by archetype
+# ═════════════════════════════════════════════════════════════════════════════
+
+func test_selfie_flash_base_cooldown() -> void:
+	var w := _make_selfie_flash()
+	assert_almost_eq(w.base_cooldown, 3.0, 0.001, "SelfieFlash base_cooldown must be 3.0")
+
+func test_voice_blast_base_cooldown() -> void:
+	var w := _make_voice_blast()
+	assert_almost_eq(w.base_cooldown, 3.0, 0.001, "VoiceBlast base_cooldown must be 3.0")
+
+func test_adoring_aura_base_cooldown() -> void:
+	var w := _make_adoring_aura()
+	assert_almost_eq(w.base_cooldown, 3.5, 0.001, "AdoringAura base_cooldown must be 3.5")
+
+func test_nova_archetype_base_cooldown_default() -> void:
+	var w := _make_nova_weapon()
+	assert_almost_eq(w.base_cooldown, 2.5, 0.001, "NovaWeapon3D direct base_cooldown must default to 2.5")
+
+# ═════════════════════════════════════════════════════════════════════════════
 # Scenes load and are Weapon3D
 # ═════════════════════════════════════════════════════════════════════════════
 

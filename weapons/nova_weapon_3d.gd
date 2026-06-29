@@ -16,8 +16,10 @@ var damage: float = 18.0
 ## Seconds enemies are charmed per pulse. 0.0 = no charm.
 var charm_duration: float = 0.0
 
-func _ready() -> void:
+func _init() -> void:
 	base_cooldown = 2.5
+
+func _ready() -> void:
 	super()
 
 ## On fire: find affected enemies (pure helper), then apply damage / charm.

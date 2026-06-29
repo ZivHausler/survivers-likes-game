@@ -214,6 +214,26 @@ func test_mass_dm_damage_lower() -> void:
 	assert_almost_eq(w.damage, 9.0, 0.001, "MassDM damage must be 9")
 
 # ═════════════════════════════════════════════════════════════════════════════
+# Per-skill base_cooldown — subclass values must not be clobbered by archetype
+# ═════════════════════════════════════════════════════════════════════════════
+
+func test_mirror_shards_base_cooldown() -> void:
+	var w := _make_mirror_shards()
+	assert_almost_eq(w.base_cooldown, 2.0, 0.001, "MirrorShards base_cooldown must be 2.0")
+
+func test_mass_dm_base_cooldown() -> void:
+	var w := _make_mass_dm()
+	assert_almost_eq(w.base_cooldown, 2.0, 0.001, "MassDM base_cooldown must be 2.0")
+
+func test_group_call_base_cooldown() -> void:
+	var w := _make_group_call()
+	assert_almost_eq(w.base_cooldown, 2.5, 0.001, "GroupCall base_cooldown must be 2.5")
+
+func test_orbit_archetype_base_cooldown_default() -> void:
+	var w := _make_orbit_weapon()
+	assert_almost_eq(w.base_cooldown, 2.5, 0.001, "OrbitWeapon3D direct base_cooldown must default to 2.5")
+
+# ═════════════════════════════════════════════════════════════════════════════
 # Scenes load and are Weapon3D
 # ═════════════════════════════════════════════════════════════════════════════
 

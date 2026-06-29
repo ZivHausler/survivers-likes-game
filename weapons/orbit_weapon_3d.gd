@@ -28,8 +28,10 @@ var _orbiters: Array[Area3D] = []
 ## Per-enemy hit cooldown: instance_id → expiry tick (msec).
 var _hit_cd: Dictionary = {}
 
-func _ready() -> void:
+func _init() -> void:
 	base_cooldown = 2.5
+
+func _ready() -> void:
 	super()
 	_rebuild_orbiters()
 
