@@ -126,10 +126,19 @@ func _rebuild_orbiters() -> void:
 		sphere.radius = 0.6
 		col.shape = sphere
 		area.add_child(col)
-		# Placeholder visual mesh (minimal — rich VFX is Phase 4.5).
+		# Visible emissive sphere so players can see the orbiters circling.
 		var mi: MeshInstance3D = MeshInstance3D.new()
-		mi.mesh = SphereMesh.new()
-		mi.scale = Vector3(0.4, 0.4, 0.4)
+		var sphere_mesh := SphereMesh.new()
+		sphere_mesh.radius = 0.4
+		sphere_mesh.height  = 0.8
+		mi.mesh = sphere_mesh
+		# Fresh material per orbiter — never share a resource across instances.
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = vfx_color
+		mat.emission_enabled = true
+		mat.emission = vfx_color
+		mat.emission_energy_multiplier = 2.0
+		mi.material_override = mat
 		area.add_child(mi)
 		area.position = offsets[i]
 		add_child(area)

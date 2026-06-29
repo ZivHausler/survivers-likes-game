@@ -5,10 +5,19 @@ class_name SkillCastFx3D extends GPUParticles3D
 
 func play_at(pos: Vector3, color: Color) -> void:
 	global_position = pos
-	# Duplicate the shared material so we can set a unique color per instance.
-	var mat: ParticleProcessMaterial = process_material.duplicate()
-	mat.color = color
-	process_material = mat
+	# Duplicate the shared process material so we can set a unique color per instance.
+	var pmat: ParticleProcessMaterial = process_material.duplicate()
+	pmat.color = color
+	process_material = pmat
+	# Apply a fresh emissive material so particles are visible against a dark arena.
+	# vertex_color_use_as_albedo lets the process_material.color modulate albedo.
+	var vmat := StandardMaterial3D.new()
+	vmat.vertex_color_use_as_albedo = true
+	vmat.albedo_color = color
+	vmat.emission_enabled = true
+	vmat.emission = color
+	vmat.emission_energy_multiplier = 3.0
+	material_override = vmat
 	emitting = true
 	var timer: SceneTreeTimer = get_tree().create_timer(lifetime + 0.2)
 	timer.timeout.connect(queue_free)

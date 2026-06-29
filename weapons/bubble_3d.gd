@@ -26,6 +26,26 @@ var _hit_enemies: Array[Node] = []
 var vfx_id: StringName = &"avihay_chat_spam"
 var vfx_color: Color = Color(0.3, 0.6, 1.0)  # blue/chat
 
+func _ready() -> void:
+	_setup_visual()
+
+## Add a clearly visible emissive sphere mesh so the bubble is easy to see.
+## Called from _ready(); creates a fresh material per instance.
+func _setup_visual() -> void:
+	var mi := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.5
+	sphere.height  = 1.0
+	mi.mesh = sphere
+	# Fresh material per bubble instance — never share a resource.
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = vfx_color
+	mat.emission_enabled = true
+	mat.emission = vfx_color
+	mat.emission_energy_multiplier = 2.0
+	mi.material_override = mat
+	add_child(mi)
+
 ## Initialise the bubble after adding to scene tree.
 ## Call this immediately after add_child(bubble).
 func setup(direction: Vector3, damage: float, pierce: int, homing: bool) -> void:

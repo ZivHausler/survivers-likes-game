@@ -7,10 +7,12 @@ direction = Vector3(0, 1, 0)
 spread = 180.0
 initial_velocity_min = 3.0
 initial_velocity_max = 8.0
+scale_min = 0.3
+scale_max = 0.6
 color = Color(1, 1, 1, 1)
 
 [node name="SkillCastFx3D" type="GPUParticles3D"]
-amount = 16
+amount = 32
 lifetime = 0.6
 one_shot = true
 explosiveness = 0.95

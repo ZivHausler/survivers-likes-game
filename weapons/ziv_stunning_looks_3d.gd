@@ -41,6 +41,40 @@ func _ready() -> void:
 	# CharmField stays off until evolve() activates it.
 	_charm_field.monitoring  = false
 	_charm_field.monitorable = false
+	_setup_visuals()
+
+## Programmatically add emissive mesh visuals to Beam and CharmField so they
+## are clearly visible in the dark arena.  Materials are created fresh here —
+## no shared-resource mutation.
+func _setup_visuals() -> void:
+	# Beam: a box matching the BoxShape3D (1.5 × 0.5 × 8.0), offset to centre on z=-4.
+	var beam_mesh_inst := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(1.5, 0.5, 8.0)
+	beam_mesh_inst.mesh = box
+	beam_mesh_inst.position = Vector3(0.0, 0.0, -4.0)
+	var beam_mat := StandardMaterial3D.new()
+	beam_mat.albedo_color = Color(vfx_color.r, vfx_color.g, vfx_color.b, 0.6)
+	beam_mat.emission_enabled = true
+	beam_mat.emission = vfx_color
+	beam_mat.emission_energy_multiplier = 2.0
+	beam_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	beam_mesh_inst.material_override = beam_mat
+	_beam.add_child(beam_mesh_inst)
+	# CharmField: a large semi-transparent sphere indicating the charm radius.
+	var charm_mesh_inst := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = charm_radius
+	sphere.height  = charm_radius * 2.0
+	charm_mesh_inst.mesh = sphere
+	var charm_mat := StandardMaterial3D.new()
+	charm_mat.albedo_color = Color(vfx_color.r, vfx_color.g, vfx_color.b, 0.12)
+	charm_mat.emission_enabled = true
+	charm_mat.emission = vfx_color
+	charm_mat.emission_energy_multiplier = 1.0
+	charm_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	charm_mesh_inst.material_override = charm_mat
+	_charm_field.add_child(charm_mesh_inst)
 
 func _process(dt: float) -> void:
 	if evolved:
