@@ -197,6 +197,7 @@ func _spawn_boss(hp_mult: float) -> void:
 		var model_node := boss.get_node_or_null("Model") as Node3D
 		if model_node:
 			apply_model_tint(model_node, Color(1.0, 0.15, 0.1, 1.0))
+		boss.configure_boss(Enemy3D.BossKind.MINI)
 
 
 func _spawn_big_boss(hp_mult: float) -> void:
@@ -219,6 +220,7 @@ func _spawn_big_boss(hp_mult: float) -> void:
 		var model_node := boss.get_node_or_null("Model") as Node3D
 		if model_node:
 			apply_model_tint(model_node, Color(0.5, 0.0, 1.0, 1.0))
+		boss.configure_boss(Enemy3D.BossKind.BIG, "Undead Serpent")
 
 
 func _instance_enemy(data: EnemyData, scale_mult: float) -> Enemy3D:

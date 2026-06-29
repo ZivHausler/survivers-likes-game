@@ -209,3 +209,38 @@ func test_apply_model_tint_recurses_into_children() -> void:
 	var bm := result_mat as BaseMaterial3D
 	assert_not_null(bm, "child material must be BaseMaterial3D")
 	assert_eq(bm.albedo_color, Color.RED, "child surface albedo must equal the tint")
+
+# ── boss spawn wiring (configure_boss tagging) ────────────────────────────────
+
+## Build a Spawner3D under a non-root container (so _instance_enemy's parent assert
+## passes and spawned enemies land in the container), wired to a dummy target.
+func _make_active_spawner() -> Spawner3D:
+	var container: Node3D = add_child_autofree(Node3D.new())
+	var spawner := Spawner3D.new()
+	container.add_child(spawner)
+	var target: Node3D = add_child_autofree(Node3D.new())
+	spawner.setup(target)
+	return spawner
+
+func _first_enemy_in(spawner: Spawner3D) -> Enemy3D:
+	for child in spawner.get_parent().get_children():
+		if child is Enemy3D:
+			return child as Enemy3D
+	return null
+
+func test_spawn_boss_tags_enemy_as_mini() -> void:
+	var spawner := _make_active_spawner()
+	spawner._spawn_boss(1.0)
+	var boss := _first_enemy_in(spawner)
+	assert_not_null(boss, "a mini-boss enemy must be spawned")
+	assert_eq(boss.boss_kind, Enemy3D.BossKind.MINI, "mini-boss tagged MINI")
+	assert_not_null(boss._health_bar, "mini-boss must carry a HealthBar3D")
+
+func test_spawn_big_boss_tags_enemy_as_big_and_emits() -> void:
+	var spawner := _make_active_spawner()
+	watch_signals(GameEvents)
+	spawner._spawn_big_boss(1.0)
+	var boss := _first_enemy_in(spawner)
+	assert_not_null(boss, "a big-boss enemy must be spawned")
+	assert_eq(boss.boss_kind, Enemy3D.BossKind.BIG, "big-boss tagged BIG")
+	assert_signal_emitted(GameEvents, "boss_spawned")
