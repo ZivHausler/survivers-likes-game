@@ -32,6 +32,7 @@ var _player = null  # Player3D at runtime; duck-typed so test stubs work
 var _spawner = null  # Spawner3D at runtime; duck-typed so test stubs work
 var _gem_scene: PackedScene = null
 var _upgrade_ui: Node = null  # UpgradeUI CanvasLayer
+var _pause_menu: Node = null  # PauseMenu CanvasLayer (sibling in main_3d.tscn)
 ## skill.id → SkillData, built from char_data.skills at start.
 var _skill_by_id: Dictionary = {}
 
@@ -57,6 +58,7 @@ func start() -> void:
 	_player = parent.get_node_or_null("Player") as Player3D
 	_spawner = parent.get_node_or_null("Spawner3D")  # duck-typed; no cast needed
 	_upgrade_ui = parent.get_node_or_null("UpgradeUI")
+	_pause_menu = parent.get_node_or_null("PauseMenu")
 
 	# Character data: use RunState if set, else default to ziv_3d.tres.
 	var char_data: CharacterData = RunState.selected_character as CharacterData
@@ -126,6 +128,21 @@ func _process(dt: float) -> void:
 	if get_tree().paused:
 		return
 	elapsed += dt
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed("ui_cancel"):
+		return
+	# Never open the pause menu while the level-up card flow is running — it owns
+	# the paused state and the picker UI; overlapping would conflict.
+	if _choosing:
+		return
+	if _pause_menu == null:
+		return
+	if _pause_menu.is_open():
+		_pause_menu.close()
+	else:
+		_pause_menu.open()
 
 
 func get_elapsed() -> float:

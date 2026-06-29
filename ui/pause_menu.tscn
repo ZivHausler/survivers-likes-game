@@ -1,0 +1,43 @@
+[gd_scene load_steps=2 format=3 uid="uid://pause_menu_3d"]
+
+[ext_resource type="Script" path="res://ui/pause_menu.gd" id="1_pm"]
+
+[node name="PauseMenu" type="CanvasLayer"]
+process_mode = 3
+script = ExtResource("1_pm")
+
+[node name="Panel" type="Panel" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = -130.0
+offset_right = 140.0
+offset_bottom = 130.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+
+[node name="PausedLabel" type="Label" parent="Panel/VBox"]
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="ContinueButton" type="Button" parent="Panel/VBox"]
+text = "Continue"
+
+[node name="RetryButton" type="Button" parent="Panel/VBox"]
+text = "Retry"
+
+[node name="CharacterSelectButton" type="Button" parent="Panel/VBox"]
+text = "Character Select"
+
+[node name="QuitButton" type="Button" parent="Panel/VBox"]
+text = "Quit Game"
