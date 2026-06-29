@@ -16,7 +16,7 @@ var _fill_pivot: Node3D = null
 var _fill: MeshInstance3D = null
 
 func _ready() -> void:
-	_bg = _make_quad(WIDTH, HEIGHT, COLOR_BG, 0.0)
+	_bg = _make_quad(WIDTH, HEIGHT, COLOR_BG, 0.0, 0)
 	add_child(_bg)
 	# Pivot anchored at the bar's left edge; the fill quad is offset +WIDTH/2 so its
 	# left edge coincides with the pivot. Scaling the pivot's x grows/shrinks the fill
@@ -24,13 +24,15 @@ func _ready() -> void:
 	_fill_pivot = Node3D.new()
 	_fill_pivot.position = Vector3(-WIDTH * 0.5, 0.0, FILL_EPSILON)
 	add_child(_fill_pivot)
-	_fill = _make_quad(WIDTH, HEIGHT, COLOR_FILL, 0.0)
+	_fill = _make_quad(WIDTH, HEIGHT, COLOR_FILL, 0.0, 1)
 	_fill.position = Vector3(WIDTH * 0.5, 0.0, 0.0)
 	_fill_pivot.add_child(_fill)
 	set_ratio(1.0)
 
 ## Build an unshaded, double-sided, depth-test-disabled quad of the given size/color.
-func _make_quad(w: float, h: float, color: Color, z: float) -> MeshInstance3D:
+## priority controls render_priority on the material so fill (priority=1) always draws
+## in front of the background (priority=0) even when no_depth_test=true disables Z sorting.
+func _make_quad(w: float, h: float, color: Color, z: float, priority: int) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var quad := QuadMesh.new()
 	quad.size = Vector2(w, h)
@@ -41,6 +43,7 @@ func _make_quad(w: float, h: float, color: Color, z: float) -> MeshInstance3D:
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.no_depth_test = true
 	mat.albedo_color = color
+	mat.render_priority = priority
 	mi.material_override = mat
 	return mi
 
@@ -63,4 +66,5 @@ func _process(_dt: float) -> void:
 	var cam := get_viewport().get_camera_3d()
 	if cam == null:
 		return
+	# Assumes the parent boss uses uniform scale and never rotates its body (only its Model child rotates); a non-uniform/rotated body would skew this unit-scale billboard.
 	global_transform = Transform3D(cam.global_transform.basis, global_position)

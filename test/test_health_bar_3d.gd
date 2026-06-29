@@ -24,3 +24,12 @@ func test_builds_background_and_fill_children() -> void:
 	var bar: HealthBar3D = add_child_autofree(HealthBar3D.new())
 	assert_not_null(bar._bg, "background quad must be built")
 	assert_not_null(bar._fill, "fill quad must be built")
+
+func test_fill_renders_in_front_of_background() -> void:
+	var bar: HealthBar3D = add_child_autofree(HealthBar3D.new())
+	var bg_mat := bar._bg.material_override as StandardMaterial3D
+	var fill_mat := bar._fill.material_override as StandardMaterial3D
+	assert_not_null(bg_mat, "bg must have a material")
+	assert_not_null(fill_mat, "fill must have a material")
+	assert_true(fill_mat.render_priority > bg_mat.render_priority,
+			"fill must have higher render_priority so it is never overdrawn by the bg")

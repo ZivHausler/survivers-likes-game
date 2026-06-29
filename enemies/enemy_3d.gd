@@ -180,7 +180,8 @@ func take_damage(amount: float) -> void:
 	if boss_kind == BossKind.BIG:
 		GameEvents.boss_hp_changed.emit(hp, data.max_hp)
 	elif boss_kind == BossKind.MINI and is_instance_valid(_health_bar):
-		_health_bar.set_ratio(hp / data.max_hp)
+		var denom := maxf(data.max_hp, 0.0001)
+		_health_bar.set_ratio(hp / denom)
 	# Non-lethal hit: flash the enemy mesh white for 0.08 s.
 	HitFlash3D.flash(self, 0.08)
 
