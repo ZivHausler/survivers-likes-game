@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"yoav_drive_by_passive"
+display_name = "Turbo Boost"
+kind = 1
+max_level = 5
+effect_kind = &""
+effect_value = 0.5
+description = "Engine upgrade widens the strafe lane on each pass."
+stat_text = "+0.5 Strafe Width"
+skill_id = &"yoav_drive_by"

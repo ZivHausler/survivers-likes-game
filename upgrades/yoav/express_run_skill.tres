@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"yoav_express_run_skill"
+display_name = "Express Run+"
+kind = 4
+max_level = 5
+effect_kind = &""
+effect_value = 0.0
+description = "More drones, more hits. Enemies are swarmed from every angle."
+stat_text = "Skill level +1 (+4 damage, +1 drone)"
+skill_id = &"yoav_express_run"

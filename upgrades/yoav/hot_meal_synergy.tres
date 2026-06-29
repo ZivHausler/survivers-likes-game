@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"yoav_hot_meal_synergy"
+display_name = "EVOLVE: Napalm Special"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "The secret menu item. Scorched-earth radius, maximum heat."
+stat_text = "Unlocks Napalm Special mode"
+skill_id = &"yoav_hot_meal"

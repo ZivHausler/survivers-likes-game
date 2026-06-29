@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"yoav_delivery_orbit_synergy"
+display_name = "EVOLVE: Drone Swarm"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "Parcels become autonomous drones. Count doubles and speed surges."
+stat_text = "Unlocks Drone Swarm mode"
+skill_id = &"yoav_delivery_orbit"
