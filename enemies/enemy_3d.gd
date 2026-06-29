@@ -38,6 +38,15 @@ var _anim_loaded: bool = false
 ## Phase accumulator (radians) for the procedural alive-bob; advances each physics frame.
 var _bob_phase: float = 0.0
 
+## Boss classification — set by Spawner3D via configure_boss() after setup().
+enum BossKind { NONE, MINI, BIG }
+var boss_kind: int = BossKind.NONE
+var boss_name: String = ""
+## Floating world-space HP bar for mini-bosses only (null otherwise).
+var _health_bar: HealthBar3D = null
+## Local-space Y offset of the mini-boss head bar (scales with the boss body).
+const MINI_BOSS_BAR_OFFSET_Y := 2.5
+
 @onready var _model: Node3D = $Model
 @onready var _placeholder: MeshInstance3D = $Model/MeshInstance3D
 ## RVO avoidance agent; routes the actual move so the swarm flows around obstacles
@@ -84,6 +93,20 @@ func setup(p_data: EnemyData, p_target: Node3D) -> void:
 			var mat := StandardMaterial3D.new()
 			mat.albedo_color = data.color
 			mesh_inst.material_override = mat
+
+## Tag this enemy as a boss. Called by Spawner3D AFTER setup() (so `data` is set).
+## BIG  → announce to the HUD via GameEvents.boss_spawned (no head bar).
+## MINI → attach a HealthBar3D above the head, starting full.
+func configure_boss(kind: int, p_name: String = "") -> void:
+	boss_kind = kind
+	boss_name = p_name
+	if kind == BossKind.BIG:
+		GameEvents.boss_spawned.emit(p_name, data.max_hp)
+	elif kind == BossKind.MINI:
+		_health_bar = HealthBar3D.new()
+		add_child(_health_bar)
+		_health_bar.position = Vector3(0.0, MINI_BOSS_BAR_OFFSET_Y, 0.0)
+		_health_bar.set_ratio(1.0)
 
 ## Suppress enemy movement for `duration` seconds.
 ## Stacks by taking the maximum remaining time (mirrors 2D charm logic).
@@ -145,11 +168,19 @@ func take_damage(amount: float) -> void:
 		return
 	hp -= amount
 	if hp <= 0.0:
+		# Big boss announces death so the HUD bar hides before the node is freed.
+		if boss_kind == BossKind.BIG:
+			GameEvents.boss_died.emit()
 		# Death visuals handled by Juice3D / HitFlash3D + the death pop particle;
 		# _play_anim("die") would never render because queue_free() follows immediately.
 		GameEvents.enemy_killed_3d.emit(global_position, data.xp_value)
 		queue_free()
 		return
+	# Non-lethal hit: drive boss HP feedback, then flash.
+	if boss_kind == BossKind.BIG:
+		GameEvents.boss_hp_changed.emit(hp, data.max_hp)
+	elif boss_kind == BossKind.MINI and is_instance_valid(_health_bar):
+		_health_bar.set_ratio(hp / data.max_hp)
 	# Non-lethal hit: flash the enemy mesh white for 0.08 s.
 	HitFlash3D.flash(self, 0.08)
 

@@ -280,3 +280,118 @@ func test_no_model_scene_tints_placeholder_by_color() -> void:
 	var mat := placeholder.material_override as StandardMaterial3D
 	assert_not_null(mat, "material_override must be a StandardMaterial3D")
 	assert_eq(mat.albedo_color, Color.BLUE, "albedo_color must match data.color")
+
+# ── BUG B: skeletal "move" animation retargeting ──────────────────────────────
+# The skinned mesh GLB (bug_mesh.glb) imports its rig as a Skeleton3D, but the
+# separate animation GLB (bug_run.glb) keys node-path tracks (RootNode/bug_body/…).
+# retarget_tracks_to_skeleton() rewrites those onto skeleton bones so the walk plays.
+
+func test_find_skeleton_locates_skinned_skeleton_in_bug_mesh() -> void:
+	var mesh_ps := load("res://art/enemies_3d/bug/bug_mesh.glb") as PackedScene
+	var mesh_inst: Node = autofree(mesh_ps.instantiate())
+	var skel := Enemy3D.find_skeleton(mesh_inst)
+	assert_not_null(skel, "bug_mesh.glb must import a Skeleton3D")
+	assert_true(skel.get_bone_count() > 0, "skeleton must expose bones")
+
+func test_retarget_tracks_maps_node_paths_onto_skeleton_bones() -> void:
+	var mesh_ps := load("res://art/enemies_3d/bug/bug_mesh.glb") as PackedScene
+	var mesh_inst: Node = autofree(mesh_ps.instantiate())
+	var skel := Enemy3D.find_skeleton(mesh_inst)
+	assert_not_null(skel, "bug_mesh.glb must import a Skeleton3D")
+
+	var run_ps := load("res://art/enemies_3d/bug/bug_run.glb") as PackedScene
+	var run_inst: Node = autofree(run_ps.instantiate())
+	var src_ap := run_inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	assert_not_null(src_ap, "bug_run.glb must carry an AnimationPlayer")
+	var names := src_ap.get_animation_list()
+	assert_false(names.is_empty(), "bug_run.glb must contain at least one animation")
+	var anim: Animation = (src_ap.get_animation(names[0]) as Animation).duplicate(true)
+
+	# Pre-condition: raw tracks are node paths with no :bone subname (the bug).
+	assert_eq(anim.track_get_path(0).get_concatenated_subnames(), "",
+			"raw imported track must be a node path, not a bone track")
+
+	var kept := Enemy3D.retarget_tracks_to_skeleton(anim, skel, NodePath("RootNode/Skeleton3D"))
+	assert_true(kept > 0, "at least one track must retarget onto a bone")
+	# Every surviving track must address a real bone via its subname.
+	for t in range(anim.get_track_count()):
+		var p := anim.track_get_path(t)
+		var sub := p.get_concatenated_subnames()
+		assert_true(skel.find_bone(sub) != -1,
+				"track %d must target a real bone, got path %s" % [t, p])
+
+func test_bug_model_setup_loads_retargeted_move_animation() -> void:
+	var e: Enemy3D = add_child_autofree(Enemy3DScene.instantiate()) as Enemy3D
+	var target: Node3D = add_child_autofree(Node3D.new()) as Node3D
+	e.setup(_make_data_with_model(), target)
+	assert_true(e._anim_loaded, "bug model should load a 'move' animation")
+	assert_not_null(e._anim_player, "anim player must be set after model load")
+	assert_true(e._anim_player.has_animation("move"), "'move' animation must be present")
+	var anim := e._anim_player.get_animation("move")
+	var skel := Enemy3D.find_skeleton(e._model_inst)
+	assert_not_null(skel, "model instance must contain a Skeleton3D")
+	assert_true(anim.get_track_count() > 0, "retargeted 'move' must keep tracks")
+	# Resolve each track exactly as AnimationMixer does: the node portion must resolve
+	# from the player's root_node, and the subname must be a real bone. This is precisely
+	# the check whose failure produced the "couldn't resolve track" warning spam.
+	var anim_root: Node = e._anim_player.get_node(e._anim_player.root_node)
+	assert_not_null(anim_root, "AnimationPlayer.root_node must resolve to a node")
+	for t in range(anim.get_track_count()):
+		var p := anim.track_get_path(t)
+		var node_path := NodePath(p.get_concatenated_names())
+		var resolved := anim_root.get_node_or_null(node_path)
+		assert_true(resolved is Skeleton3D,
+				"track %d node path %s must resolve to the Skeleton3D" % [t, p])
+		assert_true(skel.find_bone(p.get_concatenated_subnames()) != -1,
+				"track %d must target a real bone, got %s" % [t, p])
+
+# ── boss tagging + HP feedback ────────────────────────────────────────────────
+
+func test_default_enemy_boss_kind_is_none() -> void:
+	var e: Enemy3D = _make_enemy()
+	assert_eq(e.boss_kind, Enemy3D.BossKind.NONE, "normal enemy defaults to BossKind.NONE")
+
+func test_normal_enemy_has_no_health_bar_child() -> void:
+	var e: Enemy3D = _make_enemy()
+	assert_null(e._health_bar, "normal enemy must not own a HealthBar3D")
+
+func test_configure_big_boss_emits_boss_spawned_with_max_hp() -> void:
+	var e: Enemy3D = _make_enemy(500.0)
+	watch_signals(GameEvents)
+	e.configure_boss(Enemy3D.BossKind.BIG, "Undead Serpent")
+	assert_eq(e.boss_kind, Enemy3D.BossKind.BIG, "boss_kind set to BIG")
+	assert_signal_emitted_with_parameters(GameEvents, "boss_spawned", ["Undead Serpent", 500.0])
+
+func test_big_boss_nonlethal_damage_emits_boss_hp_changed() -> void:
+	var e: Enemy3D = _make_enemy(500.0)
+	e.configure_boss(Enemy3D.BossKind.BIG, "Undead Serpent")
+	watch_signals(GameEvents)
+	e.take_damage(120.0)  # 500 → 380, non-lethal
+	assert_signal_emitted_with_parameters(GameEvents, "boss_hp_changed", [380.0, 500.0])
+
+func test_big_boss_lethal_damage_emits_boss_died() -> void:
+	var e: Enemy3D = _make_enemy(100.0)
+	e.configure_boss(Enemy3D.BossKind.BIG, "Undead Serpent")
+	watch_signals(GameEvents)
+	e.take_damage(100.0)  # lethal
+	assert_signal_emitted(GameEvents, "boss_died")
+
+func test_configure_mini_boss_creates_health_bar_at_full() -> void:
+	var e: Enemy3D = _make_enemy(200.0)
+	e.configure_boss(Enemy3D.BossKind.MINI)
+	assert_eq(e.boss_kind, Enemy3D.BossKind.MINI, "boss_kind set to MINI")
+	assert_not_null(e._health_bar, "mini-boss must own a HealthBar3D child")
+	assert_almost_eq(e._health_bar._fill_pivot.scale.x, 1.0, 0.001, "bar starts full")
+
+func test_mini_boss_nonlethal_damage_updates_bar_ratio() -> void:
+	var e: Enemy3D = _make_enemy(200.0)
+	e.configure_boss(Enemy3D.BossKind.MINI)
+	e.take_damage(50.0)  # 200 → 150 → ratio 0.75
+	assert_almost_eq(e._health_bar._fill_pivot.scale.x, 0.75, 0.001, "bar fill tracks hp/max")
+
+func test_normal_enemy_damage_emits_no_boss_signals() -> void:
+	var e: Enemy3D = _make_enemy(50.0)
+	watch_signals(GameEvents)
+	e.take_damage(10.0)
+	assert_signal_not_emitted(GameEvents, "boss_hp_changed")
+	assert_signal_not_emitted(GameEvents, "boss_died")
