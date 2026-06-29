@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"natali_comic_relief_synergy"
+display_name = "SYNERGY: Standing Ovation"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "The crowd loves it. The burst evolves into a rapid-fire comedy barrage."
+stat_text = "Unlocks Standing Ovation"
+skill_id = &"natali_comic_relief"
