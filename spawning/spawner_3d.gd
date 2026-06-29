@@ -88,6 +88,10 @@ static func big_boss_enemy_data(base: EnemyData, hp_mult: float) -> EnemyData:
 static func apply_model_tint(node: Node, tint: Color) -> void:
 	if node is MeshInstance3D:
 		var mi := node as MeshInstance3D
+		# Skip hidden meshes (e.g. the sphere placeholder that setup() hid before
+		# instancing the real model). Avoids allocating a material for an invisible node.
+		if not mi.visible:
+			return
 		if mi.mesh:
 			for i in mi.mesh.get_surface_count():
 				var existing: Material = mi.get_active_material(i)
@@ -168,6 +172,10 @@ func _spawn_boss(hp_mult: float) -> void:
 	var boss_data: EnemyData = boss_enemy_data(data, hp_mult)
 	# Give boss the imposing serpent model instead of the diatryma tank model.
 	boss_data.model_scene = load(SERPENT_SCENE_PATH) as PackedScene
+	# COMPOUND SCALE NOTE: model_scale (BOSS_MODEL_SCALE = 1.5) sets the Model pivot
+	# scale inside Enemy3D.setup(). The body scale (BOSS_SCALE_MULT = 3×) is applied
+	# separately in _instance_enemy(). Combined visual size = 3 × 1.5 = 4.5× base.
+	# Tune BOSS_MODEL_SCALE (mesh proportions) vs BOSS_SCALE_MULT (whole-body size).
 	boss_data.model_scale = BOSS_MODEL_SCALE
 	var boss: Enemy3D = _instance_enemy(boss_data, BOSS_SCALE_MULT)
 	if boss != null:
@@ -187,6 +195,10 @@ func _spawn_big_boss(hp_mult: float) -> void:
 	var big_data: EnemyData = big_boss_enemy_data(data, hp_mult)
 	# Give big boss the imposing serpent model at a larger scale.
 	big_data.model_scene = load(SERPENT_SCENE_PATH) as PackedScene
+	# COMPOUND SCALE NOTE: model_scale (BIG_BOSS_MODEL_SCALE = 2.0) sets the Model pivot
+	# scale inside Enemy3D.setup(). The body scale (BIG_BOSS_SCALE_MULT = 5×) is applied
+	# separately in _instance_enemy(). Combined visual size = 5 × 2.0 = 10× base.
+	# Tune BIG_BOSS_MODEL_SCALE (mesh proportions) vs BIG_BOSS_SCALE_MULT (whole-body size).
 	big_data.model_scale = BIG_BOSS_MODEL_SCALE
 	var boss: Enemy3D = _instance_enemy(big_data, BIG_BOSS_SCALE_MULT)
 	if boss != null:
@@ -207,6 +219,9 @@ func _instance_enemy(data: EnemyData, scale_mult: float) -> Enemy3D:
 	parent.add_child(enemy)
 	enemy.add_to_group("enemies")
 	enemy.global_position = _random_ring_position()
+	# Knob 1 of 2 for boss sizing: sets the CharacterBody3D (collision + all children).
+	# Boss model also applies a model_scale via Enemy3D.setup() → _model.scale (knob 2).
+	# Result: final visual size = scale_mult × data.model_scale (see _spawn_boss/_spawn_big_boss).
 	enemy.scale = Vector3.ONE * scale_mult
 	enemy.setup(data, _target)
 	return enemy

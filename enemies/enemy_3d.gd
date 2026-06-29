@@ -92,8 +92,8 @@ func take_damage(amount: float) -> void:
 		return
 	hp -= amount
 	if hp <= 0.0:
-		# Best-effort die animation: play before freeing, but don't block kill logic.
-		_play_anim("die")
+		# Death visuals handled by Juice3D / HitFlash3D + the death pop particle;
+		# _play_anim("die") would never render because queue_free() follows immediately.
 		GameEvents.enemy_killed_3d.emit(global_position, data.xp_value)
 		queue_free()
 		return
