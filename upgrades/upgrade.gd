@@ -2,7 +2,8 @@
 class_name Upgrade extends Resource
 
 ## Enum of upgrade categories.
-enum Kind { SIGNATURE, PASSIVE, GENERIC, EVOLUTION }
+## SKILL (4) and SYNERGY (5) are used by the 3D SkillSystem; existing 2D values 0–3 unchanged.
+enum Kind { SIGNATURE, PASSIVE, GENERIC, EVOLUTION, SKILL, SYNERGY }
 
 @export var id: StringName
 @export var display_name: String = ""
@@ -18,3 +19,5 @@ enum Kind { SIGNATURE, PASSIVE, GENERIC, EVOLUTION }
 @export var stat_text: String = ""
 ## Optional card icon texture. When null a placeholder colour badge is shown instead.
 @export var icon: Texture2D
+## For SKILL / PASSIVE / SYNERGY upgrades: which SkillData.id this upgrade belongs to.
+@export var skill_id: StringName = &""

@@ -28,6 +28,7 @@ links: [[stat-block]], [[data-driven-characters]], [[weapon-system]]
 | `model_scene` | `PackedScene` | `null` | Kenney Blocky Character GLB to instance for 3-D play (null → capsule placeholder) |
 | `model_scale` | `float` | `1.0` | Uniform scale applied to the Model Node3D after instancing |
 | `model_tint` | `Color` | `Color.WHITE` | Optional albedo override to distinguish friends sharing one base model |
+| `skills` | `Array[SkillData]` | `[]` | 3D skill roster: 4 `SkillData` entries for 3D characters; 2D characters leave empty — 2D path unaffected. See [[skill-system]]. |
 
 ## Usage Pattern
 

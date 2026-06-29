@@ -122,3 +122,12 @@ See [[game-manager]] for the full router implementation.
   choice set.
 - Downstream weapon code listens to `GameEvents.evolution_unlocked` to swap
   the weapon variant — see [[weapon-system]].
+
+## 3D Skill System
+
+The 3D game uses a parallel `SkillSystem` (`core/skill_system.gd`) instead of
+`UpgradeSystem`. Both extend `RefCounted` and expose the same conceptual API
+(`build_choices`, `apply`, `has_available_choices`). `UpgradeSystem` is NOT
+modified and remains the exclusive system for the 2D game path. The `Upgrade.Kind`
+enum was extended additively with `SKILL = 4` and `SYNERGY = 5`; all existing
+2D values (0–3) are unchanged. See [[skill-system]] for the full 3D model.
