@@ -7,3 +7,6 @@ export_presets.cfg
 .superpowers/
 
 .claude/
+
+# Large model asset — exceeds GitHub's 100MB limit, shared out-of-band
+art/models/nature/fir_tree_01/fir_tree_01.bin
