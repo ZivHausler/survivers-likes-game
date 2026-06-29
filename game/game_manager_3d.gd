@@ -68,11 +68,16 @@ func _on_enemy_killed(pos: Vector3, xp: int) -> void:
 	if _gem_scene == null or _player == null:
 		return
 	var gem: XPGem3D = _gem_scene.instantiate() as XPGem3D
-	gem.position = pos
 	gem.setup(xp, _player)
 	var parent := get_parent()
 	if parent:
 		# Defer insertion: enemy_killed_3d can fire from inside a physics callback.
 		# Adding an Area3D during physics query flush prevents monitoring setup,
 		# so body_entered never fires. Deferring moves insertion to a safe point.
+		#
+		# pos is a WORLD coordinate. global_position is only valid once the node is
+		# in the scene tree, so we set it via tree_entered rather than using the
+		# local .position property (which would only be correct when the parent is
+		# at the origin).
+		gem.tree_entered.connect(func(): gem.global_position = pos, CONNECT_ONE_SHOT)
 		parent.add_child.call_deferred(gem)

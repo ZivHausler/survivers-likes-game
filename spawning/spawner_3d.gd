@@ -135,6 +135,10 @@ func _spawn_boss(hp_mult: float) -> void:
 	var boss_data: EnemyData = boss_enemy_data(data, hp_mult)
 	var boss: Enemy3D = _instance_enemy(boss_data, BOSS_SCALE_MULT)
 	if boss != null:
+		# ORDERING DEPENDENCY: tint MUST run after _instance_enemy() (which calls
+		# enemy.setup()). setup() sets material_override on "Model/MeshInstance3D";
+		# we intentionally overwrite it here with the boss tint. The node path
+		# "Model/MeshInstance3D" matches the structure of enemy_3d.tscn.
 		var mesh_inst := boss.get_node_or_null("Model/MeshInstance3D") as MeshInstance3D
 		if mesh_inst != null:
 			var mat := StandardMaterial3D.new()
@@ -149,6 +153,10 @@ func _spawn_big_boss(hp_mult: float) -> void:
 	var big_data: EnemyData = big_boss_enemy_data(data, hp_mult)
 	var boss: Enemy3D = _instance_enemy(big_data, BIG_BOSS_SCALE_MULT)
 	if boss != null:
+		# ORDERING DEPENDENCY: tint MUST run after _instance_enemy() (which calls
+		# enemy.setup()). setup() sets material_override on "Model/MeshInstance3D";
+		# we intentionally overwrite it here with the big-boss tint. The node path
+		# "Model/MeshInstance3D" matches the structure of enemy_3d.tscn.
 		var mesh_inst := boss.get_node_or_null("Model/MeshInstance3D") as MeshInstance3D
 		if mesh_inst != null:
 			var mat := StandardMaterial3D.new()

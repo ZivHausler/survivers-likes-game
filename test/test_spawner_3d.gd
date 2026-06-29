@@ -87,6 +87,13 @@ func test_big_boss_data_xp_value_is_big_boss_xp() -> void:
 	assert_eq(big.xp_value, Spawner3D.BIG_BOSS_XP_VALUE,
 			"big-boss xp_value must equal BIG_BOSS_XP_VALUE (200)")
 
+func test_big_boss_data_move_speed_scaled_to_3d() -> void:
+	var tank := load("res://enemies/tank.tres") as EnemyData
+	var original_speed := tank.move_speed
+	var big := Spawner3D.big_boss_enemy_data(tank, 1.0)
+	assert_almost_eq(big.move_speed, original_speed * (1.0 / 16.0), 0.001,
+			"big-boss move_speed must be divided by 16 in 3D world")
+
 # ── shared .tres invariant (also closes a 2D coverage gap) ───────────────────
 
 func test_shared_swarmer_tres_not_mutated_by_scale_enemy_data() -> void:
