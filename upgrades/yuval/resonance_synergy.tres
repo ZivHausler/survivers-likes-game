@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"yuval_resonance_synergy"
+display_name = "EVOLVE: Total Harmony"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "Everything resonates at once — a massive stun wave covering the entire arena."
+stat_text = "Transforms Resonance into Total Harmony"
+skill_id = &"yuval_resonance"

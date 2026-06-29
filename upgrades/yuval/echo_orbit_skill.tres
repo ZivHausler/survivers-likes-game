@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"yuval_echo_orbit_skill"
+display_name = "Echo Orbit+"
+kind = 4
+max_level = 5
+effect_kind = &""
+effect_value = 0.0
+description = "More sound echoes join the orbit, covering more ground."
+stat_text = "Skill level +1"
+skill_id = &"yuval_echo_orbit"

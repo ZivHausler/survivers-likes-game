@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"ido_corrosion_passive"
+display_name = "Deep Burn"
+kind = 1
+max_level = 5
+effect_kind = &""
+effect_value = 2.5
+description = "The acid burns deeper, increasing corrosion damage."
+stat_text = "+2.5 Corrosion Damage"
+skill_id = &"ido_corrosion"

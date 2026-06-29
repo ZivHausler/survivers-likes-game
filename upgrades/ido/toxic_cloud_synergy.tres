@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"ido_toxic_cloud_synergy"
+display_name = "EVOLVE: Death Mist"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "The cloud transcends all limits. A permanent toxic death mist surrounds Ido."
+stat_text = "Transforms Toxic Cloud into Death Mist"
+skill_id = &"ido_toxic_cloud"

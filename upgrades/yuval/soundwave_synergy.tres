@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"yuval_soundwave_synergy"
+display_name = "EVOLVE: Sonic Boom"
+kind = 5
+max_level = 1
+effect_kind = &""
+effect_value = 0.0
+description = "Sound breaks the barrier. An explosive boom that shatters everything nearby."
+stat_text = "Transforms Soundwave into Sonic Boom"
+skill_id = &"yuval_soundwave"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"ido_corrosion_skill"
+display_name = "Corrosion+"
+kind = 4
+max_level = 5
+effect_kind = &""
+effect_value = 0.0
+description = "Acid eats through armor faster with each upgrade."
+stat_text = "Skill level +1"
+skill_id = &"ido_corrosion"

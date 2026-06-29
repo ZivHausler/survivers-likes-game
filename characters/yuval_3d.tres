@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=9 format=3]
+
+[ext_resource type="Script" uid="uid://oeuj1jqprh5d" path="res://core/character_data.gd" id="1_char_data"]
+[ext_resource type="Script" uid="uid://0rwxad1au28r" path="res://core/stat_block.gd" id="2_stat_block"]
+[ext_resource type="PackedScene" path="res://art/characters_3d/kenney_blocky_characters/models/character-f.glb" id="3_model"]
+[ext_resource type="Resource" path="res://characters/skills/yuval_soundwave.tres" id="4_soundwave"]
+[ext_resource type="Resource" path="res://characters/skills/yuval_echo_orbit.tres" id="5_echo_orbit"]
+[ext_resource type="Resource" path="res://characters/skills/yuval_bass_drop.tres" id="6_bass_drop"]
+[ext_resource type="Resource" path="res://characters/skills/yuval_resonance.tres" id="7_resonance"]
+
+[sub_resource type="Resource" id="Resource_stats"]
+script = ExtResource("2_stat_block")
+max_hp = 100.0
+move_speed = 8.0
+pickup_range = 4.5
+damage_mult = 1.0
+fire_rate_mult = 1.0
+armor = 0.0
+
+[resource]
+script = ExtResource("1_char_data")
+id = &"yuval"
+display_name = "Yuval"
+color = Color(0.0, 0.9, 0.9, 1.0)
+base_stats = SubResource("Resource_stats")
+model_scene = ExtResource("3_model")
+model_scale = 1.0
+model_tint = Color(1, 1, 1, 1)
+skills = Array[Resource]([ExtResource("4_soundwave"), ExtResource("5_echo_orbit"), ExtResource("6_bass_drop"), ExtResource("7_resonance")])

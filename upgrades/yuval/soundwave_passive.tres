@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"yuval_soundwave_passive"
+display_name = "Lingering Echo"
+kind = 1
+max_level = 5
+effect_kind = &""
+effect_value = 0.3
+description = "The stun lingers longer as the sound echoes through the area."
+stat_text = "+0.3s Stun Duration"
+skill_id = &"yuval_soundwave"
