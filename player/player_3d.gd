@@ -2,13 +2,25 @@
 class_name Player3D extends CharacterBody3D
 ## 3D player actor (CharacterBody3D). Gameplay on XZ plane (Y up).
 ## Owns WASD movement and all HP/XP/level/stat logic — ported verbatim from Player (2D).
-## Weapons and enemies are wired in later tasks; weapon stays null until then.
+## Model rendering: setup() installs the CharacterData model under the Model Node3D child,
+## hides the capsule placeholder, caches the model's AnimationPlayer, and plays idle/walk.
+## Face direction is driven by the pure-static face_angle() helper in _physics_process()
+## without rotating the collision body.
+
+## Velocity below this length plays idle animation instead of walk.
+const WALK_THRESHOLD := 0.05
 
 var stats: StatBlock
 var weapon: Node3D = null
 var level: int = 1
 var xp: int = 0
 var hp: float = 0.0
+
+## Cached AnimationPlayer from the instanced model; null if model has none or model_scene unset.
+var _anim_player: AnimationPlayer = null
+
+@onready var _model: Node3D = $Model
+@onready var _placeholder: MeshInstance3D = $Model/MeshInstance3D
 
 func setup(data: CharacterData) -> void:
 	stats = data.base_stats.duplicate_stats()
@@ -23,7 +35,38 @@ func setup(data: CharacterData) -> void:
 			weapon.setup(self, stats)
 		else:
 			inst.free()
+
+	# Install rigged character model if provided; otherwise keep the capsule placeholder.
+	# Tunable defaults: model_scale=1.0 ≈ native Kenney GLB size (~1.8 m); Y offset 0.
+	# Adjust model_scale in the .tres file and the Model node's Y position in the scene for
+	# precise ground contact — these are MANUAL PLAYTEST items.
+	if data.model_scene:
+		if _placeholder:
+			_placeholder.hide()
+		var model_inst := data.model_scene.instantiate()
+		_model.add_child(model_inst)
+		_model.scale = Vector3.ONE * data.model_scale
+		if data.model_tint != Color.WHITE:
+			_apply_tint(model_inst, data.model_tint)
+		_anim_player = model_inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		if _anim_player and _anim_player.has_animation("idle"):
+			_anim_player.play("idle")
+
 	GameEvents.player_hp_changed.emit(hp, stats.max_hp)
+
+## Recursively set albedo tint on all MeshInstance3D surfaces under node.
+## Replaces materials, so textures are hidden — use sparingly (intended for friends
+## sharing a single base GLB who need a colour to distinguish them).
+func _apply_tint(node: Node, tint: Color) -> void:
+	if node is MeshInstance3D:
+		var mi := node as MeshInstance3D
+		if mi.mesh:
+			var mat := StandardMaterial3D.new()
+			mat.albedo_color = tint
+			for i in mi.get_surface_override_material_count():
+				mi.set_surface_override_material(i, mat)
+	for child in node.get_children():
+		_apply_tint(child, tint)
 
 func _physics_process(_dt: float) -> void:
 	if not stats:
@@ -31,6 +74,30 @@ func _physics_process(_dt: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = move_to_velocity(dir, stats.move_speed)
 	move_and_slide()
+	# Rotate Model toward movement heading (only visual; collision body stays upright).
+	if velocity.length() > WALK_THRESHOLD:
+		_model.rotation.y = face_angle(velocity)
+		_play_anim("walk")
+	else:
+		_play_anim("idle")
+
+## Attempt to play a named animation clip; silently no-ops if AnimationPlayer or clip absent.
+func _play_anim(anim_name: String) -> void:
+	if not _anim_player:
+		return
+	if not _anim_player.has_animation(anim_name):
+		return
+	if _anim_player.current_animation == anim_name:
+		return
+	_anim_player.play(anim_name)
+
+## Pure static heading helper — unit-testable without Input or scene tree.
+## Returns Y-axis rotation (radians) a Model should face given an XZ velocity vector.
+## Zero-length velocity returns 0.0 — never NaN.
+static func face_angle(velocity: Vector3) -> float:
+	if velocity.is_zero_approx():
+		return 0.0
+	return atan2(velocity.x, velocity.z)
 
 ## Pure XZ mapping helper — unit-testable without Input or scene tree.
 ## "up" on screen (move_up action, dir.y = -1) maps to -Z (away from camera).

@@ -25,6 +25,9 @@ links: [[stat-block]], [[data-driven-characters]], [[weapon-system]]
 | `passive_id` | `StringName` | — | ID of the passive ability associated with this character |
 | `evolution_id` | `StringName` | — | ID of the evolved form unlocked at max signature level |
 | `max_signature_level` | `int` | `5` | Signature weapon levels before evolution becomes available |
+| `model_scene` | `PackedScene` | `null` | Kenney Blocky Character GLB to instance for 3-D play (null → capsule placeholder) |
+| `model_scale` | `float` | `1.0` | Uniform scale applied to the Model Node3D after instancing |
+| `model_tint` | `Color` | `Color.WHITE` | Optional albedo override to distinguish friends sharing one base model |
 
 ## Usage Pattern
 

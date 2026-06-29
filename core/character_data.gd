@@ -14,3 +14,7 @@ class_name CharacterData extends Resource
 @export var passive_upgrade: Upgrade
 @export var evolution_upgrade: Upgrade
 @export var sprite_frames: SpriteFrames  ## Optional animated sprite; null → use color placeholder
+## 3-D model fields — additive; defaults so existing 2-D .tres files keep working.
+@export var model_scene: PackedScene     ## Kenney GLB to instance (null = keep capsule placeholder)
+@export var model_scale: float = 1.0    ## Uniform scale applied to the Model Node3D
+@export var model_tint: Color = Color.WHITE  ## Optional albedo tint to differentiate friends sharing a base model

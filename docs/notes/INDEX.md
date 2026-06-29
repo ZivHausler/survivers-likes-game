@@ -9,7 +9,7 @@ Add new notes here as they are created; link by `[[id]]`.
 
 - [[game-camera-3d]] — `GameCamera3D`: tilted perspective Camera3D, follows target on XZ; pure static helpers for unit testing
 - [[arena-3d]] — `arena_3d.tscn`: 3D ground plane (200×200), DirectionalLight3D, WorldEnvironment; gameplay plane = XZ
-- [[player-3d]] — `Player3D` (`CharacterBody3D`): WASD on XZ, HP/XP/level/stat logic ported verbatim from 2D Player; weapon stays null until 3D weapons exist
+- [[player-3d]] — `Player3D` (`CharacterBody3D`): WASD on XZ, HP/XP/level/stat logic ported verbatim from 2D Player; Kenney Blocky Character model with idle/walk animation and movement-facing via `face_angle()`
 - [[enemy-3d]] — `Enemy3D` (`CharacterBody3D`): steering/charm/contact-damage/death ported verbatim from 2D Enemy; emits `enemy_killed_3d(Vector3,int)` for Task 1.4 gem spawner
 - [[weapon-system-3d]] — `Weapon3D` base class: Node3D port of Weapon; same timer/cooldown/level/evolve contract; 1 unit ≈ 16 px
 - [[weapon-ziv-3d]] — `ZivStunningLooks3D`: 3D beam (Area3D BoxShape) + XZ charm sorting; evolve = Y-rotation + always-on CharmField
@@ -29,7 +29,7 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[sprite-integration]] — Optional sprite fields on `CharacterData`/`EnemyData` + fallback rule (Wave A/B)
 - [[data-driven-characters]] — How a friend is modelled as `CharacterData` + weapon + passive + evolution
 - [[stat-block]] — `StatBlock` resource: all numeric stats for a character/enemy
-- [[character-data]] — `CharacterData` resource: complete friend definition (stats, weapon, passive, evolution)
+- [[character-data]] — `CharacterData` resource: complete friend definition (stats, weapon, passive, evolution, 3D model/scale/tint)
 - [[weapon-system]] — `Weapon` base class: self-driving timer, lifecycle contract, subclass pattern
 - [[weapon-ziv]] — `ZivStunningLooks`: "Stunning Looks" beam + charm; evolution "Absolutely Fabulous"
 - [[weapon-avihay]] — `AvihayChatSpam`: "Chat Spam" homing bubbles + pierce; evolution "Reply-All Apocalypse"

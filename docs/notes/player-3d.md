@@ -17,8 +17,10 @@ player is kept intact; Player3D owns all the same logic ported verbatim.
 ```
 Player3D (CharacterBody3D, group "player", layer=1, mask=0)
 ├── CollisionShape3D  (CapsuleShape3D radius=0.5, height=2.0)
-├── Model (Node3D)    ← Phase 2 replaces this subtree with Kenney model
-│   └── MeshInstance3D (CapsuleMesh placeholder)
+├── Model (Node3D)    ← visual root; rotated to face movement (collision stays upright)
+│   ├── MeshInstance3D (CapsuleMesh placeholder — hidden by setup() when model_scene is set)
+│   └── <GLB instance>  (instanced from CharacterData.model_scene, scaled by model_scale)
+│       └── AnimationPlayer  (found via find_child; plays "idle" / "walk")
 └── Hurtbox (Area3D, layer=2, mask=0)
     └── CollisionShape3D (CapsuleShape3D radius=0.5, height=2.0)
 ```
@@ -37,8 +39,9 @@ and follows the Player3D node via its `target` export.
 
 | Symbol | Type | Description |
 |---|---|---|
-| `setup(data: CharacterData)` | `func` | Apply stats, optionally spawn weapon, emit initial `player_hp_changed` |
+| `setup(data: CharacterData)` | `func` | Apply stats, optionally spawn weapon/model, emit initial `player_hp_changed` |
 | `move_to_velocity(dir, speed)` | `static func` | Pure XZ mapping helper; unit-testable without Input/tree |
+| `face_angle(velocity: Vector3) -> float` | `static func` | Y-axis heading (radians) for a velocity; returns 0 for zero vector (never NaN) |
 | `weapon` | `Weapon` | Null until a 3D weapon scene is wired (future task) |
 | `level` | `int` | Current level (starts 1) |
 | `xp` | `int` | XP accumulated toward next level |
@@ -87,6 +90,30 @@ Identical to 2D Player: `5 + lvl*3 + lvl²*2`
 - `player_hp_changed(current, max_hp)` — on `setup()` and every `take_damage()`
 - `player_leveled_up(level)` — once per level gained inside `add_xp()`
 - `player_died()` — when HP drops to or below 0
+
+## Model rendering (Task 2.1)
+
+When `CharacterData.model_scene` is set, `setup()`:
+1. Hides the capsule `MeshInstance3D` placeholder under `$Model`.
+2. Instances the GLB and adds it under `$Model`; applies `model_scale` via `$Model.scale`.
+3. Optionally applies `model_tint` (albedo override on all `MeshInstance3D` surfaces).
+4. Searches for an `AnimationPlayer` via `find_child("AnimationPlayer", true, false)`
+   and plays `"idle"` if found.
+
+In `_physics_process()`:
+- When `velocity.length() > WALK_THRESHOLD` (0.05), rotates `$Model.rotation.y` to
+  `face_angle(velocity)` and plays `"walk"`.
+- Otherwise plays `"idle"`.
+- `face_angle()` is `atan2(v.x, v.z)` — a pure static helper that never returns NaN.
+- The collision body (CharacterBody3D) is never rotated; only the visual Model node turns.
+
+### Playtest-tunable values
+
+| Variable | Current value | Location | Note |
+|---|---|---|---|
+| `model_scale` | `1.0` | `ziv_3d.tres` / `avihay_3d.tres` | Kenney GLB native size ≈ 1.8 m; adjust here |
+| Model Y offset | `0` | `player_3d.tscn` → Model node position | If feet float, shift Model.position.y down |
+| `WALK_THRESHOLD` | `0.05` | `player_3d.gd` const | Raise if idle flickers at rest |
 
 ## Wiring in main_3d
 

@@ -178,3 +178,64 @@ func test_apply_stat_upgrade_armor() -> void:
 	var p := _make_player()
 	p.apply_stat_upgrade(&"armor", 3.0)
 	assert_almost_eq(p.stats.armor, 3.0, 0.001)
+
+# ── face_angle (pure static, no Input/tree needed) ───────────────────────────
+
+func test_face_angle_positive_x_velocity() -> void:
+	var angle := Player3D.face_angle(Vector3(1.0, 0.0, 0.0))
+	assert_almost_eq(angle, atan2(1.0, 0.0), 0.001, "+X velocity heading")
+
+func test_face_angle_positive_z_velocity() -> void:
+	var angle := Player3D.face_angle(Vector3(0.0, 0.0, 1.0))
+	assert_almost_eq(angle, atan2(0.0, 1.0), 0.001, "+Z velocity heading")
+
+func test_face_angle_diagonal() -> void:
+	var angle := Player3D.face_angle(Vector3(1.0, 0.0, 1.0))
+	assert_almost_eq(angle, atan2(1.0, 1.0), 0.001, "diagonal XZ velocity heading")
+
+func test_face_angle_negative_x_velocity() -> void:
+	var angle := Player3D.face_angle(Vector3(-1.0, 0.0, 0.0))
+	assert_almost_eq(angle, atan2(-1.0, 0.0), 0.001, "-X velocity heading")
+
+func test_face_angle_zero_velocity_returns_zero_not_nan() -> void:
+	var angle := Player3D.face_angle(Vector3.ZERO)
+	assert_almost_eq(angle, 0.0, 0.001, "zero velocity returns 0.0 (no NaN)")
+
+# ── model integration tests ───────────────────────────────────────────────────
+
+func _make_char_data_with_model(model_path: String = "res://art/characters_3d/kenney_blocky_characters/models/character-a.glb") -> CharacterData:
+	var cd := _make_char_data()
+	cd.model_scene = load(model_path)
+	cd.model_scale = 1.0
+	return cd
+
+func test_setup_with_model_hides_capsule_placeholder() -> void:
+	var player: Player3D = add_child_autofree(Player3DScene.instantiate())
+	player.setup(_make_char_data_with_model())
+	var placeholder := player.get_node_or_null("Model/MeshInstance3D") as MeshInstance3D
+	assert_not_null(placeholder, "MeshInstance3D placeholder must still exist in scene")
+	assert_false(placeholder.visible, "placeholder capsule must be hidden after model setup")
+
+func test_setup_with_model_adds_instance_under_model_node() -> void:
+	var player: Player3D = add_child_autofree(Player3DScene.instantiate())
+	player.setup(_make_char_data_with_model())
+	var model_node := player.get_node("Model") as Node3D
+	# Model node should have: original MeshInstance3D + the instanced GLB scene
+	assert_true(model_node.get_child_count() > 1, "instanced model was added under Model node")
+
+func test_setup_with_model_finds_animation_player() -> void:
+	var player: Player3D = add_child_autofree(Player3DScene.instantiate())
+	player.setup(_make_char_data_with_model())
+	assert_not_null(player._anim_player, "AnimationPlayer must be found inside the Kenney GLB")
+
+func test_setup_without_model_leaves_placeholder_visible() -> void:
+	var player: Player3D = add_child_autofree(Player3DScene.instantiate())
+	player.setup(_make_char_data())  # no model_scene
+	var placeholder := player.get_node_or_null("Model/MeshInstance3D") as MeshInstance3D
+	assert_not_null(placeholder)
+	assert_true(placeholder.visible, "placeholder stays visible when no model_scene is set")
+
+func test_setup_without_model_anim_player_stays_null() -> void:
+	var player: Player3D = add_child_autofree(Player3DScene.instantiate())
+	player.setup(_make_char_data())  # no model_scene
+	assert_null(player._anim_player, "_anim_player must stay null when model_scene is unset")

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CharacterData" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="CharacterData" load_steps=9 format=3]
 
 [ext_resource type="Script" uid="uid://oeuj1jqprh5d" path="res://core/character_data.gd" id="1_char_data"]
 [ext_resource type="Script" uid="uid://0rwxad1au28r" path="res://core/stat_block.gd" id="2_stat_block"]
@@ -6,6 +6,7 @@
 [ext_resource type="Resource" path="res://upgrades/ziv/signature.tres" id="4_sig"]
 [ext_resource type="Resource" path="res://upgrades/ziv/passive.tres" id="5_pas"]
 [ext_resource type="Resource" path="res://upgrades/ziv/evolution.tres" id="6_evo"]
+[ext_resource type="PackedScene" uid="uid://duvjv73aas321" path="res://art/characters_3d/kenney_blocky_characters/models/character-a.glb" id="7_model"]
 
 [sub_resource type="Resource" id="Resource_stats"]
 script = ExtResource("2_stat_block")
@@ -29,3 +30,6 @@ max_signature_level = 5
 signature_upgrade = ExtResource("4_sig")
 passive_upgrade = ExtResource("5_pas")
 evolution_upgrade = ExtResource("6_evo")
+model_scene = ExtResource("7_model")
+model_scale = 1.0
+model_tint = Color(1.0, 0.4, 0.7, 1.0)
