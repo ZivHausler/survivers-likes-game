@@ -70,7 +70,9 @@ func _on_hit(enemy: Node) -> void:
 	_hit_enemies.append(enemy)
 	if enemy.has_method("take_damage"):
 		enemy.take_damage(_damage)
-		GameEvents.skill_hit.emit(vfx_id, vfx_color, (enemy as Node3D).global_position)
+		var e3d := enemy as Node3D
+		if e3d:
+			GameEvents.skill_hit.emit(vfx_id, vfx_color, e3d.global_position)
 	_pierce -= 1
 	if _pierce <= 0:
 		queue_free()

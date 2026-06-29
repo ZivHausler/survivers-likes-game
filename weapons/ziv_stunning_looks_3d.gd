@@ -58,7 +58,8 @@ func _deal_beam_damage() -> void:
 	for body in _beam.get_overlapping_bodies():
 		if body.is_in_group("enemies"):
 			body.take_damage(damage)
-			GameEvents.skill_hit.emit(vfx_id, vfx_color, body.global_position)
+			if damage > 0.0:
+				GameEvents.skill_hit.emit(vfx_id, vfx_color, body.global_position)
 
 func _charm_nearby_enemies() -> void:
 	if evolved:
