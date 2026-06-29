@@ -45,6 +45,16 @@ var _choosing: bool = false
 var _pending_levelups: int = 0
 
 
+## Assemble a run's skill list: the character's exclusive ultimate first, then the
+## type-filtered shared pool. Pure (no scene access) so it is unit-testable.
+static func assemble_run_skills(ultimate: SkillData, pool: Array, types: Array) -> Array:
+	var out: Array = []
+	if ultimate != null:
+		out.append(ultimate)
+	out.append_array(SkillPool.filter(pool, types))
+	return out
+
+
 func _ready() -> void:
 	_gem_scene = load(GEM_SCENE_PATH) as PackedScene
 	start()
@@ -78,14 +88,25 @@ func start() -> void:
 		if u:
 			generic_pool.append(u)
 
-	if char_data and not char_data.skills.is_empty():
-		# 3D multi-weapon path: SkillSystem from the skills roster.
+	if char_data and char_data.ultimate != null and not char_data.types.is_empty():
+		# Type-gated pool path: ultimate + filtered shared pool.
+		var run_skills := assemble_run_skills(char_data.ultimate, SkillPool.all(), char_data.types)
+		skill_system = SkillSystem.new(run_skills, generic_pool)
+		_skill_by_id.clear()
+		for s in run_skills:
+			_skill_by_id[s.id] = s
+		# Acquire the signature (ultimate) weapon immediately.
+		if _player:
+			for s in run_skills:
+				if s.is_signature:
+					_player.acquire_skill(s.id, s.weapon_scene)
+					break
+	elif char_data and not char_data.skills.is_empty():
+		# Legacy per-character roster path (still used until migration completes).
 		skill_system = SkillSystem.new(char_data.skills, generic_pool)
-		# Build skill-by-id lookup for routing.
 		_skill_by_id.clear()
 		for s in char_data.skills:
 			_skill_by_id[s.id] = s
-		# Acquire the signature skill immediately.
 		if _player:
 			for s in char_data.skills:
 				if s.is_signature:
