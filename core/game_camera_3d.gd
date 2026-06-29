@@ -39,8 +39,6 @@ const ZOOM_MAX: float = 2.2
 ## Zoom change per mouse-wheel notch.
 const ZOOM_STEP: float = 0.12
 
-## Degrees of yaw/pitch change per pixel of left-drag.
-const DRAG_SENSITIVITY: float = 0.3
 ## Steepest allowed tilt (most top-down). Stops the camera flipping over the target.
 const PITCH_MIN: float = -85.0
 ## Flattest allowed tilt (most side-on). Stops the view going fully horizontal.
@@ -52,13 +50,12 @@ const DEFAULT_YAW: float = 0.0
 var _trauma: float = 0.0
 ## The point the camera orbits and look_at()s. Eases toward the target each frame, so
 ## the camera follows by pure translation; the same pivot drives position AND look_at,
-## so movement never rotates the view. Only drag changes the orbit angles.
+## so movement never rotates the view. The orbit angles are fixed (set via the editor
+## or reset_view); the mouse cannot change them.
 var _pivot: Vector3 = Vector3.ZERO
 ## True once the pivot has snapped to a valid target. Avoids easing in from the origin
 ## when target is assigned after _ready() (e.g. by GameManager3D in code).
 var _snapped: bool = false
-## True while the left mouse button is held (orbit/tilt drag in progress).
-var _dragging: bool = false
 
 func _ready() -> void:
 	if target:
@@ -89,19 +86,12 @@ func _apply_orbit() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			_dragging = mb.pressed
-		elif mb.button_index == MOUSE_BUTTON_MIDDLE and mb.pressed:
+		if mb.button_index == MOUSE_BUTTON_MIDDLE and mb.pressed:
 			reset_view()
 		elif mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_UP:
 			zoom = clamp_zoom(zoom - ZOOM_STEP)
 		elif mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			zoom = clamp_zoom(zoom + ZOOM_STEP)
-	elif event is InputEventMouseMotion and _dragging:
-		var mm := event as InputEventMouseMotion
-		# Horizontal drag orbits (yaw); vertical drag tilts (pitch), clamped.
-		yaw_degrees = wrapf(yaw_degrees + mm.relative.x * DRAG_SENSITIVITY, -180.0, 180.0)
-		pitch_degrees = clamp_pitch(pitch_degrees + mm.relative.y * DRAG_SENSITIVITY)
 
 ## Snap the view back to the default tilt and facing.
 func reset_view() -> void:

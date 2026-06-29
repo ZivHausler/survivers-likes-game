@@ -93,10 +93,6 @@ func _make_button_event(button_index: int, pressed: bool) -> InputEventMouseButt
 	ev.pressed = pressed
 	return ev
 
-func _make_motion_event(relative: Vector2) -> InputEventMouseMotion:
-	var ev := InputEventMouseMotion.new()
-	ev.relative = relative
-	return ev
 
 func test_wheel_up_decreases_zoom_by_one_step() -> void:
 	var cam := GameCamera3D.new()
@@ -126,51 +122,7 @@ func test_wheel_down_clamps_at_max() -> void:
 	assert_almost_eq(cam.zoom, GameCamera3D.ZOOM_MAX, 0.001, "WHEEL_DOWN at ZOOM_MAX stays at ZOOM_MAX")
 	cam.free()
 
-# ── left-drag orbit/tilt + middle-click reset ────────────────────────────────
-
-func test_left_drag_horizontal_changes_yaw() -> void:
-	var cam := GameCamera3D.new()
-	cam.yaw_degrees = 0.0
-	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_LEFT, true))
-	cam._unhandled_input(_make_motion_event(Vector2(10.0, 0.0)))
-	assert_almost_eq(cam.yaw_degrees, 10.0 * GameCamera3D.DRAG_SENSITIVITY, 0.001,
-		"horizontal drag rotates yaw by relative.x * DRAG_SENSITIVITY")
-	cam.free()
-
-func test_left_drag_vertical_changes_pitch() -> void:
-	var cam := GameCamera3D.new()
-	cam.pitch_degrees = -65.0
-	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_LEFT, true))
-	cam._unhandled_input(_make_motion_event(Vector2(0.0, 5.0)))
-	assert_almost_eq(cam.pitch_degrees, GameCamera3D.clamp_pitch(-65.0 + 5.0 * GameCamera3D.DRAG_SENSITIVITY), 0.001,
-		"vertical drag tilts pitch by relative.y * DRAG_SENSITIVITY (clamped)")
-	cam.free()
-
-func test_left_drag_pitch_clamped_to_min() -> void:
-	var cam := GameCamera3D.new()
-	cam.pitch_degrees = -84.0
-	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_LEFT, true))
-	cam._unhandled_input(_make_motion_event(Vector2(0.0, -100.0)))
-	assert_almost_eq(cam.pitch_degrees, GameCamera3D.PITCH_MIN, 0.001, "a large vertical drag cannot push pitch past PITCH_MIN")
-	cam.free()
-
-func test_motion_without_left_button_does_not_change_view() -> void:
-	var cam := GameCamera3D.new()
-	cam.yaw_degrees = 0.0
-	cam.pitch_degrees = -65.0
-	cam._unhandled_input(_make_motion_event(Vector2(50.0, 50.0)))
-	assert_almost_eq(cam.yaw_degrees, 0.0, 0.001, "no orbit without an active left-drag")
-	assert_almost_eq(cam.pitch_degrees, -65.0, 0.001, "no tilt without an active left-drag")
-	cam.free()
-
-func test_left_release_stops_dragging() -> void:
-	var cam := GameCamera3D.new()
-	cam.yaw_degrees = 0.0
-	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_LEFT, true))
-	cam._unhandled_input(_make_button_event(MOUSE_BUTTON_LEFT, false))
-	cam._unhandled_input(_make_motion_event(Vector2(50.0, 0.0)))
-	assert_almost_eq(cam.yaw_degrees, 0.0, 0.001, "releasing the left button stops orbiting")
-	cam.free()
+# ── middle-click reset ───────────────────────────────────────────────────────
 
 func test_middle_click_resets_view() -> void:
 	var cam := GameCamera3D.new()
