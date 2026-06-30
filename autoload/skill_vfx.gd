@@ -7,6 +7,13 @@ extends Node
 
 const _SkillCastFxScene: PackedScene = preload("res://vfx/skill_cast_fx_3d.tscn")
 const _SkillHitFxScene: PackedScene = preload("res://vfx/skill_hit_fx_3d.tscn")
+const _AoeTelegraphScene: PackedScene = preload("res://vfx/aoe_telegraph_3d.tscn")
+
+## Default AoE radius (world units) used when the cast signal carries no radius.
+## CONCERN: GameEvents.skill_cast carries (vfx_id, color, position) — no radius.
+## All casts receive a telegraph at this default size. Nova/ground casts are not
+## distinguishable from the signal alone; dispatched for ALL casts intentionally.
+const _DEFAULT_TELEGRAPH_RADIUS := 6.0
 
 func _ready() -> void:
 	GameEvents.skill_cast.connect(_on_skill_cast)
@@ -32,6 +39,10 @@ func _on_skill_cast(_vfx_id: StringName, color: Color, position: Vector3) -> voi
 	var fx: SkillCastFx3D = _SkillCastFxScene.instantiate()
 	parent.add_child(fx)
 	fx.play_at(position, color)
+	# AoE telegraph — additive ring decal on the ground plane (LoL Swarm readability).
+	var tele: AoeTelegraph3D = _AoeTelegraphScene.instantiate()
+	parent.add_child(tele)
+	tele.play_at(position, _DEFAULT_TELEGRAPH_RADIUS, color)
 
 func _on_skill_hit(_vfx_id: StringName, color: Color, position: Vector3) -> void:
 	var parent: Node = _safe_parent()

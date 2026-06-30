@@ -54,6 +54,7 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[juice]] — `Juice` autoload: decoupled visual-effects layer (connects to GameEvents; enemy_killed + hp_changed filled in Wave C / Task C1)
 - [[juice-3d]] — `Juice3D` autoload: 3D companion to Juice; DeathPop3D, DamageNumber3D, HitFlash3D, camera shake via GameCamera3D.add_trauma (Task 1.6)
 - [[skill-vfx]] — `SkillVFX` autoload: decoupled skill cast/hit VFX layer; `skill_cast`/`skill_hit` signals; SkillCastFx3D + SkillHitFx3D GPUParticles3D; per-archetype color defaults (Task 4.5)
+- [[aoe-telegraph]] — `AoeTelegraph3D`: flat additive ring decal on the XZ ground plane; expands/pulses then auto-frees; dispatched by SkillVFX on every `skill_cast` for LoL Swarm ground readability (Task 1.6)
 - [[vfx-system]] — Wave C VFX scenes: ScreenShake, HitFlash, DamageNumber, DeathPop, EvolutionFlash (C2), XpSparkle (C2)
 - [[sprite-integration]] — Optional sprite fields on `CharacterData`/`EnemyData` + fallback rule (Wave A/B)
 - [[data-driven-characters]] — How a friend is modelled as `CharacterData` + weapon + passive + evolution
