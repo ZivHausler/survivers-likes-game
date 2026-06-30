@@ -33,6 +33,12 @@ sky_material = SubResource("PanoramaSkyMaterial_sky")
 background_mode = 2
 sky = SubResource("Sky_main")
 ambient_light_source = 3
+ambient_light_energy = 0.4
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.8
+glow_bloom = 0.2
+glow_hdr_threshold = 1.0
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall_ns"]
 size = Vector3(200, 10, 2)
@@ -56,8 +62,9 @@ shape = SubResource("BoxShape3D_floor")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.766044, 0.642788, 0, -0.642788, 0.766044, 0, 10, 0)
-light_energy = 1.2
+light_energy = 1.0
 shadow_enabled = true
+shadow_blur = 2.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
