@@ -1,33 +1,30 @@
 # See docs/notes/hud.md
 class_name HUD extends CanvasLayer
-## In-run heads-up display: timer, HP bar, XP bar + level, kill counter.
+## In-run heads-up display: top status strip (timer/kills/level/XP) and bottom command bar
+## (HP, weapon cooldown slots, ultimate slot, passives).
 ## process_mode = PROCESS_MODE_ALWAYS so _process runs BOTH during normal play
 ## (live timer/kills/XP) and while the level-up overlay pauses the tree.
 
-@onready var _timer_label:   Label       = $VBox/TimerLabel
-@onready var _kills_label:   Label       = $VBox/KillsLabel
-@onready var _level_label:   Label       = $VBox/LevelLabel
-@onready var _hp_bar:        ProgressBar = $VBox/HPBar
-@onready var _xp_bar:        ProgressBar = $VBox/XPBar
-@onready var _evolve_banner: Label       = $EvolveBanner
-@onready var _boss_bar:      Control     = $BossBar
-@onready var _boss_name:     Label       = $BossBar/BossContent/BossNameLabel
-@onready var _boss_hp_bar:   ProgressBar = $BossBar/BossContent/BossHPBar
-@onready var _boss_hp_text:  Label       = $BossBar/BossContent/BossHPBar/BossHPText
+@onready var _timer_label:   Label          = $TopStrip/StripVBox/StripRow/TimerLabel
+@onready var _kills_label:   Label          = $TopStrip/StripVBox/StripRow/KillsLabel
+@onready var _level_label:   Label          = $TopStrip/StripVBox/StripRow/LevelBadge/LevelLabel
+@onready var _hp_bar:        ProgressBar    = $CommandBar/CBContent/HPZone/HPBarContainer/HPBar
+@onready var _hp_text:       Label          = $CommandBar/CBContent/HPZone/HPBarContainer/HPBar/HPText
+@onready var _xp_bar:        ProgressBar    = $TopStrip/StripVBox/XPBar
+@onready var _evolve_banner: Label          = $EvolveBanner
+@onready var _boss_bar:      Control        = $BossBar
+@onready var _boss_name:     Label          = $BossBar/BossContent/BossNameLabel
+@onready var _boss_hp_bar:   ProgressBar    = $BossBar/BossContent/BossHPBar
+@onready var _boss_hp_text:  Label          = $BossBar/BossContent/BossHPBar/BossHPText
+@onready var _passives_box:  HBoxContainer  = $CommandBar/CBContent/PassivesBox
+@onready var _weapons_box:   HBoxContainer  = $CommandBar/CBContent/RightZone/WeaponsBox
+@onready var _ult_radial:    RadialCooldown = $CommandBar/CBContent/RightZone/UltSlot/UltSlotContent/UltRadial
 
 var _game_manager: Node = null  # duck-typed: GameManager (2D) or GameManager3D
 var _player: Node = null        # duck-typed: Player (2D) or Player3D
 var _evolve_tween: Tween = null
-
-# --- Three-zone cooldown HUD (created in _ready; no @onready so tests can load without scene) ---
-# Left zone: passives (HBoxContainer, PRESET_BOTTOM_LEFT)
-var _passives_box: HBoxContainer = null
 var _passive_panels: Array = []
 var _passive_last_count: int = 0
-# Center zone: ultimate radial (RadialCooldown, anchored bottom-center)
-var _ult_radial: RadialCooldown = null
-# Right zone: weapon cooldown bars (HBoxContainer, PRESET_BOTTOM_RIGHT)
-var _weapons_box: HBoxContainer = null
 var _cd_bars: Array[ProgressBar] = []
 var _cd_last_count: int = 0
 
@@ -39,41 +36,6 @@ func _ready() -> void:
 	GameEvents.boss_spawned.connect(_on_boss_spawned)
 	GameEvents.boss_hp_changed.connect(_on_boss_hp_changed)
 	GameEvents.boss_died.connect(_on_boss_died)
-
-	# Left zone: passives.
-	_passives_box = HBoxContainer.new()
-	_passives_box.name = "PassivesBox"
-	_passives_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	_passives_box.offset_bottom = -8.0
-	_passives_box.offset_top   = -56.0
-	_passives_box.offset_left  = 8.0
-	_passives_box.offset_right = 300.0
-	_passives_box.add_theme_constant_override("separation", 4)
-	add_child(_passives_box)
-
-	# Center zone: radial ultimate indicator.
-	_ult_radial = RadialCooldown.new()
-	_ult_radial.name = "UltRadial"
-	_ult_radial.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	_ult_radial.custom_minimum_size = Vector2(64, 64)
-	_ult_radial.offset_left  = -32.0
-	_ult_radial.offset_right =  32.0
-	_ult_radial.offset_top   = -72.0
-	_ult_radial.offset_bottom = -8.0
-	_ult_radial.visible = false
-	add_child(_ult_radial)
-
-	# Right zone: weapon cooldown bars.
-	_weapons_box = HBoxContainer.new()
-	_weapons_box.name = "WeaponsBox"
-	_weapons_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	_weapons_box.offset_bottom = -8.0
-	_weapons_box.offset_top   = -72.0
-	_weapons_box.offset_left  = -300.0
-	_weapons_box.offset_right = -8.0
-	_weapons_box.add_theme_constant_override("separation", 6)
-	add_child(_weapons_box)
-
 	# Defer finding siblings so the full scene tree is ready
 	call_deferred("_find_siblings")
 
@@ -102,7 +64,7 @@ func _process(_dt: float) -> void:
 			var secs := int(_game_manager.get_elapsed())
 			_timer_label.text = "%d:%02d" % [int(secs / 60.0), secs % 60]
 		if _game_manager.has_method("get_kills"):
-			_kills_label.text = "Kills: %d" % _game_manager.get_kills()
+			_kills_label.text = "%d" % _game_manager.get_kills()
 	if _player and is_instance_valid(_player):
 		if _player.has_method("xp_to_next") and "level" in _player:
 			_xp_bar.max_value = _player.xp_to_next(_player.get("level"))
@@ -113,9 +75,10 @@ func _process(_dt: float) -> void:
 func _on_hp_changed(current: float, max_hp: float) -> void:
 	_hp_bar.max_value = max_hp
 	_hp_bar.value     = current
+	_hp_text.text = "%d / %d" % [int(max(current, 0.0)), int(max_hp)]
 
 func _on_leveled_up(level: int) -> void:
-	_level_label.text = "Lv %d" % level
+	_level_label.text = "LV %d" % level
 
 func _on_evolution_unlocked(_weapon_id: StringName) -> void:
 	# Kill any in-flight fade so a rapid second evolution doesn't leave the old
@@ -187,18 +150,32 @@ func _update_cooldown_bars() -> void:
 		else:
 			weapon_entries.append(e)
 
-	# --- Right zone: weapon bars ---
+	# --- Right zone: weapon slots ---
 	if weapon_entries.size() != _cd_last_count:
 		for child in _weapons_box.get_children():
 			child.queue_free()
 		_cd_bars.clear()
 		for i in weapon_entries.size():
 			var panel := Panel.new()
-			panel.custom_minimum_size = Vector2(40, 40)
+			panel.custom_minimum_size = Vector2(48, 48)
 			var style := StyleBoxFlat.new()
-			style.bg_color = Color(0.08, 0.08, 0.08, 0.85)
+			style.bg_color = Color(0.06, 0.08, 0.12, 0.9)
 			style.set_corner_radius_all(4)
+			style.border_width_left   = 1
+			style.border_width_top    = 1
+			style.border_width_right  = 1
+			style.border_width_bottom = 1
+			style.border_color = Color(0.3, 0.8, 1.0, 0.5)
 			panel.add_theme_stylebox_override("panel", style)
+			# TextureRect placeholder (real art assigned in a later task)
+			var icon_rect := TextureRect.new()
+			icon_rect.name = "IconTexture"
+			icon_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+			icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			panel.add_child(icon_rect)
+			# Cooldown overlay bar (transparent bg, cyan fill)
 			var bar := ProgressBar.new()
 			bar.name = "Bar"
 			bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -206,22 +183,34 @@ func _update_cooldown_bars() -> void:
 			bar.value = weapon_entries[i]["fraction"]
 			bar.show_percentage = false
 			var bg_style := StyleBoxFlat.new()
-			bg_style.bg_color = Color(0.08, 0.08, 0.08, 0.0)
+			bg_style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
 			bar.add_theme_stylebox_override("background", bg_style)
 			var fill_style := StyleBoxFlat.new()
-			fill_style.bg_color = Color(0.2, 0.7, 1.0, 0.85)  # cyan for weapons
+			fill_style.bg_color = Color(0.2, 0.7, 1.0, 0.6)
 			bar.add_theme_stylebox_override("fill", fill_style)
 			panel.add_child(bar)
-			var lbl := Label.new()
-			lbl.name = "ReadyLabel"
-			lbl.text = "RDY"
-			lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			lbl.add_theme_font_size_override("font_size", 10)
-			lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			lbl.visible = false
-			panel.add_child(lbl)
+			# ID abbreviation — fallback label when no texture is loaded
+			var id_lbl := Label.new()
+			id_lbl.name = "IDLabel"
+			id_lbl.text = str(weapon_entries[i]["id"]).substr(0, 4).to_upper()
+			id_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			id_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			id_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+			id_lbl.add_theme_font_size_override("font_size", 8)
+			id_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			panel.add_child(id_lbl)
+			# READY glow label
+			var ready_lbl := Label.new()
+			ready_lbl.name = "ReadyLabel"
+			ready_lbl.text = "READY"
+			ready_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			ready_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			ready_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+			ready_lbl.add_theme_font_size_override("font_size", 9)
+			ready_lbl.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
+			ready_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			ready_lbl.visible = false
+			panel.add_child(ready_lbl)
 			_weapons_box.add_child(panel)
 			_cd_bars.append(bar)
 		_cd_last_count = weapon_entries.size()
@@ -234,7 +223,7 @@ func _update_cooldown_bars() -> void:
 		if ready_lbl:
 			ready_lbl.visible = frac >= 1.0
 
-	# --- Center zone: ultimate radial ---
+	# --- Ultimate slot: radial sweep ---
 	if _ult_radial != null:
 		if ult_entry != null:
 			_ult_radial.visible = true
@@ -251,16 +240,21 @@ func _update_cooldown_bars() -> void:
 			_passive_panels.clear()
 			for e in passive_entries:
 				var panel := Panel.new()
-				panel.custom_minimum_size = Vector2(36, 36)
+				panel.custom_minimum_size = Vector2(40, 40)
 				var style := StyleBoxFlat.new()
-				style.bg_color = Color(0.1, 0.08, 0.15, 0.85)
+				style.bg_color = Color(0.1, 0.08, 0.15, 0.9)
 				style.set_corner_radius_all(4)
+				style.border_width_left   = 1
+				style.border_width_top    = 1
+				style.border_width_right  = 1
+				style.border_width_bottom = 1
+				style.border_color = Color(0.6, 0.3, 1.0, 0.5)
 				panel.add_theme_stylebox_override("panel", style)
 				var lbl := Label.new()
 				lbl.text = str(e["id"]).substr(0, 3).to_upper()
 				lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 				lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-				lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+				lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 				lbl.add_theme_font_size_override("font_size", 8)
 				lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				panel.add_child(lbl)
@@ -269,9 +263,9 @@ func _update_cooldown_bars() -> void:
 				lvl_lbl.text = "x%d" % e["level"]
 				lvl_lbl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 				lvl_lbl.offset_top    = -14.0
-				lvl_lbl.offset_bottom =  0.0
+				lvl_lbl.offset_bottom =   0.0
 				lvl_lbl.offset_left   = -20.0
-				lvl_lbl.offset_right  =  0.0
+				lvl_lbl.offset_right  =   0.0
 				lvl_lbl.add_theme_font_size_override("font_size", 8)
 				lvl_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				panel.add_child(lvl_lbl)
