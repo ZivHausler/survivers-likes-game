@@ -1,16 +1,22 @@
-[gd_scene load_steps=13 format=3 uid="uid://bq6n3f8p5xm2kw"]
+[gd_scene load_steps=32 format=3 uid="uid://bq6n3f8p5xm2kw"]
 
 [ext_resource type="PackedScene" uid="uid://cw4t3rpond3dv1" path="res://obstacles/water_3d.tscn" id="5_water"]
 [ext_resource type="Script" uid="uid://d3yhcfccvtnu2" path="res://arena/arena_scatter.gd" id="6_scatter"]
 [ext_resource type="Texture2D" uid="uid://p1a0rifue7i4" path="res://art/textures/final_city_pavement_albedo.png" id="1_pavement"]
 [ext_resource type="Texture2D" uid="uid://cnrrqlqe5qn7x" path="res://art/hdri/sky_2k.hdr" id="4_sky_hdri"]
+[ext_resource type="Texture2D" uid="uid://6xrubff53a8t" path="res://art/textures/final_city_grass_albedo.png" id="7_grass"]
+[ext_resource type="Texture2D" uid="uid://bdkngpcpmurqt" path="res://art/textures/final_city_cobble_albedo.png" id="8_cobble"]
+[ext_resource type="Texture2D" uid="uid://dhumsyk5bjyi5" path="res://art/textures/final_city_floor_albedo.png" id="9_floor"]
+[ext_resource type="Texture2D" uid="uid://b7mqgin36he72" path="res://art/textures/final_city_sand_albedo.png" id="10_sand"]
+[ext_resource type="Texture2D" uid="uid://boycvnoueo4yw" path="res://art/textures/final_city_plaza_albedo.png" id="11_plaza"]
+[ext_resource type="Texture2D" uid="uid://dj4kq5tmol8uf" path="res://art/textures/final_city_corrupted_albedo.png" id="12_corrupted"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
-albedo_color = Color(0.7, 0.72, 0.78, 1)
-albedo_texture = ExtResource("1_pavement")
+albedo_color = Color(0.45, 0.55, 0.35, 1)
+albedo_texture = ExtResource("7_grass")
 roughness = 0.85
 metallic = 0.0
-uv1_scale = Vector3(60, 60, 60)
+uv1_scale = Vector3(50, 50, 50)
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
 size = Vector2(200, 200)
@@ -41,6 +47,69 @@ size = Vector3(200, 10, 2)
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall_ew"]
 size = Vector3(2, 10, 200)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cobble"]
+albedo_color = Color(0.60, 0.58, 0.55, 1)
+albedo_texture = ExtResource("8_cobble")
+roughness = 0.85
+metallic = 0.0
+uv1_scale = Vector3(20, 20, 20)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor_mat"]
+albedo_color = Color(0.40, 0.45, 0.55, 1)
+albedo_texture = ExtResource("9_floor")
+roughness = 0.85
+metallic = 0.0
+uv1_scale = Vector3(15, 15, 15)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sand"]
+albedo_color = Color(0.75, 0.70, 0.55, 1)
+albedo_texture = ExtResource("10_sand")
+roughness = 0.85
+metallic = 0.0
+uv1_scale = Vector3(20, 20, 20)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_plaza"]
+albedo_color = Color(0.65, 0.62, 0.58, 1)
+albedo_texture = ExtResource("11_plaza")
+roughness = 0.85
+metallic = 0.0
+uv1_scale = Vector3(12, 12, 12)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_corrupted"]
+albedo_color = Color(0.40, 0.30, 0.45, 1)
+albedo_texture = ExtResource("12_corrupted")
+roughness = 0.85
+metallic = 0.0
+uv1_scale = Vector3(6, 6, 6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_road"]
+albedo_color = Color(0.55, 0.55, 0.60, 1)
+albedo_texture = ExtResource("1_pavement")
+roughness = 0.85
+metallic = 0.0
+uv1_scale = Vector3(20, 20, 20)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_quadrant"]
+size = Vector2(76, 76)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_road_ns"]
+size = Vector2(14, 200)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_road_ew"]
+size = Vector2(200, 14)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_plaza"]
+size = Vector2(46, 46)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_corrupted_lg"]
+size = Vector2(18, 18)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_corrupted_md"]
+size = Vector2(16, 16)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_corrupted_sm"]
+size = Vector2(14, 14)
+
 [node name="Arena3D" type="Node3D"]
 
 [node name="Ground" type="StaticBody3D" parent="."]
@@ -54,6 +123,53 @@ surface_material_override/0 = SubResource("StandardMaterial3D_ground")
 [node name="GroundCollision" type="CollisionShape3D" parent="Ground"]
 position = Vector3(0, -0.05, 0)
 shape = SubResource("BoxShape3D_floor")
+
+[node name="GroundRegions" type="Node3D" parent="Ground"]
+
+[node name="QuadrantNE" type="MeshInstance3D" parent="Ground/GroundRegions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 0.05, -50)
+mesh = SubResource("PlaneMesh_quadrant")
+surface_material_override/0 = SubResource("StandardMaterial3D_cobble")
+
+[node name="QuadrantSW" type="MeshInstance3D" parent="Ground/GroundRegions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0.05, 50)
+mesh = SubResource("PlaneMesh_quadrant")
+surface_material_override/0 = SubResource("StandardMaterial3D_floor_mat")
+
+[node name="QuadrantSE" type="MeshInstance3D" parent="Ground/GroundRegions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 0.05, 50)
+mesh = SubResource("PlaneMesh_quadrant")
+surface_material_override/0 = SubResource("StandardMaterial3D_sand")
+
+[node name="CorruptedPatch1" type="MeshInstance3D" parent="Ground/GroundRegions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -55, 0.06, 65)
+mesh = SubResource("PlaneMesh_corrupted_lg")
+surface_material_override/0 = SubResource("StandardMaterial3D_corrupted")
+
+[node name="CorruptedPatch2" type="MeshInstance3D" parent="Ground/GroundRegions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0.06, 72)
+mesh = SubResource("PlaneMesh_corrupted_md")
+surface_material_override/0 = SubResource("StandardMaterial3D_corrupted")
+
+[node name="CorruptedPatch3" type="MeshInstance3D" parent="Ground/GroundRegions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -72, 0.06, 40)
+mesh = SubResource("PlaneMesh_corrupted_sm")
+surface_material_override/0 = SubResource("StandardMaterial3D_corrupted")
+
+[node name="RoadNS" type="MeshInstance3D" parent="Ground/GroundRegions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+mesh = SubResource("PlaneMesh_road_ns")
+surface_material_override/0 = SubResource("StandardMaterial3D_road")
+
+[node name="RoadEW" type="MeshInstance3D" parent="Ground/GroundRegions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.101, 0)
+mesh = SubResource("PlaneMesh_road_ew")
+surface_material_override/0 = SubResource("StandardMaterial3D_road")
+
+[node name="PlazaCenter" type="MeshInstance3D" parent="Ground/GroundRegions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+mesh = SubResource("PlaneMesh_plaza")
+surface_material_override/0 = SubResource("StandardMaterial3D_plaza")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.766044, 0.642788, 0, -0.642788, 0.766044, 0, 10, 0)
@@ -99,10 +215,10 @@ collision_mask = 0
 shape = SubResource("BoxShape3D_wall_ew")
 
 [node name="WaterPond1" parent="." instance=ExtResource("5_water")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 0, -30)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -55, 0, -55)
 
 [node name="WaterPond2" parent="." instance=ExtResource("5_water")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0, 45)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 0, 60)
 
 [node name="ObstacleSpawner" type="Node" parent="."]
 script = ExtResource("6_scatter")

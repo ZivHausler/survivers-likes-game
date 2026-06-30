@@ -80,7 +80,7 @@ func test_pylon_obstacle_has_mesh_instances() -> void:
 	assert_not_null(obstacles, "Obstacles container must exist")
 	if obstacles == null:
 		return
-	# Even-indexed children are pylons (ArenaScatter spawns pylon when i%2==0).
+	# All obstacle props are wrapped models; confirm any even-indexed one has a visible mesh.
 	var checked := false
 	for i in obstacles.get_child_count():
 		if i % 2 != 0:
@@ -90,7 +90,7 @@ func test_pylon_obstacle_has_mesh_instances() -> void:
 			continue
 		var mesh_count := _count_visible_mesh_instances_in(child)
 		assert_true(mesh_count >= 1,
-			"pylon Obstacle3D must contain at least one visible MeshInstance3D, got %d" % mesh_count)
+			"Obstacle3D at index %d must contain at least one visible MeshInstance3D, got %d" % [i, mesh_count])
 		checked = true
-		break  # one confirmed pylon is sufficient
-	assert_true(checked, "at least one pylon Obstacle3D must have been inspected")
+		break  # one confirmed obstacle is sufficient
+	assert_true(checked, "at least one even-indexed Obstacle3D must have been inspected")

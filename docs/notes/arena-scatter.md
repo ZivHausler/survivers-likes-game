@@ -4,7 +4,7 @@
 
 `ArenaScatter.compute_positions()` is a pure, deterministic placement function that generates XZ positions for arena obstacles using rejection sampling with a seeded `RandomNumberGenerator`.
 
-The instance-side spawner scatters two sci-fi prop types into the arena: **pylons** (tall, even-indexed slots, ~6 units) and **barriers** (low, odd-indexed slots, ~2 units). Both are primitive Godot scenes — no external gltf assets required.
+The instance-side spawner places biome-themed props across four regions (NW Forest, NE City, SW Tech, SE Beach) plus a central plaza hub and road lamps — all deterministic via per-region seeded calls to `compute_positions`.
 
 **File:** `arena/arena_scatter.gd`
 
@@ -48,51 +48,64 @@ Uses **rejection sampling**:
 
 This design prevents infinite loops while allowing graceful degradation when the request is geometrically impossible (e.g., fitting 1000 obstacles with tight separation in a small area).
 
-## Usage (Task 8)
+## Region-based Spawner (_ready)
 
-The arena scene calls `compute_positions()` with the seed and placement knobs, then instantiates
-`Obstacle3D` at each returned position with either a pylon (even index) or barrier (odd index).
+`_ready()` builds the arena layout in four phases:
 
-## Sci-Fi Props (Phase 4.3)
+### 1. Plaza Hub (fixed positions)
+- **Fountain** (Obstacle3D, footprint r=1.5) at (0, 0, 16) — named `"Fountain"` so tests can find it.
+- **6 Pillars** (Obstacle3D, r=0.5) in a ring at radius 20: (±20,0,0), (±10,0,±17).
+- **4 Braziers** (Decor, no collision) at radius ~14: (±10, 0, ±10).
 
-The spawner places two primitive Godot-native prop types instead of external gltf assets:
+### 2. Road Lamps (Decor, no collision)
+32 `prop_lamp_3d` instances at d ∈ {30, 52, 74, 96} on each of the 4 road arms, offset ±7 to either side of the road centreline.
 
-- **Pylon** (`obstacles/sci_fi_pylon_3d.tscn`): tall slim column (~6 units), dark metal body
-  (`Color(0.12, 0.13, 0.16)`) with two emissive rings — cyan (`Color(0.3, 0.8, 1.0)`) at mid-height
-  and magenta (`Color(1.0, 0.2, 0.6)`) near the top. `emission_energy_multiplier = 3.0/2.5`
-  so the WorldEnvironment bloom fires above the HDR threshold (1.0). Fills the even-indexed slot
-  with `tree_footprint_radius=0.8`, `tree_height=6.0`.
-- **Barrier** (`obstacles/sci_fi_barrier_3d.tscn`): wide angular block (~2 units), dark metal body
-  with a cyan emissive top stripe (`emission_energy_multiplier = 2.5`). Fills the odd-indexed slot
-  with `rock_footprint_radius=1.4`, `rock_height=2.0`.
+### 3. Regional Props
+Each region calls `compute_positions` twice (obstacle seed and decor seed are offset by 50 for independence), offsets results to the region center, and spawns:
 
-Both scenes are visual-only `Node3D` roots (no collision/nav); `Obstacle3D.set_model()` wraps them
-with the `CylinderShape3D` + `NavigationObstacle3D` footprint. `model_scale = 1.0` for both since
-they are pre-sized at game scale. The `_extract_tree_variant()` helper that dug into the gltf
-sibling structure is removed — no longer needed.
+| Region | Center (x,z) | Extent | Obstacle Props | Decor Props |
+|--------|-------------|--------|----------------|-------------|
+| NW Forest | (-50,-50) | 34 | tree×4, rock×2 | bush×3, flowers×2, tall_grass×2, mushroom×1 |
+| NE City | (50,-50) | 34 | crate×3, barrel×2, dumpster×1, fence×2, barrier×2 | cone×2, holo_sign×1 |
+| SW Tech | (-50,50) | 34 | pylon×3, sci_fi_barrier×2, generator×2 | holo_sign×2 |
+| SE Beach | (50,50) | 34 | rock×3, barrier×2, crate×2, barrel×2, pillar×2 | — |
 
-## Navigation Map Activation
-
+### 4. Navigation Map Activation
 `_ready()` also calls `_activate_navigation(parent)`, which adds a flat
 `NavigationRegion3D` (`ArenaNavRegion`, a single 200×200 quad navmesh, no baking) to
 the arena. This is required because enemy `NavigationAgent3D` RVO avoidance only
 produces a non-zero `safe_velocity` when its navigation map is **active**, and the
 world's default map stays inactive until a region exists. Without it, every enemy's
-`velocity_computed` returned zero and the swarm froze (the enemy-side
-`AVOID_EPSILON_SQ` fallback in `enemy-3d.md` is the second line of defense). Pure
-avoidance needs only an active map — pathfinding-quality navmesh detail is not
-required.
+`velocity_computed` returned zero and the swarm froze. Pure avoidance needs only an
+active map — pathfinding-quality navmesh detail is not required.
+
+## Obstacle vs Decor
+
+- **Obstacle3D wrapper** (collision layer 16 + `NavigationObstacle3D`): trees, rocks, crates,
+  barrels, dumpsters, fences, concrete_barriers, pillars, fountain, pylons, sci_fi_barriers,
+  generators.
+- **Plain visual (no collision)**: flowers, bushes, tall_grass, mushrooms, cones, holo_signs,
+  lamps, braziers.
+
+Footprint data lives in the `_FP` constant dictionary in `arena_scatter.gd`.
+
+## Spawn Clearance
+
+Regional extents of 34 with centers at ±50 mean the closest any regional prop can get
+to the global origin is 50 − 34 = 16 units — well outside the 10-unit spawn disc.
+Plaza hub props are placed at explicit positions all ≥ 12 units from origin
+(pillars at r=20, braziers at r≈14, fountain at z=16).
 
 ## Tests
 
-`test/test_arena_scatter.gd` validates:
-- Determinism (same seed → identical results)
-- Count capped at request
-- All positions within extent and on XZ plane
-- Center clear-radius respected
-- Minimum separation respected
-- Over-dense requests terminate gracefully
+`test/test_arena_scatter.gd` validates the pure `compute_positions` logic:
+- Determinism, count cap, extent bounds, center clear-radius, min separation, over-dense termination.
 
-`test/test_arena_3d_map.gd` validates runtime spawning and prop mesh presence (pylon Obstacle3D
-contains at least one visible MeshInstance3D). `test/test_scifi_props.gd` validates that both
-prop scenes load as `Node3D` with at least one `MeshInstance3D` child.
+`test/test_arena_3d_map.gd` validates runtime spawning and obstacle mesh presence.
+
+`test/test_arena_regions.gd` validates the Final City map layout:
+- `Ground/GroundRegions` node and named sub-planes (PlazaCenter, RoadNS, RoadEW, QuadrantNE/SW/SE).
+- All region planes have albedo textures.
+- Fountain centerpiece in Obstacles node.
+- Obstacle count ≥ 20.
+- No obstacle within the 10-unit spawn disc.

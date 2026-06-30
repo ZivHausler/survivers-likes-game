@@ -1,8 +1,9 @@
 # See docs/notes/arena-scatter.md
 class_name ArenaScatter extends Node
 ## Seeded, deterministic placement of arena obstacles on the XZ plane.
-## Pure logic (compute_positions) is unit-tested headless; node instantiation is
-## handled by the arena scene (Task 8) which loads obstacle_3d.tscn per position.
+## Pure logic (compute_positions) is unit-tested headless — DO NOT change its
+## signature or logic. _ready() places biome-themed props per region
+## (NW Forest, NE City, SW Tech, SE Beach) plus a central plaza hub and road lamps.
 
 ## Returns up to `count` XZ positions (y=0) inside [-extent, extent], none within
 ## `clear_radius` of origin, all at least `min_separation` apart. Deterministic for
@@ -37,73 +38,190 @@ static func compute_positions(rng_seed: int, count: int, extent: float,
 			break
 	return out
 
-# --- Instance-side spawner -------------------------------------------------
-# When this script is attached to a node inside the arena scene, _ready() uses
-# the seeded compute_positions() above to scatter sci-fi props (pylon / barrier)
-# into an `Obstacles` Node3D added to the arena. All knobs are exported so
-# placement density and prop footprints are playtest-tunable.
+# --- Footprint (collision + nav) per prop key: [radius, height] ---
+const _FP := {
+	"prop_tree_3d":             [0.8,  6.0],
+	"prop_rock_3d":             [1.2,  2.0],
+	"prop_crate_3d":            [0.7,  1.5],
+	"prop_barrel_3d":           [0.5,  1.5],
+	"prop_dumpster_3d":         [1.2,  2.0],
+	"prop_fence_3d":            [0.5,  1.5],
+	"prop_concrete_barrier_3d": [1.0,  1.5],
+	"prop_pillar_3d":           [0.5,  4.0],
+	"prop_fountain_3d":         [1.5,  3.0],
+	"sci_fi_pylon_3d":          [0.8,  6.0],
+	"sci_fi_barrier_3d":        [1.4,  2.0],
+	"prop_generator_3d":        [1.0,  2.0],
+}
 
-@export var obstacle_count: int = 35
-@export var rng_seed: int = 1
-@export var extent: float = 88.0
-@export var clear_radius: float = 14.0
-@export var min_separation: float = 7.0
-## Footprint (collision + nav) per prop type; pylons are slim+tall, barriers wide+low.
-@export var tree_footprint_radius: float = 0.8
-@export var tree_height: float = 6.0
-@export var rock_footprint_radius: float = 1.4
-@export var rock_height: float = 2.0
-## Uniform scale applied to all props. Both pylon and barrier scenes are pre-sized
-## at game scale (~6 and ~2 units tall respectively) so 1.0 is the correct value.
-@export var model_scale: float = 1.0
+## Per-region definitions. Each entry: { cx, cz, ext, seed, obs, dec }
+##   obs → [[prop_key, count], …] — wrapped in Obstacle3D (collision + nav)
+##   dec → [[prop_key, count], …] — plain visual node, no collision
+## Regional centers are at ±50 with extent 34, so all placed props are ≥ 16 units
+## from the global origin — well outside the 10-unit spawn disc.
+const _REGIONS := [
+	{  # NW Forest: x<0, z<0, center (-50,-50)
+		"cx": -50.0, "cz": -50.0, "ext": 34.0, "seed": 100,
+		"obs": [["prop_tree_3d", 4], ["prop_rock_3d", 2]],
+		"dec": [["prop_bush_3d", 3], ["prop_flowers_3d", 2],
+				["prop_tall_grass_3d", 2], ["prop_mushroom_3d", 1]],
+	},
+	{  # NE City: x>0, z<0, center (50,-50)
+		"cx": 50.0, "cz": -50.0, "ext": 34.0, "seed": 200,
+		"obs": [["prop_crate_3d", 3], ["prop_barrel_3d", 2],
+				["prop_dumpster_3d", 1], ["prop_fence_3d", 2],
+				["prop_concrete_barrier_3d", 2]],
+		"dec": [["prop_cone_3d", 2], ["prop_holo_sign_3d", 1]],
+	},
+	{  # SW Tech: x<0, z>0, center (-50,50)
+		"cx": -50.0, "cz": 50.0, "ext": 34.0, "seed": 300,
+		"obs": [["sci_fi_pylon_3d", 3], ["sci_fi_barrier_3d", 2],
+				["prop_generator_3d", 2]],
+		"dec": [["prop_holo_sign_3d", 2]],
+	},
+	{  # SE Beach: x>0, z>0, center (50,50)
+		"cx": 50.0, "cz": 50.0, "ext": 34.0, "seed": 400,
+		"obs": [["prop_rock_3d", 3], ["prop_concrete_barrier_3d", 2],
+				["prop_crate_3d", 2], ["prop_barrel_3d", 2],
+				["prop_pillar_3d", 2]],
+		"dec": [],
+	},
+]
+
+## Minimum pairwise separation used for all seeded regional placements.
+const _MIN_SEP := 6.0
+## Base RNG seed; each region adds its own seed offset for independence.
+const _BASE_SEED := 1
 
 const _OBSTACLE_SCENE := preload("res://obstacles/obstacle_3d.tscn")
-const _PYLON_PATH := "res://obstacles/sci_fi_pylon_3d.tscn"
-const _BARRIER_PATH := "res://obstacles/sci_fi_barrier_3d.tscn"
 
 func _ready() -> void:
 	var parent := get_parent()
 	if parent == null:
 		return
-	# Activate a navigation map so enemy NavigationAgent3D RVO avoidance actually
-	# simulates (the world's default map is INACTIVE until a region exists, which
-	# makes velocity_computed return zero — enemies' own desired-velocity fallback
-	# covers that, but this lets avoidance steering work in the rendered game).
+	# Activate navigation map so enemy RVO avoidance produces non-zero safe velocity.
 	_activate_navigation(parent)
+
 	var obstacles := Node3D.new()
 	obstacles.name = "Obstacles"
+	var decor := Node3D.new()
+	decor.name = "Decor"
 
-	var pylon_scene := load(_PYLON_PATH) as PackedScene
-	if pylon_scene == null:
-		push_warning("ArenaScatter: failed to load pylon scene '%s'; using fallback box" % _PYLON_PATH)
-	var barrier_scene := load(_BARRIER_PATH) as PackedScene
-	if barrier_scene == null:
-		push_warning("ArenaScatter: failed to load barrier scene '%s'; using fallback box" % _BARRIER_PATH)
+	_place_plaza_hub(obstacles, decor)
+	_place_road_lamps(decor)
+	for region in _REGIONS:
+		_place_region(obstacles, decor, region)
 
-	var positions := compute_positions(rng_seed, obstacle_count, extent, clear_radius, min_separation)
-	for i in positions.size():
-		var pos: Vector3 = positions[i]
-		var is_pylon := (i % 2) == 0
-		var prop_scene: PackedScene = pylon_scene if is_pylon else barrier_scene
-		var footprint := tree_footprint_radius if is_pylon else rock_footprint_radius
-		var height := tree_height if is_pylon else rock_height
+	# Deferred: parent is busy adding children during scene entry.
+	parent.add_child.call_deferred(obstacles)
+	parent.add_child.call_deferred(decor)
 
-		var obs: Obstacle3D = _OBSTACLE_SCENE.instantiate()
-		var model: Node = prop_scene.instantiate() if prop_scene != null else null
+# --- Plaza hub ---
+
+## Place the fountain centerpiece, pillar ring, and brazier corners in the plaza.
+func _place_plaza_hub(obstacles: Node3D, decor: Node3D) -> void:
+	# Fountain obstacle — offset from spawn origin so the player doesn't spawn inside it.
+	_spawn_obstacle(obstacles, "prop_fountain_3d", Vector3(0, 0, 16), "Fountain")
+	# 6 pillars in a ring at radius 20 around plaza center.
+	var pillar_ring := [
+		Vector3(20, 0, 0),   Vector3(10, 0, 17),  Vector3(-10, 0, 17),
+		Vector3(-20, 0, 0),  Vector3(-10, 0, -17), Vector3(10, 0, -17),
+	]
+	for pos in pillar_ring:
+		_spawn_obstacle(obstacles, "prop_pillar_3d", pos)
+	# 4 braziers as decorative accent — no collision.
+	var brazier_ring := [
+		Vector3(10, 0, 10), Vector3(-10, 0, 10),
+		Vector3(-10, 0, -10), Vector3(10, 0, -10),
+	]
+	for pos in brazier_ring:
+		_spawn_decor(decor, "prop_brazier_3d", pos)
+
+# --- Road lamps ---
+
+## Line each road arm with lamps every ~22 units, offset ±7 to either side.
+func _place_road_lamps(decor: Node3D) -> void:
+	var steps := [30.0, 52.0, 74.0, 96.0]
+	for d in steps:
+		_spawn_decor(decor, "prop_lamp_3d", Vector3(-7, 0, -d))  # N arm, left
+		_spawn_decor(decor, "prop_lamp_3d", Vector3( 7, 0, -d))  # N arm, right
+		_spawn_decor(decor, "prop_lamp_3d", Vector3(-7, 0,  d))  # S arm, left
+		_spawn_decor(decor, "prop_lamp_3d", Vector3( 7, 0,  d))  # S arm, right
+		_spawn_decor(decor, "prop_lamp_3d", Vector3(-d, 0, -7))  # W arm, top
+		_spawn_decor(decor, "prop_lamp_3d", Vector3(-d, 0,  7))  # W arm, bottom
+		_spawn_decor(decor, "prop_lamp_3d", Vector3( d, 0, -7))  # E arm, top
+		_spawn_decor(decor, "prop_lamp_3d", Vector3( d, 0,  7))  # E arm, bottom
+
+# --- Regional placement ---
+
+## Place all obstacle and decor props for one biome region using compute_positions.
+## Positions are generated relative to local (0,0) then offset to the region center.
+func _place_region(obstacles: Node3D, decor: Node3D, region: Dictionary) -> void:
+	var center := Vector3(region["cx"], 0.0, region["cz"])
+	var ext: float = region["ext"]
+	var seed_off: int = region["seed"]
+
+	# Expand obstacle prop list: [[key, count], …] → [key, key, …]
+	var obs_keys: Array = []
+	for entry in region["obs"]:
+		for _i in entry[1]:
+			obs_keys.append(entry[0])
+
+	if obs_keys.size() > 0:
+		var positions := compute_positions(
+				_BASE_SEED + seed_off, obs_keys.size(), ext, 0.0, _MIN_SEP)
+		for i in positions.size():
+			_spawn_obstacle(obstacles, obs_keys[i], center + positions[i])
+
+	# Expand decor prop list
+	var dec_keys: Array = []
+	for entry in region["dec"]:
+		for _i in entry[1]:
+			dec_keys.append(entry[0])
+
+	if dec_keys.size() > 0:
+		# Offset seed by 50 so decor positions are independent of obstacle positions.
+		var positions := compute_positions(
+				_BASE_SEED + seed_off + 50, dec_keys.size(), ext, 0.0, _MIN_SEP)
+		for i in positions.size():
+			_spawn_decor(decor, dec_keys[i], center + positions[i])
+
+# --- Helpers ---
+
+## Create an Obstacle3D for `prop_key` at `pos`, optionally naming it `node_name`.
+func _spawn_obstacle(container: Node3D, prop_key: String, pos: Vector3,
+		node_name: String = "") -> void:
+	var fp: Array = _FP.get(prop_key, [1.0, 2.0])
+	var prop_scene := load("res://obstacles/%s.tscn" % prop_key) as PackedScene
+	var obs: Obstacle3D = _OBSTACLE_SCENE.instantiate()
+	if prop_scene != null:
+		var model := prop_scene.instantiate()
 		if model is Node3D:
-			var visual: Node3D = model as Node3D
-			visual.scale = Vector3.ONE * model_scale
-			obs.set_model(visual, footprint, height)
+			obs.set_model(model as Node3D, fp[0], fp[1])
 		else:
 			if model != null:
-				model.free()  # not a Node3D — discard and fall back
-			obs.configure(_fallback_mesh(footprint, height), footprint, height)
-		obs.position = Vector3(pos.x, 0.0, pos.z)
-		obstacles.add_child(obs)
+				model.free()
+			obs.configure(_fallback_mesh(fp[0], fp[1]), fp[0], fp[1])
+	else:
+		push_warning("ArenaScatter: failed to load obstacle prop '%s'" % prop_key)
+		obs.configure(_fallback_mesh(fp[0], fp[1]), fp[0], fp[1])
+	obs.position = Vector3(pos.x, 0.0, pos.z)
+	if node_name != "":
+		obs.name = node_name
+	container.add_child(obs)
 
-	# Defer the single attach to the arena: during scene entry the parent is
-	# "busy setting up children", so a direct add_child() would be rejected.
-	parent.add_child.call_deferred(obstacles)
+## Instantiate a decoration (no collision) at `pos` and add it to `container`.
+func _spawn_decor(container: Node3D, prop_key: String, pos: Vector3) -> void:
+	var prop_scene := load("res://obstacles/%s.tscn" % prop_key) as PackedScene
+	if prop_scene == null:
+		push_warning("ArenaScatter: failed to load decor prop '%s'" % prop_key)
+		return
+	var node := prop_scene.instantiate()
+	if node is Node3D:
+		(node as Node3D).position = Vector3(pos.x, 0.0, pos.z)
+		container.add_child(node)
+	else:
+		node.free()
 
 ## Add a flat NavigationRegion3D covering the playfield so the navigation map is
 ## ACTIVE. NavigationAgent3D avoidance (RVO) only produces a non-zero safe velocity
