@@ -45,6 +45,10 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[weapon-nova-3d]] — `NovaWeapon3D`: reusable AoE pulse archetype; damage + optional charm; pure `affected_enemies()` helper; subclasses: ZivSelfieFlash3D, ZivAdoringAura3D, AvihayVoiceBlast3D
 - [[skills-overview-3-3]] — Full roster: Ziv (Mirror Shards, Selfie Flash, Adoring Aura) + Avihay (Group Call, Voice Blast, Mass DM); upgrade file locations; manual-playtest checklist
 
+## Visual / Theme (Phase 6)
+
+- [[swarm-hud-theme]] — Dark sci-fi HUD theme: dark-panel StyleBoxes, bright text, palette HP/XP bar fills; applied to hud.tscn + upgrade_ui.tscn
+
 ## Systems
 
 - [[game-events]] — Global signal bus (`GameEvents` autoload)
