@@ -109,10 +109,9 @@ func setup(p_data: EnemyData, p_target: Node3D) -> void:
 		# Spawner3D — if a surface already has a real albedo_texture (e.g. diatryma feathers),
 		# the texture is kept and albedo_color multiplies it.
 		Spawner3D.apply_model_tint(model_inst, data.color)
-		# Stylize visual layer (guarded — no-ops if autoload absent).
-		var _s := get_node_or_null("/root/Stylize")
-		if _s:
-			_s.apply_to(_model, data.color, VisualPalette.role(&"enemy_secondary"))
+		# NOTE: the cel/rim Stylize overlay is intentionally NOT applied to enemies.
+		# Per design direction, the new neon visual treatment is reserved for NEW assets
+		# we create; existing mob models keep their original materials + per-variant tint.
 		# Cache AnimationPlayer if the mesh GLB embedded one.
 		_anim_player = model_inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
 		# BUG B FIX: attempt skeletal animation from a separate anim-only GLB.
