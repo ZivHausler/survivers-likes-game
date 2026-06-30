@@ -1,19 +1,57 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" uid="uid://dg51ebxxt1vyo" path="res://ui/hud.gd" id="1_hud"]
 [ext_resource type="Theme" path="res://ui/theme/swarm_hud_theme.tres" id="2_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hpbg"]
 bg_color = Color(0.05, 0.05, 0.07, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hpfill"]
 bg_color = Color(1.0, 0.35, 0.1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1.0, 0.55, 0.2, 0.7)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpbg"]
 bg_color = Color(0.04, 0.12, 0.18, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfill"]
 bg_color = Color(0.3, 0.8, 1.0, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.9, 1.0, 0.7)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bossfill"]
+bg_color = Color(1.0, 0.2, 0.6, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1.0, 0.4, 0.7, 0.7)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [node name="HUD" type="CanvasLayer"]
 process_mode = 3
@@ -63,34 +101,40 @@ offset_top = -40.0
 offset_bottom = 40.0
 text = "EVOLVE!"
 horizontal_alignment = 1
+theme_override_colors/font_color = Color(1.0, 0.8, 0.2, 1)
+theme_override_colors/font_outline_color = Color(0.3, 0.8, 1.0, 0.8)
+theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 48
 
-[node name="BossBar" type="VBoxContainer" parent="."]
+[node name="BossBar" type="PanelContainer" parent="."]
 visible = false
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -320.0
-offset_top = 10.0
-offset_right = 320.0
-offset_bottom = 64.0
+offset_left = -330.0
+offset_top = 4.0
+offset_right = 330.0
+offset_bottom = 76.0
 grow_horizontal = 2
+theme = ExtResource("2_theme")
+
+[node name="BossContent" type="VBoxContainer" parent="BossBar"]
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="BossNameLabel" type="Label" parent="BossBar"]
+[node name="BossNameLabel" type="Label" parent="BossBar/BossContent"]
 text = "Boss"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 20
 
-[node name="BossHPBar" type="ProgressBar" parent="BossBar"]
+[node name="BossHPBar" type="ProgressBar" parent="BossBar/BossContent"]
 custom_minimum_size = Vector2(640, 26)
 max_value = 100.0
 value = 100.0
 show_percentage = false
 theme_override_styles/background = SubResource("StyleBoxFlat_hpbg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_hpfill")
+theme_override_styles/fill = SubResource("StyleBoxFlat_bossfill")
 
-[node name="BossHPText" type="Label" parent="BossBar/BossHPBar"]
+[node name="BossHPText" type="Label" parent="BossBar/BossContent/BossHPBar"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2

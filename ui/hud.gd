@@ -11,9 +11,9 @@ class_name HUD extends CanvasLayer
 @onready var _xp_bar:        ProgressBar = $VBox/XPBar
 @onready var _evolve_banner: Label       = $EvolveBanner
 @onready var _boss_bar:      Control     = $BossBar
-@onready var _boss_name:     Label       = $BossBar/BossNameLabel
-@onready var _boss_hp_bar:   ProgressBar = $BossBar/BossHPBar
-@onready var _boss_hp_text:  Label       = $BossBar/BossHPBar/BossHPText
+@onready var _boss_name:     Label       = $BossBar/BossContent/BossNameLabel
+@onready var _boss_hp_bar:   ProgressBar = $BossBar/BossContent/BossHPBar
+@onready var _boss_hp_text:  Label       = $BossBar/BossContent/BossHPBar/BossHPText
 
 var _game_manager: Node = null  # duck-typed: GameManager (2D) or GameManager3D
 var _player: Node = null        # duck-typed: Player (2D) or Player3D
