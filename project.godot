@@ -17,6 +17,7 @@ RunState="*res://autoload/run_state.gd"
 Juice3D="*res://autoload/juice_3d.gd"
 SkillVFX="*res://autoload/skill_vfx.gd"
 VisualPalette="*res://core/visual_palette.gd"
+Stylize="*res://vfx/stylize.gd"
 
 [input]
 

@@ -46,7 +46,38 @@ silhouette edges; scaled by `rim_color` and added to `EMISSION`.
 `emissive_color * emissive_energy` added to `EMISSION`. Artists paint glow areas in red on a
 black mask.
 
-## Usage by Stylize (Task 1.3)
+## Stylize Autoload (`vfx/stylize.gd`)
+
+The `Stylize` autoload (registered as `Stylize` in `project.godot`) applies `cel_rim.gdshader`
+to any model subtree via a single call:
+
+```gdscript
+Stylize.apply_to(node: Node3D, tint: Color, rim: Color) -> void
+```
+
+**What it does:** Recursively walks all `MeshInstance3D` descendants of `node`. For each one,
+it builds a `ShaderMaterial` with `cel_rim.gdshader`, sets `albedo_tint` and `rim_color`, copies
+any existing `albedo_texture` from the surface's active `StandardMaterial3D` (via
+`get_active_material(i)`) into the shader's `albedo` param, then assigns it as
+`material_override`.
+
+**Call order matters:** Wire `apply_to()` AFTER `_apply_texture` / `_apply_tint` in `setup()`
+so the surface override materials already carry the albedo atlas texture to copy.
+
+**Removable (decoupled):** Callers guard with `get_node_or_null("/root/Stylize")` so the
+entire visual layer is a no-op when the autoload is absent — gameplay logic is unaffected.
+
+### Caller pattern
+
+```gdscript
+var _s := get_node_or_null("/root/Stylize")
+if _s:
+    _s.apply_to(_model, tint, VisualPalette.role(&"enemy_secondary"))
+```
+
+Player wires `data.model_tint` as tint; enemies wire `data.color`.
+
+### Usage example (direct)
 
 ```gdscript
 var mat := ShaderMaterial.new()

@@ -133,6 +133,10 @@ func setup(data: CharacterData) -> void:
 			_apply_texture(model_inst, data.model_texture)
 		if data.model_tint != Color.WHITE:
 			_apply_tint(model_inst, data.model_tint)
+		# Stylize visual layer (guarded — no-ops if autoload absent).
+		var _s := get_node_or_null("/root/Stylize")
+		if _s:
+			_s.apply_to(_model, data.model_tint, VisualPalette.role(&"enemy_secondary"))
 		_anim_player = model_inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
 		if _anim_player and _anim_player.has_animation("idle"):
 			_anim_player.play("idle")
