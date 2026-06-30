@@ -4,6 +4,8 @@
 
 `ArenaScatter.compute_positions()` is a pure, deterministic placement function that generates XZ positions for arena obstacles using rejection sampling with a seeded `RandomNumberGenerator`.
 
+The instance-side spawner scatters two sci-fi prop types into the arena: **pylons** (tall, even-indexed slots, ~6 units) and **barriers** (low, odd-indexed slots, ~2 units). Both are primitive Godot scenes — no external gltf assets required.
+
 **File:** `arena/arena_scatter.gd`
 
 **Class:** `class_name ArenaScatter extends Node`
@@ -48,24 +50,26 @@ This design prevents infinite loops while allowing graceful degradation when the
 
 ## Usage (Task 8)
 
-The arena scene will call `compute_positions()` with run-specific parameters (seed from RunState), then instantiate `Obstacle3D` at each returned position.
+The arena scene calls `compute_positions()` with the seed and placement knobs, then instantiates
+`Obstacle3D` at each returned position with either a pylon (even index) or barrier (odd index).
 
-## Single-Variant Tree Selection (defect fix)
+## Sci-Fi Props (Phase 4.3)
 
-The `fir_tree_01_1k.gltf` asset contains **three** sibling tree variants as direct children of
-its root node: `fir_tree_01_a_LOD0`, `fir_tree_01_b_LOD0`, `fir_tree_01_c_LOD0`, each offset
-along X by ~6 units. Attaching the whole instantiated scene to an Obstacle3D would render a
-cluster of 3 trees while only one has a CylinderShape3D collision and NavigationObstacle3D footprint.
+The spawner places two primitive Godot-native prop types instead of external gltf assets:
 
-`_extract_tree_variant(tree_instance)` resolves this: it picks the **first direct child** whose
-name contains `"fir_tree"` (currently `fir_tree_01_a_LOD0`), resets its transform to
-`Transform3D.IDENTITY`, frees the parent (which discards the other siblings), and returns the
-single variant. If no matching child is found a `push_warning` is emitted and the whole instance
-is used as a safe fallback.
+- **Pylon** (`obstacles/sci_fi_pylon_3d.tscn`): tall slim column (~6 units), dark metal body
+  (`Color(0.12, 0.13, 0.16)`) with two emissive rings — cyan (`Color(0.3, 0.8, 1.0)`) at mid-height
+  and magenta (`Color(1.0, 0.2, 0.6)`) near the top. `emission_energy_multiplier = 3.0/2.5`
+  so the WorldEnvironment bloom fires above the HDR threshold (1.0). Fills the even-indexed slot
+  with `tree_footprint_radius=0.8`, `tree_height=6.0`.
+- **Barrier** (`obstacles/sci_fi_barrier_3d.tscn`): wide angular block (~2 units), dark metal body
+  with a cyan emissive top stripe (`emission_energy_multiplier = 2.5`). Fills the odd-indexed slot
+  with `rock_footprint_radius=1.4`, `rock_height=2.0`.
 
-The `tree_model_scale` export (default `0.35`) controls the scale of the extracted tree variant;
-the raw mesh is ~18 units tall and the player capsule is ~2 units, so `0.35` gives ~6 units.
-Rocks continue to use the existing `model_scale` export.
+Both scenes are visual-only `Node3D` roots (no collision/nav); `Obstacle3D.set_model()` wraps them
+with the `CylinderShape3D` + `NavigationObstacle3D` footprint. `model_scale = 1.0` for both since
+they are pre-sized at game scale. The `_extract_tree_variant()` helper that dug into the gltf
+sibling structure is removed — no longer needed.
 
 ## Navigation Map Activation
 
@@ -88,3 +92,7 @@ required.
 - Center clear-radius respected
 - Minimum separation respected
 - Over-dense requests terminate gracefully
+
+`test/test_arena_3d_map.gd` validates runtime spawning and prop mesh presence (pylon Obstacle3D
+contains at least one visible MeshInstance3D). `test/test_scifi_props.gd` validates that both
+prop scenes load as `Node3D` with at least one `MeshInstance3D` child.
