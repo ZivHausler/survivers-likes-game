@@ -87,6 +87,7 @@ Add new notes here as they are created; link by `[[id]]`.
 ## Assets
 
 - [[asset-licenses]] — Asset license table: Kenney CC0 packs + MIT VFX library; CREDITS for haowg/GODOT-VFX-LIBRARY
+- [[asset-pipeline]] — External artkit tool (`C:\Users\avino\swarm\`) that produces 3D chars/props/textures; flow + the consumer contract (glb clip names `idle`/`walk` & `idle`/`move`, `model_scene` swap seam, scale/facing)
 
 ## Runbooks
 
