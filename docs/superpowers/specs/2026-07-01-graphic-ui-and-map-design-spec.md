@@ -144,6 +144,25 @@ Sci-fi: `sci_fi_pylon, sci_fi_barrier`.
 **Still needed for v2:** crystal shard, pebble/rubble scatter, building facade, billboard,
 statue; decorative floor-decal meshes (rings/medallions/paths).
 
+### 3.4 Map system (IMPLEMENTED — the replicable engine)
+Data-driven, so a new map = a new recipe file (no engine edits):
+- **`arena/map_builder.gd`** (`MapBuilder` node) — reads a recipe `GDScript` exposing
+  `const RECIPE` and builds, as flat `MeshInstance3D`s under a `GeneratedGround` node:
+  **blob biomes** (`_blob_mesh`: overlapping circle fans → organic non-grid outlines),
+  **winding paths** (`_ribbon_mesh`: polyline ribbon of constant width), **water + bright
+  shoreline rim** (a larger rim blob under the water blob), and **decorative features**
+  (`disc` + `ring`/annulus, optionally emissive). World-space UVs keep tiling consistent;
+  small ascending `y` per layer avoids z-fighting; duplicate node names rely on
+  `add_child(node, true)` for unique readable names (`Biome`, `Biome2`, …).
+- **`arena/maps/final_city_map.gd`** — the Final City `RECIPE` (data only): biome blobs,
+  paths, water, plaza medallion + capture rings. Copy this file to author a new map.
+- **`arena/arena_scatter.gd`** — props/flora on top: `_OBSTACLE_CLUSTERS` (collision) +
+  `_DECOR_CLUMPS` (no collision), tight clusters with calm gaps for rhythm; aligned plaza
+  hub (bigger fountain, pillar/lamp rings). `compute_positions` is unit-tested — keep it
+  byte-identical. The arena scene wires a `GroundBuilder` (MapBuilder) + `ObstacleSpawner`.
+- **`tools/screenshot.{gd,tscn}`** — renders the arena to `_shots/*.png` (gitignored) for
+  visual critique loops: `godot47.exe res://tools/screenshot.tscn`.
+
 ### 3.3 Generation pipeline
 External artkit at `C:\Users\avino\swarm\artkit` (WSL venv `/root/sdgen/.venv/bin/python`,
 RTX 4080). Textures: `gen_texture.py` (tiling). Meshes: primitives in-engine now; Hunyuan
@@ -186,8 +205,10 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
 ---
 
 ## 5. Roadmap / open items
-- [ ] **Arena v2** — floor-first rebuild (decorative floor geometry + decals, dense scatter,
-  edge clustering, organic water + shoreline, bigger centerpiece). *(next big task)*
+- [x] **Arena v2** — floor-first rebuild SHIPPED via the data-driven MapBuilder (§3.4):
+  organic blob biomes, winding paths, glowing plaza medallion + capture rings, water +
+  shoreline rim, grass tonal variation, dense clustered scatter. *Remaining polish:* glowing
+  `Decal`s, more flora color, AI-painted hero textures, prettier grass at distance.
 - [ ] **HUD v2** — ref-#6 richness (portrait, keybinds, ultimate popup, enemy count, minimap).
 - [ ] **Decal pipeline** — generate glowing floor-decal textures + alpha-key + `Decal` placement.
 - [ ] **New decoration props** — crystal shard, pebble/rubble, building facade, billboard, statue.
@@ -203,3 +224,8 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
 - 2026-07-01 — Added vibrancy nuance: blocking spaces are acceptable; not every area must be
   dense; vary rhythm (busy ↔ calm); overarching goal = vibrant & interesting, avoid both flat
   emptiness and wall-to-wall clutter. Added the spec-maintenance rule to project `CLAUDE.md`.
+- 2026-07-01 — Built the replicable map system (§3.4): `MapBuilder` engine + `final_city_map`
+  recipe + clustered scatter + screenshot harness. Replaced the 4-square grid arena with an
+  organic floor-first composition. Arena structure tests updated; suite 1067/1067 green.
+  Committed on branch `feature/arena-floor-first`. Approach chosen with user: best visual
+  quality + modifiable/replicable per map.
