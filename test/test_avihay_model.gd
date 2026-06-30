@@ -18,6 +18,12 @@ func test_avihay_model_has_idle_and_walk_animations():
 		assert_true(ap.has_animation("walk"), "model must have a 'walk' clip (player plays it while moving)")
 	inst.free()
 
+func test_avihay_keeps_original_pbr_and_is_scaled_up():
+	# Realistic generated model opts out of the cel/rim Stylize layer and is sized up.
+	var data: CharacterData = load("res://characters/avihay_3d.tres")
+	assert_false(data.stylize_model, "Avihay's PBR model should opt out of stylize")
+	assert_almost_eq(data.model_scale, 1.3, 0.001, "Avihay model scaled up")
+
 func test_avihay_model_has_skeleton():
 	var data: CharacterData = load("res://characters/avihay_3d.tres")
 	var inst = data.model_scene.instantiate()

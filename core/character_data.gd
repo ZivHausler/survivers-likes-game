@@ -19,6 +19,7 @@ class_name CharacterData extends Resource
 @export var model_scale: float = 1.0    ## Uniform scale applied to the Model Node3D
 @export var model_tint: Color = Color.WHITE  ## Optional albedo tint to differentiate friends sharing a base model
 @export var model_texture: Texture2D    ## Skin atlas applied to all MeshInstance3D surfaces; null = no texture override
+@export var stylize_model: bool = true  ## Apply the cel/rim Stylize layer; set false to keep a model's own PBR (e.g. realistic generated models)
 ## 3-D skill roster — 4 SkillData entries for 3D characters; 2D characters leave empty.
 ## See docs/notes/skill-system.md for full model description.
 @export var skills: Array[SkillData] = []
