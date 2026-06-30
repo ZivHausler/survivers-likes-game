@@ -1,0 +1,37 @@
+[gd_scene load_steps=5 format=3 uid="uid://propbarrel3d01"]
+
+[sub_resource type="StandardMaterial3D" id="mat_barrel"]
+albedo_color = Color(0.6, 0.22, 0.1, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="mat_hoop"]
+albedo_color = Color(0.3, 0.27, 0.25, 1)
+roughness = 0.55
+metallic = 0.25
+
+[sub_resource type="CylinderMesh" id="mesh_body"]
+top_radius = 0.5
+bottom_radius = 0.5
+height = 1.0
+
+[sub_resource type="CylinderMesh" id="mesh_hoop"]
+top_radius = 0.52
+bottom_radius = 0.52
+height = 0.08
+
+[node name="PropBarrel3D" type="Node3D"]
+
+[node name="Body" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.5, 0)
+mesh = SubResource("mesh_body")
+surface_material_override/0 = SubResource("mat_barrel")
+
+[node name="HoopLow" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.22, 0)
+mesh = SubResource("mesh_hoop")
+surface_material_override/0 = SubResource("mat_hoop")
+
+[node name="HoopHigh" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.78, 0)
+mesh = SubResource("mesh_hoop")
+surface_material_override/0 = SubResource("mat_hoop")

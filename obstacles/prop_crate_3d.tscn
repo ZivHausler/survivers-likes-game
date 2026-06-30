@@ -1,0 +1,41 @@
+[gd_scene load_steps=6 format=3 uid="uid://propcrate3d001"]
+
+[sub_resource type="StandardMaterial3D" id="mat_wood"]
+albedo_color = Color(0.55, 0.35, 0.15, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="mat_frame"]
+albedo_color = Color(0.25, 0.15, 0.08, 1)
+roughness = 0.9
+metallic = 0.1
+
+[sub_resource type="BoxMesh" id="mesh_body"]
+size = Vector3(1.2, 1.2, 1.2)
+
+[sub_resource type="BoxMesh" id="mesh_frame_h"]
+size = Vector3(1.22, 0.07, 1.22)
+
+[sub_resource type="BoxMesh" id="mesh_band"]
+size = Vector3(1.22, 0.1, 1.22)
+
+[node name="PropCrate3D" type="Node3D"]
+
+[node name="Body" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.6, 0)
+mesh = SubResource("mesh_body")
+surface_material_override/0 = SubResource("mat_wood")
+
+[node name="TopFrame" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.165, 0)
+mesh = SubResource("mesh_frame_h")
+surface_material_override/0 = SubResource("mat_frame")
+
+[node name="BottomFrame" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.035, 0)
+mesh = SubResource("mesh_frame_h")
+surface_material_override/0 = SubResource("mat_frame")
+
+[node name="MidBand" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.6, 0)
+mesh = SubResource("mesh_band")
+surface_material_override/0 = SubResource("mat_frame")
