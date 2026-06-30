@@ -12,7 +12,9 @@
 > 6. `shaders/telegraph_ring.gdshader` + `vfx/aoe_telegraph_3d.*` — additive ground AoE telegraph, dispatched from `autoload/skill_vfx.gd` (per-skill 350ms cooldown).
 > 7. `pickups/xp_gem_3d.gd` + `weapons/nova_weapon_3d.gd` + `weapons/orbit_weapon_3d.gd` — VFX/gem colors sourced from `VisualPalette`.
 >
-> **Reversible by design:** disabling the `Stylize` / VFX autoloads in `project.godot` reverts to plain logic with no errors (decoupling proof — verified in Task 1.3).
+> **Reversible by design:** disabling the `Stylize` / `SkillVFX` / `Juice3D` autoloads in `project.godot` reverts to plain logic with no errors (decoupling proof — verified in Task 1.3 + final branch review). **Scope note:** `VisualPalette` is the exception — it's an **always-on foundational data autoload** (a behavior-free peer of `GameEvents`/`RunState`) referenced unguarded in weapon `_init()`; "palette is law" means it's never removed. Only the *VFX* layer (Stylize/SkillVFX/Juice3D) is the removable part.
+>
+> **Final whole-branch review (opus): ✅ ready to merge, no blockers.** Decoupling holds end-to-end; kill side-effects/timing preserved (and a latent double-XP path on same-frame lethal hits was incidentally closed); all per-instance materials bounded & freed; dissolve cleanly supersedes cel_rim. The one sanctioned behavior delta: a dead enemy leaves the `enemies` group + collision instantly but its husk lingers 0.4s for the dissolve.
 >
 > **⚠️ Your stashed WIP is at `stash@{0}`** ("pre-existing WIP (avihay weapon + project.godot rendering)") — restore with `git stash pop` after this branch settles. `project.godot` may need a small reconcile (the stash's `[rendering]` block vs. the new `[autoload]` entries).
 >
