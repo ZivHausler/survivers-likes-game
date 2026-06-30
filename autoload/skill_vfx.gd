@@ -15,6 +15,13 @@ const _AoeTelegraphScene: PackedScene = preload("res://vfx/aoe_telegraph_3d.tscn
 ## distinguishable from the signal alone; dispatched for ALL casts intentionally.
 const _DEFAULT_TELEGRAPH_RADIUS := 6.0
 
+## Minimum interval (ms) between successive telegraph spawns for the same skill.
+## Prevents visual spam from fast-firing weapons that emit multiple skill_cast signals.
+const TELEGRAPH_MIN_INTERVAL_MS := 350
+
+## Tracks the last time a telegraph was spawned for each vfx_id (ms since startup).
+var _last_telegraph_ms: Dictionary = {}
+
 func _ready() -> void:
 	GameEvents.skill_cast.connect(_on_skill_cast)
 	GameEvents.skill_hit.connect(_on_skill_hit)
@@ -40,9 +47,13 @@ func _on_skill_cast(_vfx_id: StringName, color: Color, position: Vector3) -> voi
 	parent.add_child(fx)
 	fx.play_at(position, color)
 	# AoE telegraph — additive ring decal on the ground plane (LoL Swarm readability).
-	var tele: AoeTelegraph3D = _AoeTelegraphScene.instantiate()
-	parent.add_child(tele)
-	tele.play_at(position, _DEFAULT_TELEGRAPH_RADIUS, color)
+	# Rate-limited per skill to avoid spam from fast-firing weapons.
+	var now := Time.get_ticks_msec()
+	if now - int(_last_telegraph_ms.get(_vfx_id, -100000)) >= TELEGRAPH_MIN_INTERVAL_MS:
+		_last_telegraph_ms[_vfx_id] = now
+		var tele: AoeTelegraph3D = _AoeTelegraphScene.instantiate()
+		parent.add_child(tele)
+		tele.play_at(position, _DEFAULT_TELEGRAPH_RADIUS, color)
 
 func _on_skill_hit(_vfx_id: StringName, color: Color, position: Vector3) -> void:
 	var parent: Node = _safe_parent()

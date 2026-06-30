@@ -57,3 +57,18 @@ func test_skill_vfx_spawns_telegraph_on_skill_cast() -> void:
 		func(c: Node) -> bool: return c is AoeTelegraph3D).size()
 	assert_gt(after, before,
 		"SkillVFX must spawn an AoeTelegraph3D when skill_cast is emitted")
+
+func test_telegraph_rate_limited_per_skill() -> void:
+	var tree: SceneTree = get_tree()
+	var parent: Node = tree.current_scene if tree.current_scene != null else tree.root
+	var before: int = parent.get_children().filter(
+		func(c: Node) -> bool: return c is AoeTelegraph3D).size()
+	# Emit two rapid casts for the same skill (within cooldown window).
+	GameEvents.skill_cast.emit(&"test_rapid_skill", Color.CYAN, Vector3(1, 0, 2))
+	GameEvents.skill_cast.emit(&"test_rapid_skill", Color.CYAN, Vector3(1, 0, 2))
+	await get_tree().process_frame
+	var after: int = parent.get_children().filter(
+		func(c: Node) -> bool: return c is AoeTelegraph3D).size()
+	# Only the first cast's telegraph should spawn; the second is suppressed.
+	assert_eq(after - before, 1,
+		"Rapid successive casts of the same skill must spawn only ONE telegraph")
