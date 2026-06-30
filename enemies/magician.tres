@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_enemy_data")
 id = &"magician"
-color = Color(1.0, 0.2, 0.6, 1)
+color = Color(0.55, 0.25, 0.8, 1)
 max_hp = 22.0
 move_speed = 58.0
 contact_damage = 6.0

@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_enemy_data")
 id = &"archer"
-color = Color(1.0, 0.2, 0.6, 1)
+color = Color(0.2, 0.6, 0.25, 1)
 max_hp = 16.0
 move_speed = 78.0
 contact_damage = 6.0
