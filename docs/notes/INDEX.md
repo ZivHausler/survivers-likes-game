@@ -50,6 +50,7 @@ Add new notes here as they are created; link by `[[id]]`.
 - [[game-events]] — Global signal bus (`GameEvents` autoload)
 - [[run-state]] — Cross-scene run persistence (`RunState` autoload)
 - [[visual-palette]] — League of Legends: Swarm color palette (`VisualPalette` autoload)
+- [[stylize-layer]] — `cel_rim.gdshader`: cel+rim+emissive spatial shader; uniform contract for Task 1.3 Stylize autoload
 - [[juice]] — `Juice` autoload: decoupled visual-effects layer (connects to GameEvents; enemy_killed + hp_changed filled in Wave C / Task C1)
 - [[juice-3d]] — `Juice3D` autoload: 3D companion to Juice; DeathPop3D, DamageNumber3D, HitFlash3D, camera shake via GameCamera3D.add_trauma (Task 1.6)
 - [[skill-vfx]] — `SkillVFX` autoload: decoupled skill cast/hit VFX layer; `skill_cast`/`skill_hit` signals; SkillCastFx3D + SkillHitFx3D GPUParticles3D; per-archetype color defaults (Task 4.5)
