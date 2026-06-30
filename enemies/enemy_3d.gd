@@ -55,6 +55,10 @@ var _anim_loaded: bool = false
 ## Phase accumulator (radians) for the procedural alive-bob; advances each physics frame.
 var _bob_phase: float = 0.0
 
+## True once the death sequence begins — blocks re-kills, contact damage, and movement
+## during the 0.4 s dissolve animation before queue_free().
+var _dying := false
+
 ## True once the first velocity_computed callback has been received.
 ## False on warmup frames (NavigationServer not yet joined); used by _apply_movement
 ## to fall back to a direct move_and_slide() so enemies never freeze on the first frame.
@@ -186,6 +190,8 @@ func _apply_movement(_dt: float) -> void:
 func _on_velocity_computed(safe_velocity: Vector3) -> void:
 	if data == null:
 		return
+	if _dying:
+		return  # no movement callbacks while dissolving
 	_avoidance_active = true
 	# Defense in depth: RVO only yields a non-zero safe velocity when its navigation
 	# map is active AND avoidance actually simulates (it does not in headless, and
@@ -201,6 +207,8 @@ func _on_velocity_computed(safe_velocity: Vector3) -> void:
 func _physics_process(dt: float) -> void:
 	if data == null:
 		return
+	if _dying:
+		return  # no movement or contact damage while dissolving
 	# Tick charm timer and suppress movement while charmed.
 	_charm_timer = max(0.0, _charm_timer - dt)
 	if _charm_timer > 0.0:
@@ -246,6 +254,8 @@ func _physics_process(dt: float) -> void:
 func take_damage(amount: float) -> void:
 	if data == null:
 		return
+	if _dying:
+		return  # dissolving — ignore further hits so signals/XP don't fire twice
 	hp -= amount
 	if hp <= 0.0:
 		# Big boss announces death so the HUD bar hides before the node is freed.
@@ -254,10 +264,11 @@ func take_damage(amount: float) -> void:
 		# Bosses (mini + big) trigger a screen shake on death; normal enemies do not.
 		if boss_kind != BossKind.NONE:
 			GameEvents.boss_killed_3d.emit(boss_kind)
-		# Death visuals handled by Juice3D / HitFlash3D + the death pop particle;
-		# _play_anim("die") would never render because queue_free() follows immediately.
+		# All kill side-effects (signal + XP) fire here, exactly as before.
+		# Only queue_free() is deferred so the dissolve can play (~0.4 s).
 		GameEvents.enemy_killed_3d.emit(global_position, data.xp_value)
-		queue_free()
+		_dying = true
+		_start_dissolve_death()
 		return
 	# Non-lethal hit: drive boss HP feedback, then flash.
 	if boss_kind == BossKind.BIG:
@@ -267,6 +278,42 @@ func take_damage(amount: float) -> void:
 		_health_bar.set_ratio(hp / denom)
 	# Non-lethal hit: flash the enemy mesh white for 0.08 s.
 	HitFlash3D.flash(self, 0.08)
+
+## Kick off the dissolve-death visual.  All kill side-effects (signals, XP) have
+## already fired in take_damage() before this is called.
+## If there is no real model instance (headless tests / no-model fallback path),
+## queue_free() is called immediately so existing test behaviour is unchanged.
+func _start_dissolve_death() -> void:
+	# Disable collision so hurtboxes and distance-contact checks can't re-trigger.
+	set_collision_layer(0)
+	set_collision_mask(0)
+	# Remove from the enemies group so targeting systems (weapons, AI) skip us.
+	if is_in_group(&"enemies"):
+		remove_from_group(&"enemies")
+	# No real model → free immediately (preserves current headless-test behaviour).
+	if _model_inst == null:
+		queue_free()
+		return
+	# Resolve edge colour from VisualPalette autoload (guarded: not present in some tests).
+	var vp := get_node_or_null("/root/VisualPalette")
+	var edge_col: Color = vp.role(&"enemy_secondary") if vp else Color(1.0, 0.2, 0.6)
+	# Load the dissolve shader (ResourceLoader caches it across instances).
+	var shader := load("res://shaders/dissolve_death.gdshader") as Shader
+	# Apply a fresh ShaderMaterial to every MeshInstance3D under the model pivot.
+	var meshes: Array[Node] = _model.find_children("*", "MeshInstance3D", true, false)
+	for node: Node in meshes:
+		var mi := node as MeshInstance3D
+		var mat := ShaderMaterial.new()
+		mat.shader = shader
+		mat.set_shader_parameter("progress", 0.0)
+		mat.set_shader_parameter("edge_color", edge_col)
+		mi.material_override = mat
+	# Tween progress 0 → 1 over 0.4 s on all meshes in parallel, then free.
+	var tween := create_tween()
+	for node: Node in meshes:
+		var mat := (node as MeshInstance3D).material_override as ShaderMaterial
+		tween.parallel().tween_property(mat, "shader_parameter/progress", 1.0, 0.4)
+	tween.tween_callback(queue_free)
 
 ## Play a logical animation state ("idle" / "move"); silently no-ops if the
 ## AnimationPlayer or a matching clip is absent (procedural bob covers it).
