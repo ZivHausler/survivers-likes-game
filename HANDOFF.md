@@ -1,5 +1,30 @@
 # Friends Swarm — Session Handoff
 
+> ## 🎨 LoL Swarm Visual Remake — Phase 1 COMPLETE (2026-06-30)
+> Branch **`feature/lol-swarm-visual-remake`** (off `main`). In-engine stylized render/VFX layer landed, subagent-driven + review-gated. **Suite: 1005/1007** (only the 2 pre-existing `fir_tree_01.gltf` failures; headless boot clean).
+>
+> **Delivered (7 tasks, all review-approved):**
+> 1. `core/visual_palette.gd` — `VisualPalette` autoload, `role(name)->Color`, single source of truth for gameplay colors ("palette is law").
+> 2. `shaders/cel_rim.gdshader` — spatial cel + rim + emissive-mask look shader (7-uniform contract).
+> 3. `vfx/stylize.gd` — `Stylize` autoload; applies cel_rim as `material_override` to character/enemy meshes (guarded → **removable**).
+> 4. `arena/arena_3d.tscn` — `WorldEnvironment` glow/bloom (Filmic tonemap) + soft shadows + raised ambient.
+> 5. `shaders/dissolve_death.gdshader` — enemies dissolve on death (~0.4s); **all kill side-effects/timing preserved**, `_dying` guard.
+> 6. `shaders/telegraph_ring.gdshader` + `vfx/aoe_telegraph_3d.*` — additive ground AoE telegraph, dispatched from `autoload/skill_vfx.gd` (per-skill 350ms cooldown).
+> 7. `pickups/xp_gem_3d.gd` + `weapons/nova_weapon_3d.gd` + `weapons/orbit_weapon_3d.gd` — VFX/gem colors sourced from `VisualPalette`.
+>
+> **Reversible by design:** disabling the `Stylize` / VFX autoloads in `project.godot` reverts to plain logic with no errors (decoupling proof — verified in Task 1.3).
+>
+> **⚠️ Your stashed WIP is at `stash@{0}`** ("pre-existing WIP (avihay weapon + project.godot rendering)") — restore with `git stash pop` after this branch settles. `project.godot` may need a small reconcile (the stash's `[rendering]` block vs. the new `[autoload]` entries).
+>
+> **🔶 OPEN DESIGN DECISION (for the pilot playtest):** the real `GameEvents.skill_cast(vfx_id, color, position)` signal carries **no radius or skill-type**, so a telegraph ring currently spawns on **every** cast at a fixed 6.0 radius (rate-limited per skill). "Proper" LoL-Swarm behavior — telegraphs only for nova/ground/boss skills, sized per skill, with a brighter `danger`-colored boss variant — needs **extending the `skill_cast` signal** (a gameplay-signal change, deliberately deferred out of the decoupled visual layer). Decide at playtest whether the all-casts ring reads well or we extend the signal.
+>
+> **Human playtest checklist (Phase 1):** run the game and check — does the game read neon (rim/emissive + bloom)? do enemies **dissolve** on death? do **telegraph rings** appear under casts (too many? too few?)? is the **palette role-separation** clear (enemies vs player VFX vs ground)? Bloom/ambient/glow are eyeball-tuned defaults in `arena_3d.tscn` — adjust to taste.
+>
+> **What's next (NOT done — gated on you):** Phase 0 (artkit cyber-anime prompt pack) + Phases 2-6 (regenerate characters/enemies/environment/UI) require the artkit GPU pipeline + manual **Mixamo** rigging + human playtests. See the plan `docs/superpowers/plans/2026-06-30-lol-swarm-visual-remake.md` and the consumer contract in `docs/notes/asset-pipeline.md`.
+>
+> ---
+>
+> ## Prior session
 > Last updated: 2026-06-29. Read this first to resume work.
 > **Status:** Legacy 2D game **fully removed** this session and merged to **`main`** (fast-forward). `feature/v1-vertical-slice` == `main`. No git remote configured (local only).
 > ⚠️ **`main` had diverged ahead** of the feature branch with an unmentioned **type-weapon-system foundation** (type tags on `SkillData`/`CharacterData`, `core/skill_pool.gd`, `SkillSystem` weapon-slot cap, GameManager type-gated run pool + ultimate; tests `test_run_assembly`, `test_skill_pool`, `test_type_system_fields`, `test_weapon_slot_cap`). The 2D removal was rebased on top of it.
