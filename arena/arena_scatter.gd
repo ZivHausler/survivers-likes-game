@@ -2,8 +2,10 @@
 class_name ArenaScatter extends Node
 ## Seeded, deterministic placement of arena obstacles on the XZ plane.
 ## Pure logic (compute_positions) is unit-tested headless — DO NOT change its
-## signature or logic. _ready() places biome-themed props per region
-## (NW Forest, NE City, SW Tech, SE Beach) plus a central plaza hub and road lamps.
+## signature or logic. _ready() places a central plaza hub plus dense, CLUSTERED
+## district props and flora clumps that match the organic floor built by MapBuilder
+## (arena/maps/final_city_map.gd). Clusters are tight with calm grass gaps between
+## them so the map has rhythm (busy <-> open) rather than uniform clutter.
 
 ## Returns up to `count` XZ positions (y=0) inside [-extent, extent], none within
 ## `clear_radius` of origin, all at least `min_separation` apart. Deterministic for
@@ -54,43 +56,83 @@ const _FP := {
 	"prop_generator_3d":        [1.0,  2.0],
 }
 
-## Per-region definitions. Each entry: { cx, cz, ext, seed, obs, dec }
-##   obs → [[prop_key, count], …] — wrapped in Obstacle3D (collision + nav)
-##   dec → [[prop_key, count], …] — plain visual node, no collision
-## Regional centers are at ±50 with extent 34, so all placed props are ≥ 16 units
-## from the global origin — well outside the 10-unit spawn disc.
-const _REGIONS := [
-	{  # NW Forest: x<0, z<0, center (-50,-50)
-		"cx": -50.0, "cz": -50.0, "ext": 34.0, "seed": 100,
-		"obs": [["prop_tree_3d", 4], ["prop_rock_3d", 2]],
-		"dec": [["prop_bush_3d", 3], ["prop_flowers_3d", 2],
-				["prop_tall_grass_3d", 2], ["prop_mushroom_3d", 1]],
+## Obstacle clusters (collision + nav). Centered on the MapBuilder districts; kept
+## loose enough (min_sep) that the player always has lanes through them.
+## Each: { c:Vector2, ext, seed, sep, items:[[key,count],…] }
+const _OBSTACLE_CLUSTERS := [
+	{  # W cyber-tech
+		"c": Vector2(-64, 10), "ext": 28.0, "seed": 100, "sep": 7.0,
+		"items": [["sci_fi_pylon_3d", 4], ["sci_fi_barrier_3d", 3], ["prop_generator_3d", 3]],
 	},
-	{  # NE City: x>0, z<0, center (50,-50)
-		"cx": 50.0, "cz": -50.0, "ext": 34.0, "seed": 200,
-		"obs": [["prop_crate_3d", 3], ["prop_barrel_3d", 2],
-				["prop_dumpster_3d", 1], ["prop_fence_3d", 2],
-				["prop_concrete_barrier_3d", 2]],
-		"dec": [["prop_cone_3d", 2], ["prop_holo_sign_3d", 1]],
+	{  # NE cobble town
+		"c": Vector2(56, -58), "ext": 26.0, "seed": 200, "sep": 6.5,
+		"items": [["prop_crate_3d", 4], ["prop_barrel_3d", 3], ["prop_dumpster_3d", 1],
+				["prop_fence_3d", 3], ["prop_concrete_barrier_3d", 2]],
 	},
-	{  # SW Tech: x<0, z>0, center (-50,50)
-		"cx": -50.0, "cz": 50.0, "ext": 34.0, "seed": 300,
-		"obs": [["sci_fi_pylon_3d", 3], ["sci_fi_barrier_3d", 2],
-				["prop_generator_3d", 2]],
-		"dec": [["prop_holo_sign_3d", 2]],
+	{  # SE beach
+		"c": Vector2(55, 64), "ext": 28.0, "seed": 300, "sep": 7.0,
+		"items": [["prop_rock_3d", 4], ["prop_concrete_barrier_3d", 2], ["prop_crate_3d", 2],
+				["prop_barrel_3d", 2], ["prop_pillar_3d", 2]],
 	},
-	{  # SE Beach: x>0, z>0, center (50,50)
-		"cx": 50.0, "cz": 50.0, "ext": 34.0, "seed": 400,
-		"obs": [["prop_rock_3d", 3], ["prop_concrete_barrier_3d", 2],
-				["prop_crate_3d", 2], ["prop_barrel_3d", 2],
-				["prop_pillar_3d", 2]],
-		"dec": [],
+	{  # E brick yard
+		"c": Vector2(84, 2), "ext": 13.0, "seed": 400, "sep": 5.0,
+		"items": [["prop_crate_3d", 3], ["prop_concrete_barrier_3d", 2], ["prop_barrel_3d", 2]],
+	},
+	{  # tree groves in the grass (verticality)
+		"c": Vector2(-22, 44), "ext": 12.0, "seed": 500, "sep": 5.0,
+		"items": [["prop_tree_3d", 3]],
+	},
+	{
+		"c": Vector2(38, -16), "ext": 12.0, "seed": 600, "sep": 5.0,
+		"items": [["prop_tree_3d", 2], ["prop_rock_3d", 1]],
+	},
+	{
+		"c": Vector2(-14, -50), "ext": 12.0, "seed": 700, "sep": 5.0,
+		"items": [["prop_tree_3d", 2]],
+	},
+	{  # grove filling the central-south lawn
+		"c": Vector2(16, 30), "ext": 12.0, "seed": 800, "sep": 5.0,
+		"items": [["prop_tree_3d", 2], ["prop_bush_3d", 1]],
 	},
 ]
 
-## Minimum pairwise separation used for all seeded regional placements.
-const _MIN_SEP := 6.0
-## Base RNG seed; each region adds its own seed offset for independence.
+## Dense decoration clumps (no collision). Flowers/grass/bushes/mushrooms packed
+## tightly into pockets across the grass and biome edges, with bare gaps between.
+## Each: { c:Vector2, ext, seed, sep, items:[[key,count],…] }
+const _DECOR_CLUMPS := [
+	{"c": Vector2(-20, 30), "ext": 8.0, "seed": 11, "sep": 2.2,
+		"items": [["prop_flowers_3d", 6], ["prop_tall_grass_3d", 5], ["prop_bush_3d", 2]]},
+	{"c": Vector2(25, -22), "ext": 8.0, "seed": 12, "sep": 2.2,
+		"items": [["prop_flowers_3d", 5], ["prop_tall_grass_3d", 6], ["prop_mushroom_3d", 2]]},
+	{"c": Vector2(8, 42), "ext": 8.0, "seed": 13, "sep": 2.0,
+		"items": [["prop_tall_grass_3d", 7], ["prop_flowers_3d", 4]]},
+	{"c": Vector2(-32, -22), "ext": 8.0, "seed": 14, "sep": 2.2,
+		"items": [["prop_bush_3d", 3], ["prop_flowers_3d", 5], ["prop_tall_grass_3d", 4]]},
+	{"c": Vector2(34, 14), "ext": 8.0, "seed": 15, "sep": 2.0,
+		"items": [["prop_flowers_3d", 6], ["prop_tall_grass_3d", 5]]},
+	{"c": Vector2(-10, -34), "ext": 8.0, "seed": 16, "sep": 2.2,
+		"items": [["prop_tall_grass_3d", 6], ["prop_flowers_3d", 4], ["prop_mushroom_3d", 2]]},
+	{"c": Vector2(2, 60), "ext": 9.0, "seed": 17, "sep": 2.2,
+		"items": [["prop_flowers_3d", 6], ["prop_tall_grass_3d", 6]]},
+	{"c": Vector2(-44, 32), "ext": 8.0, "seed": 18, "sep": 2.2,
+		"items": [["prop_mushroom_3d", 3], ["prop_bush_3d", 2], ["prop_tall_grass_3d", 4]]},
+	{"c": Vector2(52, 74), "ext": 9.0, "seed": 19, "sep": 2.4,
+		"items": [["prop_tall_grass_3d", 5], ["prop_flowers_3d", 3]]},
+	{"c": Vector2(-64, 10), "ext": 10.0, "seed": 20, "sep": 3.0,
+		"items": [["prop_holo_sign_3d", 2]]},
+	{"c": Vector2(56, -58), "ext": 10.0, "seed": 21, "sep": 3.0,
+		"items": [["prop_cone_3d", 3], ["prop_holo_sign_3d", 1]]},
+	{"c": Vector2(-50, 56), "ext": 8.0, "seed": 22, "sep": 2.6,
+		"items": [["prop_mushroom_3d", 3], ["prop_bush_3d", 2]]},
+	{"c": Vector2(0, 38), "ext": 9.0, "seed": 23, "sep": 2.2,
+		"items": [["prop_flowers_3d", 6], ["prop_tall_grass_3d", 5]]},
+	{"c": Vector2(34, 38), "ext": 9.0, "seed": 24, "sep": 2.2,
+		"items": [["prop_flowers_3d", 5], ["prop_tall_grass_3d", 5], ["prop_bush_3d", 2]]},
+	{"c": Vector2(46, 26), "ext": 8.0, "seed": 25, "sep": 2.2,
+		"items": [["prop_flowers_3d", 4], ["prop_tall_grass_3d", 4]]},
+]
+
+## Base RNG seed; each cluster adds its own seed offset for independence.
 const _BASE_SEED := 1
 
 const _OBSTACLE_SCENE := preload("res://obstacles/obstacle_3d.tscn")
@@ -108,9 +150,10 @@ func _ready() -> void:
 	decor.name = "Decor"
 
 	_place_plaza_hub(obstacles, decor)
-	_place_road_lamps(decor)
-	for region in _REGIONS:
-		_place_region(obstacles, decor, region)
+	for cluster in _OBSTACLE_CLUSTERS:
+		_place_cluster(obstacles, cluster, true)
+	for clump in _DECOR_CLUMPS:
+		_place_cluster(decor, clump, false)
 
 	# Deferred: parent is busy adding children during scene entry.
 	parent.add_child.call_deferred(obstacles)
@@ -118,86 +161,60 @@ func _ready() -> void:
 
 # --- Plaza hub ---
 
-## Place the fountain centerpiece, pillar ring, and brazier corners in the plaza.
+## Place the fountain centerpiece, pillar ring, brazier accents, and ring lamps,
+## aligned to the central plaza medallion built by MapBuilder.
 func _place_plaza_hub(obstacles: Node3D, decor: Node3D) -> void:
-	# Fountain obstacle — offset from spawn origin so the player doesn't spawn inside it.
-	_spawn_obstacle(obstacles, "prop_fountain_3d", Vector3(0, 0, 16), "Fountain")
-	# 6 pillars in a ring at radius 20 around plaza center.
-	var pillar_ring := [
-		Vector3(20, 0, 0),   Vector3(10, 0, 17),  Vector3(-10, 0, 17),
-		Vector3(-20, 0, 0),  Vector3(-10, 0, -17), Vector3(10, 0, -17),
-	]
-	for pos in pillar_ring:
-		_spawn_obstacle(obstacles, "prop_pillar_3d", pos)
-	# 4 braziers as decorative accent — no collision.
-	var brazier_ring := [
-		Vector3(10, 0, 10), Vector3(-10, 0, 10),
-		Vector3(-10, 0, -10), Vector3(10, 0, -10),
-	]
-	for pos in brazier_ring:
-		_spawn_decor(decor, "prop_brazier_3d", pos)
+	# Larger hero fountain, offset from the spawn origin so the player clears it.
+	_spawn_obstacle(obstacles, "prop_fountain_3d", Vector3(0, 0, 15), "Fountain", 1.7)
+	# 8 pillars on the outer (cyan) ring at radius 20.
+	for i in 8:
+		var a := TAU * float(i) / 8.0
+		_spawn_obstacle(obstacles, "prop_pillar_3d", Vector3(cos(a) * 20.0, 0, sin(a) * 20.0))
+	# 4 braziers between the rings for warm glow — no collision.
+	for i in 4:
+		var a := TAU * (float(i) + 0.5) / 4.0
+		_spawn_decor(decor, "prop_brazier_3d", Vector3(cos(a) * 10.0, 0, sin(a) * 10.0))
+	# 8 lamps just outside the medallion at radius 24.
+	for i in 8:
+		var a := TAU * (float(i) + 0.25) / 8.0
+		_spawn_decor(decor, "prop_lamp_3d", Vector3(cos(a) * 24.0, 0, sin(a) * 24.0))
 
-# --- Road lamps ---
+# --- Cluster placement ---
 
-## Line each road arm with lamps every ~22 units, offset ±7 to either side.
-func _place_road_lamps(decor: Node3D) -> void:
-	var steps := [30.0, 52.0, 74.0, 96.0]
-	for d in steps:
-		_spawn_decor(decor, "prop_lamp_3d", Vector3(-7, 0, -d))  # N arm, left
-		_spawn_decor(decor, "prop_lamp_3d", Vector3( 7, 0, -d))  # N arm, right
-		_spawn_decor(decor, "prop_lamp_3d", Vector3(-7, 0,  d))  # S arm, left
-		_spawn_decor(decor, "prop_lamp_3d", Vector3( 7, 0,  d))  # S arm, right
-		_spawn_decor(decor, "prop_lamp_3d", Vector3(-d, 0, -7))  # W arm, top
-		_spawn_decor(decor, "prop_lamp_3d", Vector3(-d, 0,  7))  # W arm, bottom
-		_spawn_decor(decor, "prop_lamp_3d", Vector3( d, 0, -7))  # E arm, top
-		_spawn_decor(decor, "prop_lamp_3d", Vector3( d, 0,  7))  # E arm, bottom
+## Place all props for one cluster using compute_positions, offset to its center.
+## `as_obstacle` chooses collision wrapping (Obstacle3D) vs plain decoration.
+func _place_cluster(container: Node3D, cluster: Dictionary, as_obstacle: bool) -> void:
+	var center := Vector3(cluster["c"].x, 0.0, cluster["c"].y)
+	var ext: float = cluster["ext"]
+	var sep: float = cluster["sep"]
+	var seed_off: int = cluster["seed"]
 
-# --- Regional placement ---
-
-## Place all obstacle and decor props for one biome region using compute_positions.
-## Positions are generated relative to local (0,0) then offset to the region center.
-func _place_region(obstacles: Node3D, decor: Node3D, region: Dictionary) -> void:
-	var center := Vector3(region["cx"], 0.0, region["cz"])
-	var ext: float = region["ext"]
-	var seed_off: int = region["seed"]
-
-	# Expand obstacle prop list: [[key, count], …] → [key, key, …]
-	var obs_keys: Array = []
-	for entry in region["obs"]:
+	var keys: Array = []
+	for entry in cluster["items"]:
 		for _i in entry[1]:
-			obs_keys.append(entry[0])
+			keys.append(entry[0])
+	if keys.is_empty():
+		return
 
-	if obs_keys.size() > 0:
-		var positions := compute_positions(
-				_BASE_SEED + seed_off, obs_keys.size(), ext, 0.0, _MIN_SEP)
-		for i in positions.size():
-			_spawn_obstacle(obstacles, obs_keys[i], center + positions[i])
-
-	# Expand decor prop list
-	var dec_keys: Array = []
-	for entry in region["dec"]:
-		for _i in entry[1]:
-			dec_keys.append(entry[0])
-
-	if dec_keys.size() > 0:
-		# Offset seed by 50 so decor positions are independent of obstacle positions.
-		var positions := compute_positions(
-				_BASE_SEED + seed_off + 50, dec_keys.size(), ext, 0.0, _MIN_SEP)
-		for i in positions.size():
-			_spawn_decor(decor, dec_keys[i], center + positions[i])
+	var positions := compute_positions(_BASE_SEED + seed_off, keys.size(), ext, 0.0, sep)
+	for i in positions.size():
+		if as_obstacle:
+			_spawn_obstacle(container, keys[i], center + positions[i])
+		else:
+			_spawn_decor(container, keys[i], center + positions[i])
 
 # --- Helpers ---
 
-## Create an Obstacle3D for `prop_key` at `pos`, optionally naming it `node_name`.
+## Create an Obstacle3D for `prop_key` at `pos`, optionally naming/scaling it.
 func _spawn_obstacle(container: Node3D, prop_key: String, pos: Vector3,
-		node_name: String = "") -> void:
+		node_name: String = "", scale_mul: float = 1.0) -> void:
 	var fp: Array = _FP.get(prop_key, [1.0, 2.0])
 	var prop_scene := load("res://obstacles/%s.tscn" % prop_key) as PackedScene
 	var obs: Obstacle3D = _OBSTACLE_SCENE.instantiate()
 	if prop_scene != null:
 		var model := prop_scene.instantiate()
 		if model is Node3D:
-			obs.set_model(model as Node3D, fp[0], fp[1])
+			obs.set_model(model as Node3D, fp[0] * scale_mul, fp[1] * scale_mul)
 		else:
 			if model != null:
 				model.free()
@@ -206,6 +223,8 @@ func _spawn_obstacle(container: Node3D, prop_key: String, pos: Vector3,
 		push_warning("ArenaScatter: failed to load obstacle prop '%s'" % prop_key)
 		obs.configure(_fallback_mesh(fp[0], fp[1]), fp[0], fp[1])
 	obs.position = Vector3(pos.x, 0.0, pos.z)
+	if scale_mul != 1.0:
+		obs.scale = Vector3.ONE * scale_mul
 	if node_name != "":
 		obs.name = node_name
 	container.add_child(obs)

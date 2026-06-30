@@ -20,8 +20,8 @@ roughness = 0.6
 size = Vector3(1.2, 0.22, 1.0)
 
 [sub_resource type="SphereMesh" id="mesh_flower"]
-radius = 0.1
-height = 0.2
+radius = 0.22
+height = 0.44
 
 [node name="PropFlowers3D" type="Node3D"]
 

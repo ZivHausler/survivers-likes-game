@@ -42,14 +42,20 @@ func test_has_four_border_walls_on_obstacle_layer() -> void:
 	root.free()
 
 func test_arena_contains_water() -> void:
-	var root := _instantiate()
+	# Water is now a procedural mesh built by MapBuilder (deferred at _ready).
+	var root: Node = autofree(_instantiate())
+	add_child(root)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var gg := root.get_node_or_null("GeneratedGround")
+	assert_not_null(gg, "GeneratedGround must be built")
 	var found := false
-	for child in root.get_children():
-		if child is Water3D:
-			found = true
-			break
-	assert_true(found, "arena must contain at least one Water3D body")
-	root.free()
+	if gg != null:
+		for child in gg.get_children():
+			if child.name.begins_with("Water"):
+				found = true
+				break
+	assert_true(found, "MapBuilder must build at least one water body mesh")
 
 func test_scatter_spawns_obstacles_at_runtime() -> void:
 	var root: Node = autofree(_instantiate())
