@@ -1,0 +1,43 @@
+[gd_scene load_steps=4 format=3 uid="uid://proptallgrass3d001"]
+
+[sub_resource type="StandardMaterial3D" id="mat_grass"]
+albedo_color = Color(0.28, 0.68, 0.22, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="mesh_blade"]
+size = Vector3(0.1, 0.75, 0.1)
+
+[sub_resource type="BoxMesh" id="mesh_blade_short"]
+size = Vector3(0.1, 0.55, 0.1)
+
+[node name="PropTallGrass3D" type="Node3D"]
+
+[node name="BladeA" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.375, 0)
+rotation = Vector3(0.0, 0.0, 0.0)
+mesh = SubResource("mesh_blade")
+surface_material_override/0 = SubResource("mat_grass")
+
+[node name="BladeB" type="MeshInstance3D" parent="."]
+position = Vector3(0.15, 0.35, 0.1)
+rotation = Vector3(0.25, 0.8, 0.1)
+mesh = SubResource("mesh_blade")
+surface_material_override/0 = SubResource("mat_grass")
+
+[node name="BladeC" type="MeshInstance3D" parent="."]
+position = Vector3(-0.15, 0.33, -0.1)
+rotation = Vector3(-0.2, -0.6, -0.12)
+mesh = SubResource("mesh_blade")
+surface_material_override/0 = SubResource("mat_grass")
+
+[node name="BladeD" type="MeshInstance3D" parent="."]
+position = Vector3(0.1, 0.28, -0.15)
+rotation = Vector3(0.15, 1.4, 0.2)
+mesh = SubResource("mesh_blade_short")
+surface_material_override/0 = SubResource("mat_grass")
+
+[node name="BladeE" type="MeshInstance3D" parent="."]
+position = Vector3(-0.12, 0.275, 0.18)
+rotation = Vector3(-0.3, 2.2, -0.15)
+mesh = SubResource("mesh_blade_short")
+surface_material_override/0 = SubResource("mat_grass")

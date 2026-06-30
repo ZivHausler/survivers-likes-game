@@ -1,0 +1,65 @@
+[gd_scene load_steps=8 format=3 uid="uid://propmushroom3d001"]
+
+[sub_resource type="StandardMaterial3D" id="mat_stem"]
+albedo_color = Color(0.9, 0.88, 0.82, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="mat_cap_red"]
+albedo_color = Color(0.85, 0.15, 0.12, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="mat_cap_purple"]
+albedo_color = Color(0.55, 0.12, 0.78, 1)
+roughness = 0.6
+
+[sub_resource type="CylinderMesh" id="mesh_stem_tall"]
+top_radius = 0.1
+bottom_radius = 0.13
+height = 0.55
+
+[sub_resource type="CylinderMesh" id="mesh_stem_short"]
+top_radius = 0.08
+bottom_radius = 0.1
+height = 0.35
+
+[sub_resource type="SphereMesh" id="mesh_cap_large"]
+radius = 0.28
+height = 0.22
+
+[sub_resource type="SphereMesh" id="mesh_cap_small"]
+radius = 0.18
+height = 0.15
+
+[node name="PropMushroom3D" type="Node3D"]
+
+[node name="StemA" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.275, 0)
+mesh = SubResource("mesh_stem_tall")
+surface_material_override/0 = SubResource("mat_stem")
+
+[node name="CapA" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.58, 0)
+mesh = SubResource("mesh_cap_large")
+surface_material_override/0 = SubResource("mat_cap_red")
+
+[node name="StemB" type="MeshInstance3D" parent="."]
+position = Vector3(0.38, 0.175, 0.15)
+rotation = Vector3(0, 0, 0.12)
+mesh = SubResource("mesh_stem_short")
+surface_material_override/0 = SubResource("mat_stem")
+
+[node name="CapB" type="MeshInstance3D" parent="."]
+position = Vector3(0.38, 0.37, 0.15)
+mesh = SubResource("mesh_cap_small")
+surface_material_override/0 = SubResource("mat_cap_purple")
+
+[node name="StemC" type="MeshInstance3D" parent="."]
+position = Vector3(-0.3, 0.175, -0.2)
+rotation = Vector3(0, 0, -0.1)
+mesh = SubResource("mesh_stem_short")
+surface_material_override/0 = SubResource("mat_stem")
+
+[node name="CapC" type="MeshInstance3D" parent="."]
+position = Vector3(-0.3, 0.37, -0.2)
+mesh = SubResource("mesh_cap_small")
+surface_material_override/0 = SubResource("mat_cap_red")
