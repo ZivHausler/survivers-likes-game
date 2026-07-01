@@ -373,3 +373,8 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   which swaps the lobby child for the arena via an authority/call_local RPC instead of
   `change_scene_to_file` (keeps the tree/RPCs alive across the transition). **This is plumbing
   only — no visual/theme pass yet**, tracked in §5 roadmap. Suite 1164/1164.
+- 2026-07-01 — Task C2 (Co-op Foundation) wired the Steam transport, adding two controls to the
+  lobby screen (`ui/lobby_3d`): **"Host (Steam)"** (creates a friends-only Steam lobby) and
+  **"Invite Friend"** (opens the Steam overlay invite; enabled once the lobby is live). Joining is
+  driven by accepting a Steam overlay invite — no manual join/ID entry. Still plumbing only, no
+  theme pass; the full lobby/HUD visual pass stays Slice #9. Suite 1189/1189.
