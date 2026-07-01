@@ -5,9 +5,16 @@ signal player_left(peer_id: int)
 signal registry_changed()
 signal all_ready()
 signal host_aborted()
+signal steam_lobby_ready(lobby_id: int)
+
+# GodotSteam LobbyType: PRIVATE=0, FRIENDS_ONLY=1, PUBLIC=2, INVISIBLE=3.
+const LOBBY_TYPE_FRIENDS_ONLY := 1
+const MAX_MEMBERS := 4
 
 var registry: LobbyRegistry = LobbyRegistry.new()
 var local_name: String = "Player"
+var _lobby_id: int = 0
+var _steam_signals_connected: bool = false
 # The GodotSteam addon may be present before Steam is actually initialized (Task C2).
 # Only pump Steam callbacks once C2 has called steamInit and set this true, so ordinary
 # ENet/solo runs never invoke the Steam API.
@@ -48,6 +55,88 @@ func join_enet(address: String, port: int = NetTransport.DEFAULT_PORT) -> int:
 
 func is_host() -> bool:
 	return multiplayer.multiplayer_peer != null and multiplayer.is_server()
+
+# ---- Steam lobby lifecycle (Task C2) ----
+# All Steam access goes through the guarded singleton so this file parses/boots
+# with the GodotSteam extension absent (it is gitignored / missing in CI).
+func _steam() -> Object:
+	return Engine.get_singleton("Steam") if Engine.has_singleton("Steam") else null
+
+func steam_init() -> bool:
+	var s := _steam()
+	if s == null:
+		return false
+	# GodotSteam init returns a status Dictionary/int; status 0 == OK.
+	var status: int
+	if s.has_method("steamInitEx"):
+		status = _init_status(s.call("steamInitEx"))
+	elif s.has_method("steamInit"):
+		status = _init_status(s.call("steamInit"))
+	else:
+		return false
+	if status != 0:
+		return false
+	_steam_ready = true
+	if not _steam_signals_connected:
+		s.connect("lobby_created", _on_lobby_created)
+		s.connect("lobby_joined", _on_lobby_joined)
+		s.connect("lobby_join_requested", _on_lobby_join_requested)
+		_steam_signals_connected = true
+	return true
+
+func _init_status(res: Variant) -> int:
+	# steamInitEx returns a Dictionary {status, verbal}; steamInit returns an int.
+	if res is Dictionary:
+		return int(res.get("status", -1))
+	return int(res)
+
+func host_steam() -> int:
+	if not steam_init():
+		return ERR_UNAVAILABLE
+	# Peer creation is deferred to the lobby_created signal handler.
+	_steam().call("createLobby", LOBBY_TYPE_FRIENDS_ONLY, MAX_MEMBERS)
+	return OK
+
+func join_steam(lobby_id: int) -> void:
+	if _steam() == null:
+		return
+	if not _steam_ready:
+		steam_init()  # ensure signals are connected before joining
+	_steam().call("joinLobby", lobby_id)
+
+func open_invite_overlay() -> void:
+	if _lobby_id == 0 or _steam() == null:
+		return
+	_steam().call("activateGameOverlayInviteDialog", _lobby_id)
+
+func _on_lobby_created(connect_result: int, lobby_id: int) -> void:
+	if connect_result != 1:  # k_EResultOK
+		push_error("Steam createLobby failed: %d" % connect_result)
+		return
+	_lobby_id = lobby_id
+	var peer := NetTransport.create_peer("steam_host", {})
+	if peer == null:
+		return
+	multiplayer.multiplayer_peer = peer
+	_apply_register(1, local_name)   # host is peer 1
+	steam_lobby_ready.emit(lobby_id)
+
+func _on_lobby_joined(lobby_id: int, _permissions: int, _locked: bool, _response: int) -> void:
+	_lobby_id = lobby_id
+	var s := _steam()
+	if s == null:
+		return
+	var owner: int = int(s.call("getLobbyOwner", lobby_id))
+	if owner == int(s.call("getSteamID")):
+		return  # we are the host; already set up in _on_lobby_created
+	var peer := NetTransport.create_peer("steam_client", {"host_steam_id": owner})
+	if peer == null:
+		return
+	multiplayer.multiplayer_peer = peer
+
+func _on_lobby_join_requested(lobby_id: int, _friend_id: int) -> void:
+	# Fired when the user accepts an invite from the Steam overlay.
+	join_steam(lobby_id)
 
 # ---- connection lifecycle ----
 func _on_peer_connected(peer_id: int) -> void:

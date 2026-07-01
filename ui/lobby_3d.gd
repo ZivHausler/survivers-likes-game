@@ -8,6 +8,8 @@ const CHARACTER_PATHS: Array[String] = preload("res://ui/character_select_3d.gd"
 
 @onready var _host_btn: Button = $VBox/NetRow/HostButton
 @onready var _join_btn: Button = $VBox/NetRow/JoinButton
+@onready var _steam_host_btn: Button = $VBox/NetRow/SteamHostButton
+@onready var _invite_btn: Button = $VBox/NetRow/InviteButton
 @onready var _fighter_grid: GridContainer = $VBox/Scroll/FighterGrid
 @onready var _player_list: VBoxContainer = $VBox/PlayerList
 @onready var _ready_toggle: CheckButton = $VBox/ReadyToggle
@@ -19,9 +21,12 @@ var _local_fighter_path: String = ""
 func _ready() -> void:
 	NetworkManager.registry_changed.connect(_refresh)
 	NetworkManager.host_aborted.connect(_on_host_aborted)
+	NetworkManager.steam_lobby_ready.connect(_on_steam_lobby_ready)
 	_build_fighter_grid()
 	_host_btn.pressed.connect(_on_host_pressed)
 	_join_btn.pressed.connect(_on_join_pressed.bind("127.0.0.1"))
+	_steam_host_btn.pressed.connect(_on_steam_host_pressed)
+	_invite_btn.pressed.connect(NetworkManager.open_invite_overlay)
 	_ready_toggle.toggled.connect(_on_ready_toggled)
 	_start_btn.pressed.connect(_on_start_pressed)
 	_solo_btn.pressed.connect(_on_solo_pressed)
@@ -33,6 +38,13 @@ func _on_host_pressed() -> void:
 
 func _on_join_pressed(address: String) -> void:
 	NetworkManager.join_enet(address)
+
+func _on_steam_host_pressed() -> void:
+	NetworkManager.host_steam()
+	_refresh()
+
+func _on_steam_lobby_ready(_lobby_id: int) -> void:
+	_invite_btn.disabled = false
 
 func _on_fighter_picked(path: String) -> void:
 	_local_fighter_path = path
