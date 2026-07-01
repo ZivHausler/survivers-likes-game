@@ -1,12 +1,12 @@
 [gd_scene load_steps=13 format=3 uid="uid://bq6n3f8p5xm2kw"]
 
-[ext_resource type="Script" uid="uid://d3yhcfccvtnu2" path="res://arena/arena_scatter.gd" id="6_scatter"]
-[ext_resource type="Script" path="res://arena/map_builder.gd" id="2_builder"]
+[ext_resource type="Script" uid="uid://rdgulrfaet1h" path="res://arena/floor/floor_builder.gd" id="1_floor_builder"]
+[ext_resource type="Script" uid="uid://dvyahd00dhjb" path="res://arena/floor/prop_scatter.gd" id="2_prop_scatter"]
 [ext_resource type="Texture2D" uid="uid://cnrrqlqe5qn7x" path="res://art/hdri/sky_2k.hdr" id="4_sky_hdri"]
 [ext_resource type="Texture2D" uid="uid://6xrubff53a8t" path="res://art/textures/final_city_grass_albedo.png" id="7_grass"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
-albedo_color = Color(0.45, 0.55, 0.35, 1)
+albedo_color = Color(0.12, 0.14, 0.12, 1)
 albedo_texture = ExtResource("7_grass")
 roughness = 0.85
 metallic = 0.0
@@ -28,12 +28,16 @@ sky_material = SubResource("PanoramaSkyMaterial_sky")
 background_mode = 2
 sky = SubResource("Sky_main")
 ambient_light_source = 3
-ambient_light_energy = 0.4
+ambient_light_energy = 0.22
 tonemap_mode = 2
+ssao_enabled = true
+ssao_radius = 2.0
+ssao_intensity = 4.5
+ssao_power = 2.5
 glow_enabled = true
-glow_intensity = 0.8
-glow_bloom = 0.2
-glow_hdr_threshold = 1.0
+glow_intensity = 0.6
+glow_bloom = 0.15
+glow_hdr_threshold = 1.1
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall_ns"]
 size = Vector3(200, 10, 2)
@@ -55,14 +59,17 @@ surface_material_override/0 = SubResource("StandardMaterial3D_ground")
 position = Vector3(0, -0.05, 0)
 shape = SubResource("BoxShape3D_floor")
 
-[node name="GroundBuilder" type="Node" parent="."]
-script = ExtResource("2_builder")
+[node name="FloorBuilder" type="Node" parent="."]
+script = ExtResource("1_floor_builder")
+recipe_path = "res://arena/maps/garden_map.gd"
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.766044, 0.642788, 0, -0.642788, 0.766044, 0, 10, 0)
-light_energy = 1.0
+transform = Transform3D(0.866025, 0, 0.5, 0.353553, 0.707107, -0.612372, -0.353553, 0.707107, 0.612372, 0, 10, 0)
+light_color = Color(1, 0.95, 0.86, 1)
+light_energy = 1.5
 shadow_enabled = true
-shadow_blur = 2.0
+shadow_blur = 0.7
+directional_shadow_max_distance = 320.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
@@ -101,5 +108,7 @@ collision_mask = 0
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Borders/WallWest"]
 shape = SubResource("BoxShape3D_wall_ew")
 
-[node name="ObstacleSpawner" type="Node" parent="."]
-script = ExtResource("6_scatter")
+[node name="GardenScatter" type="Node" parent="."]
+script = ExtResource("2_prop_scatter")
+recipe_path = "res://arena/maps/garden_map.gd"
+clear_radius = 12.0

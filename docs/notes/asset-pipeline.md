@@ -10,9 +10,14 @@ duplicating the pipeline (which would drift).
 - **Tool repo:** `C:\Users\avino\swarm\` — its own local git repo (currently **no remote**;
   the factory + source art are unbacked off-machine — push it somewhere).
   - `swarm/artkit/` — the asset factory: SDXL (`gen.py`, `gen_texture.py`), Hunyuan3D-2.1
-    (`gen_character.py`), Mixamo (manual web rig), Blender 5.1 finalize/tools. Guides:
-    `CHARACTER-GUIDE.md` (image→rigged char), `WORKFLOW.md`, `STYLE-GUIDE-CYBERANIME.md`,
-    `PROMPTS-CYBERANIME.md` (the neon cyber-anime prompt pack; see [[asset-licenses]]).
+    (`gen_character.py`), Mixamo (manual web rig), Blender 5.1 finalize/tools. Its
+    **workflow guides are mirrored into this repo** at `docs/notes/artkit/` (Hunyuan3D 3D
+    track only): `CHARACTER-GUIDE.md` (image→rigged char), `WORKFLOW.md`,
+    `STYLE-GUIDE-CYBERANIME.md`, `PROMPTS-CYBERANIME.md` (neon prompt pack; see
+    [[asset-licenses]]), plus the 3D-character pipeline design + plan. The guides are
+    **adapted to this repo** (Godot-integration steps, `model_scene` swap seam, and doc
+    cross-links point here); `docs/notes/artkit/README.md` records the binding contract.
+    The toolkit **code/env/models** stay external and unvendored.
   - `swarm/swarm-art/` — generated source art (concepts, textured + rigged `.glb`s).
   - `swarm/swarm-template/` — an **old** Godot scaffold, superseded by this repo. Ignore.
 

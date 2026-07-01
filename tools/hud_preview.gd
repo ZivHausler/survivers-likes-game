@@ -16,6 +16,7 @@ class StubPlayer extends Node:
 	var weapons: Dictionary = {}
 	var ultimate = null
 	var passives: Dictionary = {}
+	var character_data = null
 	func xp_to_next(_lvl: int) -> float:
 		return 100.0
 
@@ -46,11 +47,12 @@ func _ready() -> void:
 	var player := StubPlayer.new()
 	player.name = "Player"
 	player.add_to_group("player")
+	player.character_data = load("res://characters/avihay_3d.tres")
 	player.weapons = {
-		&"pistol": StubWeapon.new(1.0),
-		&"laser_beam": StubWeapon.new(0.45),
-		&"orbit_blade": StubWeapon.new(0.8),
-		&"frost_nova": StubWeapon.new(0.15),
+		&"avihay_spam": StubWeapon.new(1.0),
+		&"avihay_group_call": StubWeapon.new(0.45),
+		&"avihay_mass_dm": StubWeapon.new(0.8),
+		&"avihay_voice_blast": StubWeapon.new(0.15),
 	}
 	player.ultimate = StubWeapon.new(1.0)
 	player.passives = {&"haste": 2, &"armor": 1, &"magnet": 3, &"regen": 1}

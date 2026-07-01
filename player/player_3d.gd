@@ -16,6 +16,9 @@ const WALK_THRESHOLD := 0.05
 var _invuln_timer: float = 0.0
 
 var stats: StatBlock
+## The character this player was built from — exposed so the HUD can read the
+## portrait and per-skill ability icons (SkillData.icon). Set in setup().
+var character_data: CharacterData = null
 ## All acquired skills: skill_id → Weapon3D. Populated by acquire_skill().
 var weapons: Dictionary = {}
 ## Convenience back-compat pointer — the first acquired weapon (signature).
@@ -100,6 +103,7 @@ func evolve_skill(skill_id: StringName) -> void:
 		weapons[skill_id].evolve()
 
 func setup(data: CharacterData) -> void:
+	character_data = data  # exposed for the HUD (portrait + per-skill ability icons)
 	stats = data.base_stats.duplicate_stats()
 	hp = stats.max_hp
 

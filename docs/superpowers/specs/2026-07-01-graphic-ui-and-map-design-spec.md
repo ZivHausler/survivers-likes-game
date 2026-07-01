@@ -239,3 +239,27 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   ULTIMATE-READY popup, live enemy count, radar minimap (`ui/minimap.gd`). Kept the tested
   node skeleton; suite 1067/1067. Added `tools/hud_preview.*` harness. User picked "HUD v2
   now" after the arena rebuild.
+- 2026-07-01 — NEW DIRECTION: user still dislikes the visuals; kicked off a full art-directed
+  overhaul. Decisions: **3D modular tile-kit floor** (base/edge/corner/transition/trim/variation
+  + decals), **fresh rebuild** (retire MapBuilder's blob floor + current HUD), **visual-only HUD**
+  (bind existing data, no new systems), **vertical-slice-first** (central hub + Garden district +
+  HUD → ≥85/100, then replicate). See `2026-07-01-art-directed-arena-overhaul-design.md` and the
+  new screenshot self-iteration process at `docs/notes/visual-qa-loop.md`. This supersedes the
+  blob-map approach in §1.2/§3.4.
+- 2026-07-01 — Garden vertical slice SHIPPED to QA ≥85 (scored 87/100). Data-driven modular
+  floor (`arena/floor/`: `ZoneGrid`→`Autotile`→`TileVariants`→`FloorBuilder`) + clustered
+  props (`GardenScatter`) driven by `arena/maps/garden_map.gd` (24×24 ASCII recipe). Five
+  **stylized (not photoreal) SDXL floor textures** — grass / stone_plaza / stone_path /
+  dirt_path / flowerbed — generated via `artkit/generation/gen_garden_batch.py` (DreamShaper
+  XL + circular-padding seamless tiling), imported with mipmaps and sampled with anisotropic
+  filtering for the angled MOBA cam. Central flagstone combat plaza with a faint cyan
+  "garden-seal" `plaza_medallion` decal as the focal point; cross of cobble paths to
+  pond / flowerbeds / hero-tree landmark. Procedural RGBA decals (`art/decals/`:
+  contact_shadow, plaza_medallion, path_wear, leaves, moss, crack) — props grounded with
+  contact shadows. Fresh visual-only HUD (`ui/hud.*`). Suite 1103/1103. Remaining polish
+  (non-blocking): plaza prop density, dirt/stone path contrast, grass tiling repetition.
+- 2026-07-01 — Mirrored the external artkit **asset-creation workflow docs** into this repo
+  at `docs/notes/artkit/` (Hunyuan3D 3D-character track only: `CHARACTER-GUIDE.md`,
+  `WORKFLOW.md`, cyber-anime PROMPTS + STYLE-GUIDE, pipeline design + plan). Docs-only —
+  toolkit code/env/models stay external. See `docs/notes/asset-pipeline.md` +
+  `docs/notes/artkit/README.md` (this-repo deltas). No visual/gameplay change.
