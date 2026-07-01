@@ -60,7 +60,6 @@ static var RECIPE := {
 	},
 	# Authored floor decals (Task 8). type maps to a texture in Task 10; size in world units.
 	"decals": [
-		{ "type": "plaza_medallion", "pos": Vector2(0, 0),   "size": 40.0, "rot": 0.0 },
 		{ "type": "path_wear",       "pos": Vector2(0, 40),  "size": 10.0, "rot": 0.0 },
 		{ "type": "path_wear",       "pos": Vector2(0, -40), "size": 10.0, "rot": 0.0 },
 		{ "type": "leaves",          "pos": Vector2(-40, 40), "size": 8.0, "rot": 0.7 },

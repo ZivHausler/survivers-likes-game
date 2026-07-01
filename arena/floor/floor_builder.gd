@@ -46,12 +46,16 @@ func _build_into_root(root: Node3D) -> void:
 	var trims := Node3D.new(); trims.name = "TransitionTrims"
 	var decals := Node3D.new(); decals.name = "Decals"
 	var pond := Node3D.new(); pond.name = "Pond"
+	var centre := Node3D.new(); centre.name = "Centerpiece"
 	root.add_child(base_tiles)
 	root.add_child(trims)
 	root.add_child(decals)
 	root.add_child(pond)
+	root.add_child(centre)
 
 	var cs: float = recipe["cell_size"]
+	var plaza_sum := Vector3.ZERO
+	var plaza_n := 0
 	for y in grid.height:
 		for x in grid.width:
 			var z := grid.zone_at(x, y)
@@ -67,8 +71,14 @@ func _build_into_root(root: Node3D) -> void:
 			mi.position = Vector3(wc.x, zdef.get("y", 0.02), wc.z)
 			base_tiles.add_child(mi, true)
 			_lay_curbs(trims, grid, zone_y, z, x, y, wc, cs)
+			if z == &"stone_plaza":
+				plaza_sum += wc
+				plaza_n += 1
 	_build_decals(decals, recipe.get("decals", []))
 	_build_pond(pond, recipe.get("pond", {}))
+	if plaza_n > 0:
+		var pc := plaza_sum / float(plaza_n)
+		_build_centerpiece(centre, pc.x, pc.z, float(zone_y.get(&"stone_plaza", 0.45)))
 
 ## A flat, upward-facing quad of side `size` centered on its origin (XZ plane).
 func _tile_mesh(size: float) -> ArrayMesh:
@@ -134,6 +144,51 @@ func _curb_mat() -> StandardMaterial3D:
 		_curb_m.albedo_color = Color(0.72, 0.70, 0.64)
 		_curb_m.roughness = 0.8
 	return _curb_m
+
+## Integrated hero centerpiece on the plaza: a low raised circular stone dais (two
+## steps, keeps the combat top open) with a glowing emissive medallion inlay. Replaces
+## the flat pasted-on decal ring so the arena has real, lit visual hierarchy at center.
+func _build_centerpiece(container: Node3D, cx: float, cz: float, top_y: float) -> void:
+	# Outer step (wide, low) then inner step — reads as a designed dais, not a slab.
+	var s0 := MeshInstance3D.new()
+	s0.mesh = _cyl_mesh(18.0, 0.22, _curb_mat())
+	s0.position = Vector3(cx, top_y + 0.11, cz)
+	container.add_child(s0, true)
+	var s1 := MeshInstance3D.new()
+	s1.mesh = _cyl_mesh(15.5, 0.22, _skirt_mat())
+	s1.position = Vector3(cx, top_y + 0.33, cz)
+	container.add_child(s1, true)
+	# Glowing medallion inlay on the dais top (square texture -> flat quad for clean UVs).
+	if ResourceLoader.exists("res://art/decals/plaza_medallion.png"):
+		var med := MeshInstance3D.new()
+		var mesh := _tile_mesh(26.0)
+		mesh.surface_set_material(0, _medallion_mat())
+		med.mesh = mesh
+		med.position = Vector3(cx, top_y + 0.45, cz)
+		container.add_child(med, true)
+
+func _cyl_mesh(radius: float, height: float, mat: StandardMaterial3D) -> ArrayMesh:
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = radius
+	cyl.bottom_radius = radius
+	cyl.height = height
+	cyl.radial_segments = 48
+	var am := ArrayMesh.new()
+	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, cyl.get_mesh_arrays())
+	am.surface_set_material(0, mat)
+	return am
+
+func _medallion_mat() -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	var t := load("res://art/decals/plaza_medallion.png")
+	m.albedo_texture = t
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.emission_enabled = true
+	m.emission_texture = t
+	m.emission = Color(0.5, 0.95, 1.0)
+	m.emission_energy_multiplier = 3.0
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	return m
 
 func _build_decals(container: Node3D, entries: Array) -> void:
 	for e in entries:
