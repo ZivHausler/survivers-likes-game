@@ -24,13 +24,14 @@ func test_budget_counts() -> void:
 	var root := _build()
 	var props := root.get_node("Props")
 	# Dense art-directed budget (superseded the old sparse 1/3-6/10-25, which itself
-	# tripped the "props are sparse" visual auto-fail). Ranges stay bounded to still
-	# catch runaway or empty scatter.
+	# tripped the "props are sparse" visual auto-fail). Upper bound raised to 38 after
+	# adding arena-ring props inside the gameplay frustum (the combat view was empty of
+	# props at the real camera framing). Ranges stay bounded to catch runaway/empty scatter.
 	var land := props.get_node("Landmarks").get_child_count()
 	var med := props.get_node("MediumProps").get_child_count()
 	var small := props.get_node("SmallDetails").get_child_count()
 	assert_true(land >= 1 and land <= 3, "1-3 landmarks, got %d" % land)
-	assert_true(med >= 8 and med <= 30, "8-30 medium props, got %d" % med)
+	assert_true(med >= 8 and med <= 38, "8-38 medium props, got %d" % med)
 	assert_true(small >= 40 and small <= 130, "40-130 small props, got %d" % small)
 
 func test_spawn_disc_clear() -> void:
