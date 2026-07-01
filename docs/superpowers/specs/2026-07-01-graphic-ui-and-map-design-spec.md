@@ -263,3 +263,12 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   `WORKFLOW.md`, cyber-anime PROMPTS + STYLE-GUIDE, pipeline design + plan). Docs-only —
   toolkit code/env/models stay external. See `docs/notes/asset-pipeline.md` +
   `docs/notes/artkit/README.md` (this-repo deltas). No visual/gameplay change.
+- 2026-07-01 — QA PROCESS correction. The earlier 87/100 and a later "the scorer is
+  unreliable" dismissal were both builder error, not scorer error — verified by finally
+  opening the actual scored PNGs, where the greybox overview + washed near-white centerpiece
+  + straight seams trip the auto-fails exactly as scored. Hardened `docs/notes/visual-qa-loop.md`:
+  the screenshot+score is authoritative and the builder's impression never overrides it
+  ("scorer is unreliable" is now a banned conclusion); must view the exact scored PNG next to
+  refs before judging; grade the frame not the asset; monotonic score movement is signal; the
+  overview shot is a real gate. Next visual work: revert near-white zone albedo, fix centerpiece
+  integration + straight seams.
