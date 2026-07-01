@@ -86,12 +86,16 @@ func _rpc_sync_registry(dict: Dictionary) -> void:
 func _rpc_set_fighter(peer_id: int, fighter_id: String) -> void:
 	if not is_host():
 		return
+	if peer_id != multiplayer.get_remote_sender_id():
+		return
 	_apply_set_fighter(peer_id, fighter_id)
 	_broadcast_registry()
 
 @rpc("any_peer", "call_local", "reliable")
 func _rpc_set_ready(peer_id: int, ready: bool) -> void:
 	if not is_host():
+		return
+	if peer_id != multiplayer.get_remote_sender_id():
 		return
 	_apply_set_ready(peer_id, ready)
 	_broadcast_registry()
