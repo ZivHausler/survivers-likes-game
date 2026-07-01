@@ -239,3 +239,10 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   ULTIMATE-READY popup, live enemy count, radar minimap (`ui/minimap.gd`). Kept the tested
   node skeleton; suite 1067/1067. Added `tools/hud_preview.*` harness. User picked "HUD v2
   now" after the arena rebuild.
+- 2026-07-01 — NEW DIRECTION: user still dislikes the visuals; kicked off a full art-directed
+  overhaul. Decisions: **3D modular tile-kit floor** (base/edge/corner/transition/trim/variation
+  + decals), **fresh rebuild** (retire MapBuilder's blob floor + current HUD), **visual-only HUD**
+  (bind existing data, no new systems), **vertical-slice-first** (central hub + Garden district +
+  HUD → ≥85/100, then replicate). See `2026-07-01-art-directed-arena-overhaul-design.md` and the
+  new screenshot self-iteration process at `docs/notes/visual-qa-loop.md`. This supersedes the
+  blob-map approach in §1.2/§3.4.
