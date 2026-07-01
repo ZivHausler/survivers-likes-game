@@ -36,54 +36,97 @@ func _make_gem(value: int) -> XPGem3D:
 	return gem
 
 # ---------------------------------------------------------------------------
-# magnet_step — pure static helper
+# in_pickup_range — latch gate
 # ---------------------------------------------------------------------------
 
-func test_magnet_step_returns_zero_when_outside_range() -> void:
-	var gem_pos    := Vector3(10.0, 0.0, 0.0)
-	var player_pos := Vector3.ZERO
-	var delta := XPGem3D.magnet_step(gem_pos, player_pos, 5.0, 0.016)
-	assert_eq(delta, Vector3.ZERO,
-			"magnet_step should return zero when dist > pickup_range")
+func test_in_pickup_range_false_when_outside() -> void:
+	assert_false(XPGem3D.in_pickup_range(Vector3(10.0, 0.0, 0.0), Vector3.ZERO, 5.0),
+			"gem beyond pickup_range must not be in range")
 
-func test_magnet_step_returns_nonzero_when_within_range() -> void:
-	var gem_pos    := Vector3(3.0, 0.0, 0.0)
-	var player_pos := Vector3.ZERO
-	var delta := XPGem3D.magnet_step(gem_pos, player_pos, 5.0, 0.016)
-	assert_true(delta.length() > 0.0,
-			"magnet_step should return non-zero delta when within pickup_range")
+func test_in_pickup_range_true_when_inside() -> void:
+	assert_true(XPGem3D.in_pickup_range(Vector3(3.0, 0.0, 0.0), Vector3.ZERO, 5.0),
+			"gem within pickup_range must be in range")
 
-func test_magnet_step_y_component_always_zero() -> void:
-	# Gem at a different height than player — y must be zeroed.
-	var gem_pos    := Vector3(2.0, 5.0, 0.0)
-	var player_pos := Vector3(0.0, 0.0, 0.0)
-	var delta := XPGem3D.magnet_step(gem_pos, player_pos, 10.0, 0.1)
-	assert_almost_eq(delta.y, 0.0, 0.001,
-			"magnet y-component must always be 0 (XZ plane movement)")
+func test_in_pickup_range_ignores_height() -> void:
+	# A tall Y gap must not push a horizontally-close gem out of range.
+	assert_true(XPGem3D.in_pickup_range(Vector3(1.0, 50.0, 0.0), Vector3.ZERO, 5.0),
+			"range check is XZ-only; Y difference must be ignored")
 
-func test_magnet_step_moves_toward_player() -> void:
-	# Gem is at +X, player at origin → delta.x should be negative (moving toward origin).
-	var gem_pos    := Vector3(3.0, 0.0, 0.0)
-	var player_pos := Vector3.ZERO
-	var delta := XPGem3D.magnet_step(gem_pos, player_pos, 5.0, 1.0)
-	assert_true(delta.x < 0.0,
-			"gem to the +X of player should move in -X direction toward player")
-	assert_almost_eq(delta.y, 0.0, 0.001, "y must stay 0")
+# ---------------------------------------------------------------------------
+# next_magnet_speed — acceleration ramp
+# ---------------------------------------------------------------------------
 
-func test_magnet_step_faster_when_closer() -> void:
-	# At dist ≈ 0.5 the lerp t is high → faster than at dist ≈ 4.9.
-	var player_pos := Vector3.ZERO
-	var dt := 1.0
-	var delta_far   := XPGem3D.magnet_step(Vector3(4.9, 0.0, 0.0), player_pos, 5.0, dt)
-	var delta_close := XPGem3D.magnet_step(Vector3(0.5, 0.0, 0.0), player_pos, 5.0, dt)
-	assert_true(delta_close.length() > delta_far.length(),
-			"gem closer to player should move faster (magnet accelerates)")
+func test_next_magnet_speed_accelerates() -> void:
+	var s := XPGem3D.next_magnet_speed(XPGem3D.MAGNET_SPEED_MIN, 0.1)
+	assert_gt(s, XPGem3D.MAGNET_SPEED_MIN, "magnet speed must increase each step")
 
-func test_magnet_step_boundary_at_exact_range_is_nonzero() -> void:
-	# dist == pickup_range: t = clamp(1 - 1, 0, 1) = 0 → speed = MAGNET_SPEED_MIN (4.0)
-	var delta := XPGem3D.magnet_step(Vector3(5.0, 0.0, 0.0), Vector3.ZERO, 5.0, 1.0)
-	assert_true(delta.length() > 0.0,
-			"at exactly pickup_range distance the gem should still move")
+func test_next_magnet_speed_caps_at_max() -> void:
+	var s := XPGem3D.next_magnet_speed(XPGem3D.MAGNET_SPEED_MAX, 1.0)
+	assert_almost_eq(s, XPGem3D.MAGNET_SPEED_MAX, 0.001,
+			"magnet speed must not exceed MAGNET_SPEED_MAX")
+
+func test_peak_magnet_speed_beats_player() -> void:
+	# The whole point: a latched gem must be able to out-run the player.
+	# Player base move speeds are ~8 u/s; peak magnet speed must clear that with margin.
+	assert_gt(XPGem3D.MAGNET_SPEED_MAX, 20.0,
+			"peak magnet speed must comfortably exceed any player move speed")
+
+# ---------------------------------------------------------------------------
+# magnet_delta — homing step
+# ---------------------------------------------------------------------------
+
+func test_magnet_delta_y_component_always_zero() -> void:
+	var delta := XPGem3D.magnet_delta(Vector3(2.0, 5.0, 0.0), Vector3.ZERO, 10.0, 0.1)
+	assert_almost_eq(delta.y, 0.0, 0.001, "magnet y-component must always be 0 (XZ plane)")
+
+func test_magnet_delta_moves_toward_player() -> void:
+	var delta := XPGem3D.magnet_delta(Vector3(3.0, 0.0, 0.0), Vector3.ZERO, 5.0, 0.1)
+	assert_true(delta.x < 0.0, "gem at +X must move in -X toward the player")
+
+func test_magnet_delta_lands_exactly_when_overshooting() -> void:
+	# Big step (speed*dt >> dist) must land on the player, not overshoot past it.
+	var gem_pos := Vector3(1.0, 0.0, 0.0)
+	var delta := XPGem3D.magnet_delta(gem_pos, Vector3.ZERO, 100.0, 1.0)
+	assert_almost_eq((gem_pos + delta).length(), 0.0, 0.001,
+			"an overshooting step must land exactly on the player (no tunnelling)")
+
+func test_magnet_delta_zero_at_player() -> void:
+	var delta := XPGem3D.magnet_delta(Vector3.ZERO, Vector3.ZERO, 10.0, 0.1)
+	assert_eq(delta, Vector3.ZERO, "no movement when already on the player")
+
+# ---------------------------------------------------------------------------
+# Latch + acceleration integration — the fast-player regression
+# ---------------------------------------------------------------------------
+
+func test_gem_catches_fast_moving_player_after_latch() -> void:
+	# Reproduces the bug: player moving faster than the initial magnet speed.
+	# Once latched, the gem must accelerate and eventually collect regardless.
+	_player._pickup_range = 5.0
+	_player.global_position = Vector3.ZERO
+	var gem := _make_gem(7)
+	gem.global_position = Vector3(3.0, 0.0, 0.0)  # inside pickup range → will latch
+	# Drive the player away at 12 u/s (faster than MAGNET_SPEED_MIN=4) for up to 3 s.
+	var dt := 1.0 / 60.0
+	for i in range(180):
+		_player.global_position += Vector3(12.0 * dt, 0.0, 0.0)
+		gem._process(dt)
+		if gem._collected:
+			break
+	assert_true(gem._collected,
+			"a latched gem must catch and collect even a player fleeing faster than MAGNET_SPEED_MIN")
+
+func test_gem_latches_and_stays_latched_when_player_flees_out_of_range() -> void:
+	_player._pickup_range = 5.0
+	_player.global_position = Vector3.ZERO
+	var gem := _make_gem(3)
+	gem.global_position = Vector3(4.0, 0.0, 0.0)  # in range → latches on first process
+	gem._process(1.0 / 60.0)
+	assert_true(gem._magnetized, "gem must latch once inside pickup range")
+	# Teleport player far away (beyond range). Latch must persist and keep homing.
+	_player.global_position = Vector3(100.0, 0.0, 0.0)
+	gem._process(1.0 / 60.0)
+	assert_true(gem._magnetized,
+			"gem must remain magnetized even after the player leaves pickup range")
 
 # ---------------------------------------------------------------------------
 # _collect() — collection logic

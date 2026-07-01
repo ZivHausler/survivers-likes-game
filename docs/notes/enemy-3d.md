@@ -62,6 +62,16 @@ model under `Model` and hides the sphere placeholder; otherwise tints the sphere
 ### `charm(duration: float)`
 Suppress movement for `duration` seconds. Stacks by taking the max remaining time.
 
+### `apply_knockback(dir: Vector3, distance: float)`
+Hop the enemy `distance` world units along `dir` (XZ) over `KNOCKBACK_DURATION`
+(0.22 s). While the window is active, nav/attack/charm/bob logic is suspended and the
+body is carried at `distance / duration` with a procedural vertical arc
+(`sin(progress·π) · KNOCKBACK_HOP_HEIGHT`, peak 0.7 u) so it reads as a jump-back
+rather than a slide or teleport; the model settles flush (`y = 0`) when it ends. The
+RVO callback is ignored during the window to avoid double-moving. A weaker overlapping
+knockback never reduces an active stronger one. **Mini/big bosses are immune** (no-op) —
+only regular monsters are knocked around. Used by orbit weapons on orb contact.
+
 ### `take_damage(amount: float)`
 Reduce hp; on `hp <= 0` emit `GameEvents.enemy_killed_3d(global_position, xp_value)`
 and `queue_free()`. No hit-flash yet (Task 1.5 Juice).

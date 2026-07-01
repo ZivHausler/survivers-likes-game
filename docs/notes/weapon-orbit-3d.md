@@ -25,9 +25,29 @@ in `_rebuild_orbiters()`. `collision_mask = 8` targets the enemies layer.
 In `_process(dt)`, the ring phase advances by `orbit_speed * dt` each frame and
 each orbiter's `position` is updated via the pure `orbiter_offsets()` helper.
 
-Damage is dealt on the timer-driven `fire()` call (once per `base_cooldown`),
-not every frame. A per-enemy hit-cooldown dict (`_hit_cd`) prevents burst damage
-when multiple orbiters overlap the same enemy.
+**Damage is a continuous grind.** The overlap scan (`_apply_orbit_damage`) runs
+every physics frame from `_physics_process`, NOT gated by `base_cooldown`. The
+orbiters are an always-on aura, so anything an orb sweeps through takes damage.
+A per-enemy hit-cooldown dict (`_hit_cd`, `HIT_CD_MS` = 500 ms) throttles repeat
+hits so a persistently-overlapping enemy is ground down at a steady rate instead
+of once-per-frame. The timer-driven `fire()` still runs (cast-VFX pulse + direct
+test calls) and calls the same scan — harmless, because `HIT_CD_MS` dedupes it.
+
+> Historical note: damage used to be dealt *only* in `fire()` (once per
+> `base_cooldown`, 2–2.5 s). Because enemies pass through the ring between ticks,
+> that single-instant scan almost never overlapped anyone and the skills felt like
+> they did no damage. The 500 ms `HIT_CD_MS` was dead code under that model — its
+> existence was the tell that continuous scanning was the intent.
+
+**Knockback.** When an orb touches an enemy it shoves that enemy **radially outward
+from the character** (the ring centre, = the weapon's own `global_position`) by
+`ORB_KNOCKBACK_DIST` (2.5 u, XZ plane). Outward-from-centre (not away-from-orb) avoids
+flinging enemies sideways in the orb's travel direction. The shove is delivered via
+`Enemy3D.apply_knockback(dir, distance)` — a short animated **hop-back arc** (see
+`enemy-3d.md`), not an instant teleport; bodies without that method fall back to a
+direct `global_position` nudge. Only fires on an actual orb overlap, so enemies merely
+walking near the player are unaffected. Throttled by the same `HIT_CD_MS` window as the
+damage.
 
 ## Pure helper — unit-tested
 

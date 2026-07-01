@@ -19,6 +19,9 @@ const HP_BAR_SCALE := 1.4
 
 ## Seconds of remaining invulnerability (i-frames). Counts down in _physics_process.
 var _invuln_timer: float = 0.0
+## Whether the current invulnerability window blinks the model. Level-up invuln sets
+## this false so the safety window doesn't flicker; damage/ult i-frames keep it true.
+var _invuln_blink: bool = true
 
 var stats: StatBlock
 ## The character this player was built from — exposed so the HUD can read the
@@ -73,9 +76,11 @@ func is_invulnerable() -> bool:
 	return _invuln_timer > 0.0
 
 ## Grant invulnerability for `duration` seconds. Takes the max so multiple callers
-## never shorten an existing window.
-func set_invulnerable(duration: float) -> void:
+## never shorten an existing window. `blink` controls whether the model flickers during
+## the window (default true); pass false for non-combat windows like the level-up pause.
+func set_invulnerable(duration: float, blink: bool = true) -> void:
 	_invuln_timer = max(_invuln_timer, duration)
+	_invuln_blink = blink
 
 func acquire_skill(skill_id: StringName, weapon_scene: PackedScene) -> void:
 	if weapons.has(skill_id):
@@ -256,11 +261,13 @@ func _physics_process(dt: float) -> void:
 	var was_invuln := _invuln_timer > 0.0
 	_invuln_timer = max(0.0, _invuln_timer - dt)
 	if _invuln_timer > 0.0:
-		# Blink: alternate Model visibility every 0.1 s while invulnerable.
-		_model.visible = fmod(_invuln_timer, 0.2) < 0.1
+		# Blink: alternate Model visibility every 0.1 s while invulnerable — but only
+		# for combat i-frames. Non-blinking windows (e.g. level-up) stay fully visible.
+		_model.visible = fmod(_invuln_timer, 0.2) < 0.1 if _invuln_blink else true
 	elif was_invuln:
 		# Timer just reached 0 — guarantee the model is visible again.
 		_model.visible = true
+		_invuln_blink = true
 	if Input.is_action_just_pressed("ultimate"):
 		activate_ultimate()
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")

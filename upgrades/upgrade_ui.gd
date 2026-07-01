@@ -98,13 +98,28 @@ func _ready() -> void:
 		var mat := ShaderMaterial.new()
 		mat.shader = _ROUNDED_SHADER
 		mat.set_shader_parameter("radius", ICON_RADIUS)
-		(_icon_rects[i] as TextureRect).material = mat
+		var ir := _icon_rects[i] as TextureRect
+		ir.material = mat
+		# Keep the shader `aspect` in sync with the rect's real size. This fires when the
+		# panel is first shown and the container lays the icon out — without it, the aspect
+		# stays at its pre-layout value on the FIRST level-up (corners/ratio look wrong) and
+		# only corrected once a hover re-ran _apply_card_visual. resized() makes it correct
+		# from the first frame it is sized, no hover required.
+		ir.resized.connect(_update_icon_aspect.bind(ir))
 		# Rounded mask on the small synergy-tab skill icon (larger fraction — see const).
 		var smat := ShaderMaterial.new()
 		smat.shader = _ROUNDED_SHADER
 		smat.set_shader_parameter("radius", TAB_ICON_RADIUS)
-		(_synergy_icons[i] as TextureRect).material = smat
+		var si := _synergy_icons[i] as TextureRect
+		si.material = smat
+		si.resized.connect(_update_icon_aspect.bind(si))
 		(_synergy_tabs[i] as Panel).add_theme_stylebox_override("panel", tab_style)
+
+## Set the rounded-icon shader's `aspect` uniform from a TextureRect's current size so the
+## corner radius stays circular on non-square plates. Safe to call any time; no-op until sized.
+func _update_icon_aspect(rect: TextureRect) -> void:
+	if rect and rect.material is ShaderMaterial and rect.size.y > 0.0:
+		(rect.material as ShaderMaterial).set_shader_parameter("aspect", rect.size.x / rect.size.y)
 
 ## The accent colour for an upgrade kind (drives frame, glow, badge, stat highlight).
 func _accent_for(kind: int) -> Color:

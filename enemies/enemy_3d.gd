@@ -28,6 +28,11 @@ const BOB_AMPLITUDE := 0.04
 ## Maximum forward-lean pitch angle in radians at full move speed.
 const LEAN_MAX_RAD := 0.07
 
+## Duration (seconds) of the knockback hop-back arc.
+const KNOCKBACK_DURATION := 0.22
+## Peak height (world units) of the knockback hop.
+const KNOCKBACK_HOP_HEIGHT := 0.7
+
 var data: EnemyData
 var target: Node3D
 var hp: float = 0.0
@@ -36,6 +41,10 @@ var _attack: EnemyAttack = null
 var _contact_cd: float = 0.0
 ## Remaining charm time in seconds. While > 0, movement is suppressed.
 var _charm_timer: float = 0.0
+## Knockback (hop-back) state. While _knockback_timer > 0, nav/attack logic is
+## suspended and the enemy is carried along _knockback_vel with a vertical hop arc.
+var _knockback_timer: float = 0.0
+var _knockback_vel: Vector3 = Vector3.ZERO
 ## Cached AnimationPlayer from the instanced model (or a created one); null if unavailable.
 var _anim_player: AnimationPlayer = null
 ## Real clip names resolved once in setup() for the logical "idle"/"move" states.
@@ -191,6 +200,8 @@ func _on_velocity_computed(safe_velocity: Vector3) -> void:
 		return
 	if _dying:
 		return  # no movement callbacks while dissolving
+	if _knockback_timer > 0.0:
+		return  # knockback drives movement directly; ignore RVO this window
 	_avoidance_active = true
 	# Defense in depth: RVO only yields a non-zero safe velocity when its navigation
 	# map is active AND avoidance actually simulates (it does not in headless, and
@@ -208,6 +219,19 @@ func _physics_process(dt: float) -> void:
 		return
 	if _dying:
 		return  # no movement or contact damage while dissolving
+	# Knockback takes priority: carry the enemy along the hop with a vertical arc,
+	# bypassing nav/attack logic until the short window elapses.
+	if _knockback_timer > 0.0:
+		_knockback_timer = max(0.0, _knockback_timer - dt)
+		velocity = _knockback_vel
+		move_and_slide()
+		if _model:
+			# Parabolic hop: 0 at start/end, peak at mid — sin over the [0,PI] arc.
+			var progress: float = 1.0 - (_knockback_timer / KNOCKBACK_DURATION)
+			_model.position.y = sin(progress * PI) * KNOCKBACK_HOP_HEIGHT
+		if _knockback_timer == 0.0 and _model:
+			_model.position.y = 0.0  # settle flush with the ground when the hop ends
+		return
 	# Tick charm timer and suppress movement while charmed.
 	_charm_timer = max(0.0, _charm_timer - dt)
 	if _charm_timer > 0.0:
@@ -249,6 +273,25 @@ func _physics_process(dt: float) -> void:
 		if dist < CONTACT_RANGE and _contact_cd == 0.0 and is_instance_valid(target) and target.has_method("take_damage"):
 			target.take_damage(data.contact_damage)
 			_contact_cd = 0.5
+
+## Shove the enemy `distance` world units along `dir` (XZ plane) as a short hop-back:
+## suspends nav/attack for KNOCKBACK_DURATION and plays a vertical arc. Called by
+## orbit weapons on orb contact. No-op while dying, and no-op for mini/big bosses —
+## bosses stand their ground and are never knocked around. Takes the stronger of any
+## overlapping knockback so a fresh hit always registers.
+func apply_knockback(dir: Vector3, distance: float) -> void:
+	if _dying or data == null:
+		return
+	if boss_kind != BossKind.NONE:
+		return  # bosses are immune to knockback
+	var flat := Vector3(dir.x, 0.0, dir.z)
+	if flat.length_squared() < 0.0001:
+		flat = Vector3(1.0, 0.0, 0.0)
+	var vel := flat.normalized() * (distance / KNOCKBACK_DURATION)
+	if _knockback_timer > 0.0 and _knockback_vel.length_squared() >= vel.length_squared():
+		return  # already hopping at least this hard; don't weaken it
+	_knockback_vel = vel
+	_knockback_timer = KNOCKBACK_DURATION
 
 func take_damage(amount: float) -> void:
 	if data == null:

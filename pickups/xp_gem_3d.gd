@@ -3,15 +3,33 @@ class_name XPGem3D extends Area3D
 
 ## XP pickup (3D) that magnets toward the player when in range.
 ## Calls player.add_xp() and emits GameEvents.xp_collected on overlap.
-## Mirrors XPGem (Area2D) behavior verbatim; movement on XZ plane (Y up).
-## 1 world unit ≈ 16 px: MAGNET_SPEED_MAX = 300 / 16 ≈ 19.0; min speed = 60 / 16 ≈ 4.0.
+## Movement on XZ plane (Y up). 1 world unit ≈ 16 px.
+##
+## Magnet behaviour: once the gem first enters the player's pickup range it LATCHES
+## (`_magnetized`) and homes in for good — it never un-magnetizes, even if the player
+## outruns it. While latched it ACCELERATES every frame (starting at MAGNET_SPEED_MIN,
+## ramping by MAGNET_ACCEL up to MAGNET_SPEED_MAX), so it always overtakes the player
+## regardless of move speed. An arrival snap collects it if a fast step would otherwise
+## overshoot, so it can never tunnel past.
 
-const MAGNET_SPEED_MAX: float = 19.0  # 300 px / 16
-const MAGNET_SPEED_MIN: float = 4.0   # 60 px / 16
+## Peak magnet speed (world u/s). Well above any realistic player move speed so a
+## latched gem always closes the gap.
+const MAGNET_SPEED_MAX: float = 40.0
+## Initial magnet speed the instant the gem latches (world u/s).
+const MAGNET_SPEED_MIN: float = 4.0
+## How fast the magnet speed ramps up while latched (world u/s²).
+const MAGNET_ACCEL: float = 60.0
+## Distance (world u) at which a latched gem is close enough to auto-collect, as a
+## safety net for the physics overlap when moving fast.
+const COLLECT_DIST: float = 0.35
 
 var _value: int = 0
 var _player: Node3D = null
 var _collected: bool = false
+## True once the gem has entered pickup range; latched for the gem's lifetime.
+var _magnetized: bool = false
+## Current magnet speed (world u/s); ramps from MIN to MAX while latched.
+var _magnet_speed: float = 0.0
 
 
 func _ready() -> void:
@@ -64,9 +82,21 @@ func _process(dt: float) -> void:
 		return
 	if not is_instance_valid(_player):
 		return
-	var delta := magnet_step(global_position, _player.global_position,
-			_player.get_pickup_range(), dt)
-	global_position += delta
+	var player_pos: Vector3 = _player.global_position
+	# Latch on first entry into pickup range; never release afterwards.
+	if not _magnetized:
+		if in_pickup_range(global_position, player_pos, _player.get_pickup_range()):
+			_magnetized = true
+			_magnet_speed = MAGNET_SPEED_MIN
+		else:
+			return
+	# Accelerate, then home in (delta lands exactly on the player if it would overshoot).
+	_magnet_speed = next_magnet_speed(_magnet_speed, dt)
+	global_position += magnet_delta(global_position, player_pos, _magnet_speed, dt)
+	# Arrival safety net: collect once close, in case a fast step skipped the overlap.
+	var flat := Vector3(player_pos.x - global_position.x, 0.0, player_pos.z - global_position.z)
+	if flat.length() < COLLECT_DIST:
+		_collect()
 
 
 func _on_body_entered(body: Node3D) -> void:
@@ -85,19 +115,30 @@ func _collect() -> void:
 	queue_free()
 
 
-## Pure static magnet helper — returns the position delta for one physics step.
-## Movement is on the XZ plane (y component is always 0).
-## Returns Vector3.ZERO when outside `pickup_range`.
-## Speed lerps from MAGNET_SPEED_MIN to MAGNET_SPEED_MAX as dist → 0.
-static func magnet_step(gem_pos: Vector3, player_pos: Vector3,
-		pickup_range: float, dt: float) -> Vector3:
+## Pure: is the gem within `pickup_range` of the player (XZ distance)?
+## Used once to latch magnetization; afterwards distance is ignored.
+static func in_pickup_range(gem_pos: Vector3, player_pos: Vector3,
+		pickup_range: float) -> bool:
+	var diff: Vector3 = player_pos - gem_pos
+	diff.y = 0.0
+	return diff.length() <= pickup_range
+
+## Pure: the next magnet speed after `dt` — accelerates by MAGNET_ACCEL, capped at
+## MAGNET_SPEED_MAX. This is what makes a latched gem move "faster and faster".
+static func next_magnet_speed(current: float, dt: float) -> float:
+	return min(current + MAGNET_ACCEL * dt, MAGNET_SPEED_MAX)
+
+## Pure static magnet helper — position delta for one step at `speed` (XZ plane, y=0).
+## If the step would reach or overshoot the player, returns the exact remaining diff
+## so the gem lands on the player instead of tunnelling past it.
+static func magnet_delta(gem_pos: Vector3, player_pos: Vector3,
+		speed: float, dt: float) -> Vector3:
 	var diff: Vector3 = player_pos - gem_pos
 	diff.y = 0.0
 	var dist: float = diff.length()
-	if dist > pickup_range:
-		return Vector3.ZERO
 	if dist < 0.001:
 		return Vector3.ZERO
-	var t: float = clamp(1.0 - dist / max(pickup_range, 1.0), 0.0, 1.0)
-	var speed: float = lerp(MAGNET_SPEED_MIN, MAGNET_SPEED_MAX, t)
-	return diff.normalized() * speed * dt
+	var step: float = speed * dt
+	if step >= dist:
+		return diff  # land exactly on the player — no overshoot
+	return diff.normalized() * step
