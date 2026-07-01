@@ -83,6 +83,20 @@ func skill_id_of(u: Upgrade) -> StringName:
 func is_maxed(u: Upgrade) -> bool:
 	return levels.get(u.id, 0) >= u.max_level
 
+## Public lookup of the SkillData for `skill_id` (null if none). For UI that needs the
+## skill's icon/name — e.g. the synergy hint shown on a passive card, which advances the
+## owned skill toward its (golden) synergy once the skill is also maxed.
+func skill_for(skill_id: StringName) -> SkillData:
+	return _find_skill(skill_id)
+
+## True iff `skill_id` is owned and could still reach a synergy (not yet synergized).
+## Used to decide whether to show the synergy hint on that skill's passive card.
+func synergy_pending(skill_id: StringName) -> bool:
+	var skill := _find_skill(skill_id)
+	if skill == null:
+		return false
+	return levels.get(skill.skill_upgrade.id, 0) >= 1 and not synergized.has(skill_id)
+
 
 ## True iff skill_level == 5 AND passive_level ≥ 1 AND not yet synergized.
 func synergy_available(skill: SkillData) -> bool:
