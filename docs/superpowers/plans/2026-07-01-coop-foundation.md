@@ -874,6 +874,8 @@ func _rpc_sync_registry(dict: Dictionary) -> void:
 func _rpc_set_fighter(peer_id: int, fighter_id: String) -> void:
 	if not is_host():
 		return
+	if peer_id != multiplayer.get_remote_sender_id():
+		return   # a client may only set its OWN fighter (no spoofing)
 	_apply_set_fighter(peer_id, fighter_id)
 	_broadcast_registry()
 
@@ -881,6 +883,8 @@ func _rpc_set_fighter(peer_id: int, fighter_id: String) -> void:
 func _rpc_set_ready(peer_id: int, ready: bool) -> void:
 	if not is_host():
 		return
+	if peer_id != multiplayer.get_remote_sender_id():
+		return   # a client may only set its OWN ready flag
 	_apply_set_ready(peer_id, ready)
 	_broadcast_registry()
 
