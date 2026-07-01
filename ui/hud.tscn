@@ -149,12 +149,21 @@ theme = ExtResource("2_theme")
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -330.0
-offset_top = 66.0
+offset_top = 60.0
 offset_right = 330.0
-offset_bottom = 116.0
+offset_bottom = 150.0
 grow_horizontal = 2
 
-[node name="BossHP" type="ProgressBar" parent="Boss"]
+[node name="VBox" type="VBoxContainer" parent="Boss"]
+theme_override_constants/separation = 4
+
+[node name="BossName" type="Label" parent="Boss/VBox"]
+mouse_filter = 2
+text = "Boss"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 18
+
+[node name="BossHP" type="ProgressBar" parent="Boss/VBox"]
 custom_minimum_size = Vector2(640, 40)
 max_value = 100.0
 value = 100.0
@@ -162,22 +171,15 @@ show_percentage = false
 theme_override_styles/background = SubResource("SB_bossbg")
 theme_override_styles/fill = SubResource("SB_bossfill")
 
-[node name="BossHPText" type="Label" parent="Boss/BossHP"]
+[node name="BossHPText" type="Label" parent="Boss/VBox/BossHP"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 text = "0 / 0"
 horizontal_alignment = 1
-vertical_alignment = 2
+vertical_alignment = 1
 
-[node name="BossName" type="Label" parent="Boss"]
-mouse_filter = 2
-text = "Boss"
-horizontal_alignment = 1
-vertical_alignment = 0
-theme_override_font_sizes/font_size = 18
-
-[node name="Command" type="Panel" parent="."]
+[node name="Command" type="Control" parent="."]
 theme = ExtResource("2_theme")
 anchor_left = 0.04
 anchor_top = 1.0
@@ -186,66 +188,42 @@ anchor_bottom = 1.0
 offset_top = -94.0
 offset_bottom = -6.0
 grow_vertical = 0
-theme_override_styles/panel = SubResource("SB_cmd")
-
-[node name="Portrait" type="TextureRect" parent="Command"]
-visible = false
-offset_left = 12.0
-offset_top = 12.0
-offset_right = 76.0
-offset_bottom = 76.0
 mouse_filter = 2
-expand_mode = 1
-stretch_mode = 6
-
-[node name="HP" type="ProgressBar" parent="Command"]
-offset_left = 88.0
-offset_top = 12.0
-offset_right = 408.0
-offset_bottom = 40.0
-max_value = 100.0
-value = 100.0
-show_percentage = false
-theme_override_styles/background = SubResource("SB_hpbg")
-theme_override_styles/fill = SubResource("SB_hpfill")
-
-[node name="HPText" type="Label" parent="Command/HP"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
-text = "100 / 100"
-horizontal_alignment = 1
-vertical_alignment = 1
-theme_override_font_sizes/font_size = 13
 
 [node name="Passives" type="HBoxContainer" parent="Command"]
-offset_left = 88.0
-offset_top = 46.0
-offset_right = 408.0
-offset_bottom = 86.0
-theme_override_constants/separation = 4
-
-[node name="Weapons" type="HBoxContainer" parent="Command"]
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -420.0
-offset_top = 18.0
-offset_right = -92.0
-offset_bottom = 70.0
-grow_horizontal = 0
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 12.0
+offset_top = -20.0
+offset_right = -42.0
+offset_bottom = 20.0
 alignment = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
 [node name="Ult" type="Control" parent="Command"]
 script = ExtResource("3_radial")
 visible = false
-anchor_left = 1.0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -33.0
+offset_top = -33.0
+offset_right = 33.0
+offset_bottom = 33.0
+
+[node name="Weapons" type="HBoxContainer" parent="Command"]
+anchor_left = 0.5
+anchor_top = 0.5
 anchor_right = 1.0
-offset_left = -80.0
-offset_top = 14.0
+anchor_bottom = 0.5
+offset_left = 42.0
+offset_top = -26.0
 offset_right = -14.0
-offset_bottom = 80.0
-grow_horizontal = 0
+offset_bottom = 26.0
+alignment = 0
+theme_override_constants/separation = 6
 
 [node name="Minimap" type="Control" parent="."]
 script = ExtResource("4_minimap")

@@ -8,18 +8,23 @@ class_name HUD extends CanvasLayer
 ## process_mode = PROCESS_MODE_ALWAYS so _process runs during normal play AND
 ## while the level-up overlay pauses the tree (live timer/kills/XP).
 
+const _ROUNDED_ICON_SHADER := preload("res://upgrades/rounded_icon.gdshader")
+
 @onready var _timer:         Label          = $Top/TopRow/Timer
 @onready var _kills:         Label          = $Top/TopRow/Kills
 @onready var _level:         Label          = $Top/TopRow/Level
 @onready var _enemies:       Label          = $Top/TopRow/Enemies
 @onready var _xp_bar:        ProgressBar    = $Top/XP
 @onready var _boss:          Control        = $Boss
-@onready var _boss_name:     Label          = $Boss/BossName
-@onready var _boss_hp:       ProgressBar    = $Boss/BossHP
-@onready var _boss_hp_text:  Label          = $Boss/BossHP/BossHPText
-@onready var _hp_bar:        ProgressBar    = $Command/HP
-@onready var _hp_text:       Label          = $Command/HP/HPText
-@onready var _portrait_tex:  TextureRect    = $Command/Portrait
+@onready var _boss_name:     Label          = $Boss/VBox/BossName
+@onready var _boss_hp:       ProgressBar    = $Boss/VBox/BossHP
+@onready var _boss_hp_text:  Label          = $Boss/VBox/BossHP/BossHPText
+# HP bar and Portrait were removed from the command bar (HP now floats above the player;
+# the command bar holds only passives | ult | skills). Kept as null-safe lookups so the
+# existing guarded handlers simply no-op.
+@onready var _hp_bar:        ProgressBar    = get_node_or_null("Command/HP")
+@onready var _hp_text:       Label          = get_node_or_null("Command/HP/HPText")
+@onready var _portrait_tex:  TextureRect    = get_node_or_null("Command/Portrait")
 @onready var _weapons_box:   HBoxContainer  = $Command/Weapons
 @onready var _ult_radial:    RadialCooldown = $Command/Ult
 @onready var _passives_box:  HBoxContainer  = $Command/Passives
@@ -235,22 +240,23 @@ func _update_cooldown_bars() -> void:
 		_cd_bars.clear()
 		for i in weapon_entries.size():
 			var panel := Panel.new()
-			panel.custom_minimum_size = Vector2(52, 52)
+			panel.custom_minimum_size = Vector2(64, 64)
 			var style := StyleBoxFlat.new()
-			style.bg_color = Color(0.06, 0.08, 0.12, 0.9)
-			style.set_corner_radius_all(4)
+			style.bg_color = Color(0.06, 0.08, 0.12, 1.0)
+			style.set_corner_radius_all(12)
 			style.border_width_left   = 1
 			style.border_width_top    = 1
 			style.border_width_right  = 1
 			style.border_width_bottom = 1
-			style.border_color = Color(0.3, 0.8, 1.0, 0.5)
+			style.border_color = Color(0, 0, 0, 0)
 			panel.add_theme_stylebox_override("panel", style)
+			panel.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
 			# Ability icon (from SkillData.icon via _icon_map); text label is the fallback.
 			var icon_rect := TextureRect.new()
 			icon_rect.name = "IconTexture"
 			icon_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-			icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon_rect.stretch_mode = TextureRect.STRETCH_SCALE
 			icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			var slot_icon = _icon_map.get(weapon_entries[i]["id"], null)
 			if slot_icon != null:
@@ -270,6 +276,19 @@ func _update_cooldown_bars() -> void:
 			fill_style.bg_color = Color(0.2, 0.7, 1.0, 0.6)
 			bar.add_theme_stylebox_override("fill", fill_style)
 			panel.add_child(bar)
+			# Border overlay on top of the clipped icon/cooldown so it stays visible and
+			# shares the slot's exact rounded shape (border radius == image radius).
+			var frame := Panel.new()
+			frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var fstyle := StyleBoxFlat.new()
+			fstyle.bg_color = Color(0, 0, 0, 0)
+			fstyle.set_corner_radius_all(12)
+			fstyle.border_width_left = 2; fstyle.border_width_top = 2
+			fstyle.border_width_right = 2; fstyle.border_width_bottom = 2
+			fstyle.border_color = Color(0.3, 0.8, 1.0, 0.6)
+			frame.add_theme_stylebox_override("panel", fstyle)
+			panel.add_child(frame)
 			# ID abbreviation — fallback label when no texture is loaded.
 			var id_lbl := Label.new()
 			id_lbl.name = "IDLabel"
@@ -336,12 +355,14 @@ func _update_cooldown_bars() -> void:
 			for child in _passives_box.get_children():
 				child.queue_free()
 			_passive_panels.clear()
-			for e in passive_entries:
+			_passive_panels.resize(passive_entries.size())
+			for i in passive_entries.size():
+				var e = passive_entries[i]
 				var panel := Panel.new()
-				panel.custom_minimum_size = Vector2(40, 40)
+				panel.custom_minimum_size = Vector2(48, 48)
 				var style := StyleBoxFlat.new()
 				style.bg_color = Color(0.1, 0.08, 0.15, 0.9)
-				style.set_corner_radius_all(4)
+				style.set_corner_radius_all(12)
 				style.border_width_left   = 1
 				style.border_width_top    = 1
 				style.border_width_right  = 1
@@ -367,8 +388,12 @@ func _update_cooldown_bars() -> void:
 				lvl_lbl.add_theme_font_size_override("font_size", 8)
 				lvl_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				panel.add_child(lvl_lbl)
-				_passives_box.add_child(panel)
-				_passive_panels.append(panel)
+				_passive_panels[i] = panel
+			# Add right-to-left so passive #1 sits adjacent to the centred ult (the passives
+			# box is END-aligned and grows leftward). _passive_panels stays in entry order so
+			# the level-label refresh below still maps index i → entry i.
+			for i in range(passive_entries.size() - 1, -1, -1):
+				_passives_box.add_child(_passive_panels[i])
 			_passive_last_count = passive_entries.size()
 		# Always refresh level labels in-place so a level-up (count unchanged) shows.
 		for i in passive_entries.size():
