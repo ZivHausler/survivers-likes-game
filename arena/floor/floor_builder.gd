@@ -153,46 +153,100 @@ func _build_pond(container: Node3D, pond: Dictionary) -> void:
 		return
 	var c: Vector2 = pond["center"]
 	var r: float = pond["radius"]
+	# Depth gradient (Temtem-oasis reference): dark teal-green deep center -> saturated
+	# green-turquoise shallows. Saturated + green (not pale sky-blue) to match the oasis water.
+	var deep := Color(0.03, 0.28, 0.33, 1.0)
+	var shallow := Color(0.13, 0.60, 0.58, 1.0)
+	var foam: Color = pond.get("rim_color", Color(0.86, 0.98, 0.96))
+	# Water body: saturated depth gradient, opaque until a small fade only at the very edge.
 	var water := MeshInstance3D.new()
 	water.name = "PondWater"
-	water.mesh = _pond_water_mesh(r, 2.5, pond.get("water_color", Color(0.14, 0.48, 0.66, 1.0)))
-	water.position = Vector3(c.x, 0.10, c.y)  # just above the flat ground
+	water.mesh = _pond_water_mesh(r, r * 0.10, deep, shallow)
+	water.position = Vector3(c.x, 0.05, c.y)  # just above the flat ground
 	container.add_child(water, true)
+	# Thin crisp foam waterline right at the shore (references show a defined foam line, not a
+	# wide glowing halo).
+	var foam_mi := MeshInstance3D.new()
+	foam_mi.name = "PondFoam"
+	foam_mi.mesh = _foam_ring_mesh(r * 0.94, r * 0.02, Color(foam.r, foam.g, foam.b, 0.9))
+	foam_mi.position = Vector3(c.x, 0.065, c.y)
+	container.add_child(foam_mi, true)
 
-## Water disc with a SOFT alpha rim: opaque center, fading to transparent over the outer
-## `fade` world units, so the water blends into the grass rendered beneath the pond (real
-## shoreline). Vertex alpha drives the fade; albedo is the constant water colour.
-func _pond_water_mesh(r: float, fade: float, color: Color) -> ArrayMesh:
-	var segs := 72
-	var ri := maxf(0.0, r - fade)
-	var op := Color(color.r, color.g, color.b, 1.0)
+## Water disc: concentric-ring grid (not a fan — avoids radial transparency streaks) with a
+## radial depth gradient (deep center -> shallow rim) and a wide alpha fade over the outer
+## `fade` world units, so the water reveals the grass beneath at the shore. Vertex colour
+## carries both the gradient and the fade alpha.
+func _pond_water_mesh(r: float, fade: float, deep: Color, shallow: Color) -> ArrayMesh:
+	var segs := 64
+	var rings := 18
+	var fade_start: float = 1.0 - clampf(fade / r, 0.05, 0.95)  # normalized radius where alpha drops
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.set_normal(Vector3.UP)
+	for j in rings:
+		var t0 := float(j) / float(rings)
+		var t1 := float(j + 1) / float(rings)
+		for i in segs:
+			var a0 := TAU * float(i) / float(segs)
+			var a1 := TAU * float(i + 1) / float(segs)
+			_pw_vert(st, t0, a0, r, fade_start, deep, shallow)
+			_pw_vert(st, t1, a0, r, fade_start, deep, shallow)
+			_pw_vert(st, t1, a1, r, fade_start, deep, shallow)
+			_pw_vert(st, t0, a0, r, fade_start, deep, shallow)
+			_pw_vert(st, t1, a1, r, fade_start, deep, shallow)
+			_pw_vert(st, t0, a1, r, fade_start, deep, shallow)
+	var mesh := st.commit()
+	var m := StandardMaterial3D.new()
+	m.vertex_color_use_as_albedo = true
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	# Unshaded: stylized flat water shows its authored depth gradient exactly, instead of the
+	# bright sky HDRI reflecting off a flat plane at this grazing camera angle and washing it out.
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mesh.surface_set_material(0, m)
+	return mesh
+
+## One water vertex at normalized radius `t` (0 center, 1 edge) and angle `ang`: colour lerps
+## deep->shallow with t; alpha is 1 until `fade_start` then ramps to 0 at the edge.
+func _pw_vert(st: SurfaceTool, t: float, ang: float, r: float, fade_start: float,
+		deep: Color, shallow: Color) -> void:
+	var col := deep.lerp(shallow, t)
+	var a := 1.0
+	if t > fade_start:
+		a = 1.0 - (t - fade_start) / (1.0 - fade_start)
+	st.set_color(Color(col.r, col.g, col.b, a))
+	st.add_vertex(Vector3(cos(ang) * r * t, 0.0, sin(ang) * r * t))
+
+## Soft glowing annulus centered on radius `mid` (half-width `hw`): transparent at both edges,
+## full colour in the middle, emissive — reads as a foam/shore highlight line, not a hard band.
+func _foam_ring_mesh(mid: float, hw: float, color: Color) -> ArrayMesh:
+	var segs := 64
+	var inner := mid - hw
+	var outer := mid + hw
+	var op := color
 	var tr := Color(color.r, color.g, color.b, 0.0)
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	st.set_normal(Vector3.UP)
 	for i in segs:
-		var a0 := TAU * float(i) / segs
-		var a1 := TAU * float(i + 1) / segs
-		var i0 := Vector3(cos(a0) * ri, 0.0, sin(a0) * ri)
-		var i1 := Vector3(cos(a1) * ri, 0.0, sin(a1) * ri)
-		var o0 := Vector3(cos(a0) * r, 0.0, sin(a0) * r)
-		var o1 := Vector3(cos(a1) * r, 0.0, sin(a1) * r)
-		# Inner solid fan (opaque).
-		st.set_color(op); st.set_uv(Vector2(0.5, 0.5)); st.add_vertex(Vector3.ZERO)
-		st.set_color(op); st.set_uv(Vector2(0, 0)); st.add_vertex(i0)
-		st.set_color(op); st.set_uv(Vector2(1, 0)); st.add_vertex(i1)
-		# Rim ring: opaque inner -> transparent outer.
-		st.set_color(op); st.set_uv(Vector2(0, 0)); st.add_vertex(i0)
-		st.set_color(op); st.set_uv(Vector2(1, 0)); st.add_vertex(i1)
-		st.set_color(tr); st.set_uv(Vector2(1, 1)); st.add_vertex(o1)
-		st.set_color(op); st.set_uv(Vector2(0, 0)); st.add_vertex(i0)
-		st.set_color(tr); st.set_uv(Vector2(1, 1)); st.add_vertex(o1)
-		st.set_color(tr); st.set_uv(Vector2(0, 1)); st.add_vertex(o0)
+		var a0 := TAU * float(i) / float(segs)
+		var a1 := TAU * float(i + 1) / float(segs)
+		var pi0 := Vector3(cos(a0) * inner, 0.0, sin(a0) * inner)
+		var pi1 := Vector3(cos(a1) * inner, 0.0, sin(a1) * inner)
+		var pm0 := Vector3(cos(a0) * mid, 0.0, sin(a0) * mid)
+		var pm1 := Vector3(cos(a1) * mid, 0.0, sin(a1) * mid)
+		var po0 := Vector3(cos(a0) * outer, 0.0, sin(a0) * outer)
+		var po1 := Vector3(cos(a1) * outer, 0.0, sin(a1) * outer)
+		# inner(transparent) -> mid(opaque)
+		st.set_color(tr); st.add_vertex(pi0); st.set_color(op); st.add_vertex(pm0); st.set_color(op); st.add_vertex(pm1)
+		st.set_color(tr); st.add_vertex(pi0); st.set_color(op); st.add_vertex(pm1); st.set_color(tr); st.add_vertex(pi1)
+		# mid(opaque) -> outer(transparent)
+		st.set_color(op); st.add_vertex(pm0); st.set_color(tr); st.add_vertex(po0); st.set_color(tr); st.add_vertex(po1)
+		st.set_color(op); st.add_vertex(pm0); st.set_color(tr); st.add_vertex(po1); st.set_color(op); st.add_vertex(pm1)
 	var mesh := st.commit()
 	var m := StandardMaterial3D.new()
-	m.vertex_color_use_as_albedo = true       # albedo = water colour; vertex alpha = rim fade
+	m.vertex_color_use_as_albedo = true
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.roughness = 0.35
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED  # crisp bright foam line, no sky wash
 	mesh.surface_set_material(0, m)
 	return mesh
 
