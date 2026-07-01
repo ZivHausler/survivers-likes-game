@@ -1,0 +1,39 @@
+[gd_scene load_steps=6 format=3 uid="uid://proptree3d000001"]
+
+[sub_resource type="StandardMaterial3D" id="mat_trunk"]
+albedo_color = Color(0.38, 0.22, 0.1, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="mat_canopy"]
+albedo_color = Color(0.2, 0.62, 0.18, 1)
+roughness = 0.85
+
+[sub_resource type="CylinderMesh" id="mesh_trunk"]
+top_radius = 0.15
+bottom_radius = 0.22
+height = 2.4
+
+[sub_resource type="SphereMesh" id="mesh_canopy_low"]
+radius = 0.85
+height = 1.6
+
+[sub_resource type="SphereMesh" id="mesh_canopy_top"]
+radius = 0.65
+height = 1.2
+
+[node name="PropTree3D" type="Node3D"]
+
+[node name="Trunk" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.2, 0)
+mesh = SubResource("mesh_trunk")
+surface_material_override/0 = SubResource("mat_trunk")
+
+[node name="CanopyLow" type="MeshInstance3D" parent="."]
+position = Vector3(0, 2.8, 0)
+mesh = SubResource("mesh_canopy_low")
+surface_material_override/0 = SubResource("mat_canopy")
+
+[node name="CanopyTop" type="MeshInstance3D" parent="."]
+position = Vector3(0.2, 3.7, -0.1)
+mesh = SubResource("mesh_canopy_top")
+surface_material_override/0 = SubResource("mat_canopy")

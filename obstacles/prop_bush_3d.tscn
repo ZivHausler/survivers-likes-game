@@ -1,0 +1,30 @@
+[gd_scene load_steps=4 format=3 uid="uid://propbush3d000001"]
+
+[sub_resource type="StandardMaterial3D" id="mat_bush"]
+albedo_color = Color(0.22, 0.58, 0.18, 1)
+roughness = 0.85
+
+[sub_resource type="SphereMesh" id="mesh_blob_large"]
+radius = 0.45
+height = 0.85
+
+[sub_resource type="SphereMesh" id="mesh_blob_small"]
+radius = 0.32
+height = 0.6
+
+[node name="PropBush3D" type="Node3D"]
+
+[node name="BlobCenter" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.42, 0)
+mesh = SubResource("mesh_blob_large")
+surface_material_override/0 = SubResource("mat_bush")
+
+[node name="BlobLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-0.35, 0.3, 0.1)
+mesh = SubResource("mesh_blob_small")
+surface_material_override/0 = SubResource("mat_bush")
+
+[node name="BlobRight" type="MeshInstance3D" parent="."]
+position = Vector3(0.35, 0.28, -0.1)
+mesh = SubResource("mesh_blob_small")
+surface_material_override/0 = SubResource("mat_bush")

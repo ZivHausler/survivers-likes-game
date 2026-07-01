@@ -4,6 +4,8 @@
 
 `ArenaScatter.compute_positions()` is a pure, deterministic placement function that generates XZ positions for arena obstacles using rejection sampling with a seeded `RandomNumberGenerator`.
 
+The instance-side spawner places biome-themed props across four regions (NW Forest, NE City, SW Tech, SE Beach) plus a central plaza hub and road lamps — all deterministic via per-region seeded calls to `compute_positions`.
+
 **File:** `arena/arena_scatter.gd`
 
 **Class:** `class_name ArenaScatter extends Node`
@@ -46,45 +48,64 @@ Uses **rejection sampling**:
 
 This design prevents infinite loops while allowing graceful degradation when the request is geometrically impossible (e.g., fitting 1000 obstacles with tight separation in a small area).
 
-## Usage (Task 8)
+## Region-based Spawner (_ready)
 
-The arena scene will call `compute_positions()` with run-specific parameters (seed from RunState), then instantiate `Obstacle3D` at each returned position.
+`_ready()` builds the arena layout in four phases:
 
-## Single-Variant Tree Selection (defect fix)
+### 1. Plaza Hub (fixed positions)
+- **Fountain** (Obstacle3D, footprint r=1.5) at (0, 0, 16) — named `"Fountain"` so tests can find it.
+- **6 Pillars** (Obstacle3D, r=0.5) in a ring at radius 20: (±20,0,0), (±10,0,±17).
+- **4 Braziers** (Decor, no collision) at radius ~14: (±10, 0, ±10).
 
-The `fir_tree_01_1k.gltf` asset contains **three** sibling tree variants as direct children of
-its root node: `fir_tree_01_a_LOD0`, `fir_tree_01_b_LOD0`, `fir_tree_01_c_LOD0`, each offset
-along X by ~6 units. Attaching the whole instantiated scene to an Obstacle3D would render a
-cluster of 3 trees while only one has a CylinderShape3D collision and NavigationObstacle3D footprint.
+### 2. Road Lamps (Decor, no collision)
+32 `prop_lamp_3d` instances at d ∈ {30, 52, 74, 96} on each of the 4 road arms, offset ±7 to either side of the road centreline.
 
-`_extract_tree_variant(tree_instance)` resolves this: it picks the **first direct child** whose
-name contains `"fir_tree"` (currently `fir_tree_01_a_LOD0`), resets its transform to
-`Transform3D.IDENTITY`, frees the parent (which discards the other siblings), and returns the
-single variant. If no matching child is found a `push_warning` is emitted and the whole instance
-is used as a safe fallback.
+### 3. Regional Props
+Each region calls `compute_positions` twice (obstacle seed and decor seed are offset by 50 for independence), offsets results to the region center, and spawns:
 
-The `tree_model_scale` export (default `0.35`) controls the scale of the extracted tree variant;
-the raw mesh is ~18 units tall and the player capsule is ~2 units, so `0.35` gives ~6 units.
-Rocks continue to use the existing `model_scale` export.
+| Region | Center (x,z) | Extent | Obstacle Props | Decor Props |
+|--------|-------------|--------|----------------|-------------|
+| NW Forest | (-50,-50) | 34 | tree×4, rock×2 | bush×3, flowers×2, tall_grass×2, mushroom×1 |
+| NE City | (50,-50) | 34 | crate×3, barrel×2, dumpster×1, fence×2, barrier×2 | cone×2, holo_sign×1 |
+| SW Tech | (-50,50) | 34 | pylon×3, sci_fi_barrier×2, generator×2 | holo_sign×2 |
+| SE Beach | (50,50) | 34 | rock×3, barrier×2, crate×2, barrel×2, pillar×2 | — |
 
-## Navigation Map Activation
-
+### 4. Navigation Map Activation
 `_ready()` also calls `_activate_navigation(parent)`, which adds a flat
 `NavigationRegion3D` (`ArenaNavRegion`, a single 200×200 quad navmesh, no baking) to
 the arena. This is required because enemy `NavigationAgent3D` RVO avoidance only
 produces a non-zero `safe_velocity` when its navigation map is **active**, and the
 world's default map stays inactive until a region exists. Without it, every enemy's
-`velocity_computed` returned zero and the swarm froze (the enemy-side
-`AVOID_EPSILON_SQ` fallback in `enemy-3d.md` is the second line of defense). Pure
-avoidance needs only an active map — pathfinding-quality navmesh detail is not
-required.
+`velocity_computed` returned zero and the swarm froze. Pure avoidance needs only an
+active map — pathfinding-quality navmesh detail is not required.
+
+## Obstacle vs Decor
+
+- **Obstacle3D wrapper** (collision layer 16 + `NavigationObstacle3D`): trees, rocks, crates,
+  barrels, dumpsters, fences, concrete_barriers, pillars, fountain, pylons, sci_fi_barriers,
+  generators.
+- **Plain visual (no collision)**: flowers, bushes, tall_grass, mushrooms, cones, holo_signs,
+  lamps, braziers.
+
+Footprint data lives in the `_FP` constant dictionary in `arena_scatter.gd`.
+
+## Spawn Clearance
+
+Regional extents of 34 with centers at ±50 mean the closest any regional prop can get
+to the global origin is 50 − 34 = 16 units — well outside the 10-unit spawn disc.
+Plaza hub props are placed at explicit positions all ≥ 12 units from origin
+(pillars at r=20, braziers at r≈14, fountain at z=16).
 
 ## Tests
 
-`test/test_arena_scatter.gd` validates:
-- Determinism (same seed → identical results)
-- Count capped at request
-- All positions within extent and on XZ plane
-- Center clear-radius respected
-- Minimum separation respected
-- Over-dense requests terminate gracefully
+`test/test_arena_scatter.gd` validates the pure `compute_positions` logic:
+- Determinism, count cap, extent bounds, center clear-radius, min separation, over-dense termination.
+
+`test/test_arena_3d_map.gd` validates runtime spawning and obstacle mesh presence.
+
+`test/test_arena_regions.gd` validates the Final City map layout:
+- `Ground/GroundRegions` node and named sub-planes (PlazaCenter, RoadNS, RoadEW, QuadrantNE/SW/SE).
+- All region planes have albedo textures.
+- Fountain centerpiece in Obstacles node.
+- Obstacle count ≥ 20.
+- No obstacle within the 10-unit spawn disc.

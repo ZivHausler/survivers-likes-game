@@ -133,11 +133,39 @@ func setup(data: CharacterData) -> void:
 			_apply_texture(model_inst, data.model_texture)
 		if data.model_tint != Color.WHITE:
 			_apply_tint(model_inst, data.model_tint)
+		# Stylize visual layer (guarded — no-ops if autoload absent or opted out).
+		# Models with their own PBR (data.stylize_model == false) keep their native look.
+		var _s := get_node_or_null("/root/Stylize")
+		if data.stylize_model and _s:
+			_s.apply_to(_model, data.model_tint, VisualPalette.role(&"enemy_secondary"))
 		_anim_player = model_inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		# Strip root motion so locomotion clips animate IN PLACE — this game drives all
+		# movement from input (move_and_slide), so any baked hip translation (e.g. Mixamo
+		# clips not exported "In Place") would otherwise lurch the mesh off-centre.
+		_strip_root_motion(model_inst)
 		if _anim_player and _anim_player.has_animation("idle"):
 			_anim_player.play("idle")
 
 	GameEvents.player_hp_changed.emit(hp, stats.max_hp)
+
+## Route the skeleton's root bone into the AnimationPlayer's root_motion_track so its
+## baked translation is extracted (and here, discarded) instead of posing the mesh.
+## Result: locomotion clips animate in place; the CharacterBody3D's own movement is the
+## only thing that relocates the actor. No-op for models without a Skeleton3D/root bone.
+func _strip_root_motion(model_inst: Node) -> void:
+	if _anim_player == null or model_inst == null:
+		return
+	var sk := model_inst.find_child("Skeleton3D", true, false) as Skeleton3D
+	if sk == null:
+		return
+	var root_bone := -1
+	for i in sk.get_bone_count():
+		if sk.get_bone_parent(i) == -1:
+			root_bone = i
+			break
+	if root_bone == -1:
+		return
+	_anim_player.root_motion_track = NodePath(str(model_inst.get_path_to(sk)) + ":" + sk.get_bone_name(root_bone))
 
 ## Recursively set albedo_texture on all MeshInstance3D surfaces under node.
 ## Duplicates each surface's active material and sets albedo_texture so the skin atlas

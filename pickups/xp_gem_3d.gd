@@ -40,23 +40,23 @@ func setup(value: int, player: Node3D) -> void:
 	body_entered.connect(_on_body_entered)
 
 
-## Maps an XP value to a tier color.
+## Maps an XP value to a tier color sourced from VisualPalette.
 ## Tiers (low value = cool color, high value = hot/rare color):
-##   1–2   → blue   Color(0.3, 0.6, 1.0)   easiest / earliest enemies
-##   3–5   → green  Color(0.3, 1.0, 0.4)
-##   6–15  → yellow Color(1.0, 0.9, 0.2)
-##   16–49 → orange Color(1.0, 0.55, 0.1)
-##   50+   → magenta Color(1.0, 0.2, 0.6)  bosses / late-game
+##   1–2   → pickup_low    blue    easiest / earliest enemies
+##   3–5   → pickup_mid    green
+##   6–15  → pickup_high   yellow
+##   16–49 → pickup_higher orange
+##   50+   → pickup_top    magenta bosses / late-game
 static func tier_color(value: int) -> Color:
 	if value >= 50:
-		return Color(1.0, 0.2, 0.6)   # magenta — boss / late-game
+		return VisualPalette.role(&"pickup_top")     # magenta — boss / late-game
 	if value >= 16:
-		return Color(1.0, 0.55, 0.1)  # orange
+		return VisualPalette.role(&"pickup_higher")  # orange
 	if value >= 6:
-		return Color(1.0, 0.9, 0.2)   # yellow
+		return VisualPalette.role(&"pickup_high")    # yellow
 	if value >= 3:
-		return Color(0.3, 1.0, 0.4)   # green
-	return Color(0.3, 0.6, 1.0)       # blue — lowest tier
+		return VisualPalette.role(&"pickup_mid")     # green
+	return VisualPalette.role(&"pickup_low")         # blue — lowest tier
 
 
 func _process(dt: float) -> void:

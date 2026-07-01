@@ -25,6 +25,10 @@ const KIND_COLOURS: Dictionary = {
 var _system = null
 var _choices: Array = []
 
+## Card hover/focus StyleBoxes — normal matches theme default; hover brightens border.
+var _style_card_normal: StyleBoxFlat = null
+var _style_card_hover:  StyleBoxFlat = null
+
 @onready var _panel: Control = $Panel
 
 @onready var _cards: Array = [
@@ -62,11 +66,45 @@ var _choices: Array = []
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	_panel.visible = false
+
+	# Normal card style — matches the theme's PanelContainer panel StyleBox.
+	_style_card_normal = StyleBoxFlat.new()
+	_style_card_normal.bg_color = Color(0.05, 0.06, 0.10, 0.85)
+	_style_card_normal.border_width_left   = 1
+	_style_card_normal.border_width_top    = 1
+	_style_card_normal.border_width_right  = 1
+	_style_card_normal.border_width_bottom = 1
+	_style_card_normal.border_color = Color(0.3, 0.8, 1.0, 0.6)
+	_style_card_normal.set_corner_radius_all(4)
+	_style_card_normal.content_margin_left   = 8.0
+	_style_card_normal.content_margin_top    = 8.0
+	_style_card_normal.content_margin_right  = 8.0
+	_style_card_normal.content_margin_bottom = 8.0
+
+	# Hover card style — brighter bg, full-opacity cyan 2px border.
+	_style_card_hover = StyleBoxFlat.new()
+	_style_card_hover.bg_color = Color(0.08, 0.14, 0.22, 0.95)
+	_style_card_hover.border_width_left   = 2
+	_style_card_hover.border_width_top    = 2
+	_style_card_hover.border_width_right  = 2
+	_style_card_hover.border_width_bottom = 2
+	_style_card_hover.border_color = Color(0.3, 0.8, 1.0, 1.0)
+	_style_card_hover.set_corner_radius_all(4)
+	_style_card_hover.content_margin_left   = 8.0
+	_style_card_hover.content_margin_top    = 8.0
+	_style_card_hover.content_margin_right  = 8.0
+	_style_card_hover.content_margin_bottom = 8.0
+
 	for i in _cards.size():
 		var idx := i  # capture for lambda
-		(_cards[i] as Control).gui_input.connect(
-			func(event: InputEvent) -> void: _on_card_input(event, idx)
-		)
+		var card := _cards[i] as Control
+		card.gui_input.connect(func(event: InputEvent) -> void: _on_card_input(event, idx))
+		card.mouse_entered.connect(func(): _on_card_hover(idx, true))
+		card.mouse_exited.connect( func(): _on_card_hover(idx, false))
+		card.focus_mode = Control.FOCUS_ALL
+		card.focus_entered.connect(func(): _on_card_hover(idx, true))
+		card.focus_exited.connect( func(): _on_card_hover(idx, false))
+		card.add_theme_stylebox_override("panel", _style_card_normal)
 
 
 ## Called by GameManager when the player levels up.
@@ -77,6 +115,9 @@ func present(system, _player) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	_choices = system.build_choices(rng, 3)
+
+	for i in _cards.size():
+		_on_card_hover(i, false)  # reset any lingering hover state from last presentation
 
 	for i in _cards.size():
 		var card: Control = _cards[i]
@@ -112,10 +153,23 @@ func present(system, _player) -> void:
 	_panel.visible = true
 
 
+func _on_card_hover(index: int, hovered: bool) -> void:
+	if index >= _cards.size():
+		return
+	var card := _cards[index] as Control
+	card.add_theme_stylebox_override("panel",
+		_style_card_hover if hovered else _style_card_normal)
+
+
 func _on_card_input(event: InputEvent, index: int) -> void:
 	if event is InputEventMouseButton \
 			and event.pressed \
 			and event.button_index == MOUSE_BUTTON_LEFT:
+		_pick(index)
+	elif event is InputEventKey \
+			and event.pressed \
+			and not event.echo \
+			and (event.keycode == KEY_ENTER or event.keycode == KEY_SPACE):
 		_pick(index)
 
 

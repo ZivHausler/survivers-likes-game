@@ -10,3 +10,10 @@ export_presets.cfg
 
 # Large model asset — exceeds GitHub's 100MB limit, shared out-of-band
 art/models/nature/fir_tree_01/fir_tree_01.bin
+
+# Visual-iteration scratch (screenshot harness output + logs)
+_shots/
+_shot_log.txt
+_test_log.txt
+_hud_log.txt
+_play_log.txt

@@ -8,8 +8,12 @@ const WIDTH := 1.8      ## Bar width in world units (at unit scale; see _process
 const HEIGHT := 0.16    ## Bar height in world units.
 const FILL_EPSILON := 0.002  ## Fill quad sits slightly in front of the background quad.
 
-const COLOR_BG := Color(0.07, 0.05, 0.05, 1.0)
-const COLOR_FILL := Color(0.9, 0.12, 0.1, 1.0)
+## Background color: deep navy-black for contrast behind the fill.
+const COLOR_BG := Color(0.05, 0.05, 0.07, 1.0)
+## Fill color: resolved at runtime from VisualPalette so it stays in sync with the
+## palette. The const below is only used as a fallback in static/headless contexts
+## where the autoload is not available; _ready() overrides it via _make_quad().
+const COLOR_FILL_FALLBACK := Color(1.0, 0.35, 0.1, 1.0)
 
 var _bg: MeshInstance3D = null
 var _fill_pivot: Node3D = null
@@ -24,7 +28,8 @@ func _ready() -> void:
 	_fill_pivot = Node3D.new()
 	_fill_pivot.position = Vector3(-WIDTH * 0.5, 0.0, FILL_EPSILON)
 	add_child(_fill_pivot)
-	_fill = _make_quad(WIDTH, HEIGHT, COLOR_FILL, 0.0, 1)
+	var fill_color: Color = VisualPalette.role(&"danger") if VisualPalette else COLOR_FILL_FALLBACK
+	_fill = _make_quad(WIDTH, HEIGHT, fill_color, 0.0, 1)
 	_fill.position = Vector3(WIDTH * 0.5, 0.0, 0.0)
 	_fill_pivot.add_child(_fill)
 	set_ratio(1.0)

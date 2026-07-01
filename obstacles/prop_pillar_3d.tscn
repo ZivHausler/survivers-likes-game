@@ -1,0 +1,43 @@
+[gd_scene load_steps=6 format=3 uid="uid://proppillar3d00001"]
+
+[sub_resource type="StandardMaterial3D" id="mat_stone"]
+albedo_color = Color(0.78, 0.75, 0.72, 1)
+roughness = 0.88
+
+[sub_resource type="CylinderMesh" id="mesh_shaft"]
+top_radius = 0.28
+bottom_radius = 0.3
+height = 3.6
+
+[sub_resource type="BoxMesh" id="mesh_base"]
+size = Vector3(0.8, 0.22, 0.8)
+
+[sub_resource type="BoxMesh" id="mesh_capital"]
+size = Vector3(0.78, 0.2, 0.78)
+
+[sub_resource type="CylinderMesh" id="mesh_collar"]
+top_radius = 0.32
+bottom_radius = 0.32
+height = 0.14
+
+[node name="PropPillar3D" type="Node3D"]
+
+[node name="Base" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.11, 0)
+mesh = SubResource("mesh_base")
+surface_material_override/0 = SubResource("mat_stone")
+
+[node name="Shaft" type="MeshInstance3D" parent="."]
+position = Vector3(0, 2.12, 0)
+mesh = SubResource("mesh_shaft")
+surface_material_override/0 = SubResource("mat_stone")
+
+[node name="Collar" type="MeshInstance3D" parent="."]
+position = Vector3(0, 3.95, 0)
+mesh = SubResource("mesh_collar")
+surface_material_override/0 = SubResource("mat_stone")
+
+[node name="Capital" type="MeshInstance3D" parent="."]
+position = Vector3(0, 4.14, 0)
+mesh = SubResource("mesh_capital")
+surface_material_override/0 = SubResource("mat_stone")

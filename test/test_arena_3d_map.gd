@@ -42,14 +42,20 @@ func test_has_four_border_walls_on_obstacle_layer() -> void:
 	root.free()
 
 func test_arena_contains_water() -> void:
-	var root := _instantiate()
+	# Water is now a procedural mesh built by MapBuilder (deferred at _ready).
+	var root: Node = autofree(_instantiate())
+	add_child(root)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var gg := root.get_node_or_null("GeneratedGround")
+	assert_not_null(gg, "GeneratedGround must be built")
 	var found := false
-	for child in root.get_children():
-		if child is Water3D:
-			found = true
-			break
-	assert_true(found, "arena must contain at least one Water3D body")
-	root.free()
+	if gg != null:
+		for child in gg.get_children():
+			if child.name.begins_with("Water"):
+				found = true
+				break
+	assert_true(found, "MapBuilder must build at least one water body mesh")
 
 func test_scatter_spawns_obstacles_at_runtime() -> void:
 	var root: Node = autofree(_instantiate())
@@ -63,17 +69,16 @@ func test_scatter_spawns_obstacles_at_runtime() -> void:
 			count += 1
 	assert_true(count > 0, "scatter must spawn at least one Obstacle3D at runtime")
 
-## Counts nodes whose name contains "fir_tree" and "_LOD0" at any depth inside node.
-## Pre-fix: 3 (all three gltf siblings). Post-fix: exactly 1 (single variant).
-func _count_fir_lod0_in(node: Node) -> int:
+## Count MeshInstance3D nodes at any depth inside node (skipping invisible placeholders).
+func _count_visible_mesh_instances_in(node: Node) -> int:
 	var total := 0
 	for child in node.get_children():
-		if "fir_tree" in child.name and "_LOD0" in child.name:
+		if child is MeshInstance3D and (child as MeshInstance3D).visible:
 			total += 1
-		total += _count_fir_lod0_in(child)
+		total += _count_visible_mesh_instances_in(child)
 	return total
 
-func test_tree_obstacle_has_single_fir_variant() -> void:
+func test_pylon_obstacle_has_mesh_instances() -> void:
 	var root: Node = autofree(_instantiate())
 	add_child(root)
 	await get_tree().process_frame
@@ -81,7 +86,7 @@ func test_tree_obstacle_has_single_fir_variant() -> void:
 	assert_not_null(obstacles, "Obstacles container must exist")
 	if obstacles == null:
 		return
-	# Even-indexed children are trees (ArenaScatter spawns tree when i%2==0).
+	# All obstacle props are wrapped models; confirm any even-indexed one has a visible mesh.
 	var checked := false
 	for i in obstacles.get_child_count():
 		if i % 2 != 0:
@@ -89,9 +94,9 @@ func test_tree_obstacle_has_single_fir_variant() -> void:
 		var child := obstacles.get_child(i)
 		if not (child is Obstacle3D):
 			continue
-		var lod_count := _count_fir_lod0_in(child)
-		assert_eq(lod_count, 1,
-			"tree Obstacle3D must contain exactly ONE fir_tree*_LOD0 variant, got %d" % lod_count)
+		var mesh_count := _count_visible_mesh_instances_in(child)
+		assert_true(mesh_count >= 1,
+			"Obstacle3D at index %d must contain at least one visible MeshInstance3D, got %d" % [i, mesh_count])
 		checked = true
-		break  # one confirmed tree is sufficient to prove the fix
-	assert_true(checked, "at least one tree Obstacle3D must have been inspected")
+		break  # one confirmed obstacle is sufficient
+	assert_true(checked, "at least one even-indexed Obstacle3D must have been inspected")

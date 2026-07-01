@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://propconcrete3d0001"]
+
+[sub_resource type="StandardMaterial3D" id="mat_concrete"]
+albedo_color = Color(0.72, 0.7, 0.68, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="mesh_base"]
+size = Vector3(2.0, 0.55, 0.65)
+
+[sub_resource type="BoxMesh" id="mesh_top"]
+size = Vector3(2.0, 0.48, 0.38)
+
+[node name="PropConcreteBarrier3D" type="Node3D"]
+
+[node name="BarrierBase" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.275, 0)
+mesh = SubResource("mesh_base")
+surface_material_override/0 = SubResource("mat_concrete")
+
+[node name="BarrierTop" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.81, 0)
+mesh = SubResource("mesh_top")
+surface_material_override/0 = SubResource("mat_concrete")
