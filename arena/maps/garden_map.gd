@@ -45,11 +45,11 @@ static var RECIPE := {
 	# Painterly matte StandardMaterial3D defs. tex filled in Task 10 (SDXL); color is the
 	# fallback/tint. y is the base-layer height (tiny steps avoid z-fighting).
 	"zones": {
-		&"grass":       { "color": Color(0.27, 0.47, 0.28), "tex": "", "variants": 3, "y": 0.02, "emissive": false },
-		&"stone_plaza": { "color": Color(0.60, 0.61, 0.66), "tex": "", "variants": 1, "y": 0.03, "emissive": false },
-		&"stone_path":  { "color": Color(0.70, 0.68, 0.62), "tex": "", "variants": 3, "y": 0.03, "emissive": false },
-		&"dirt_path":   { "color": Color(0.42, 0.34, 0.25), "tex": "", "variants": 2, "y": 0.025, "emissive": false },
-		&"flowerbed":   { "color": Color(0.30, 0.24, 0.20), "tex": "", "variants": 2, "y": 0.025, "emissive": false },
+		&"grass":       { "color": Color(0.96, 0.98, 0.96), "tex": "res://art/textures/garden_grass.png", "variants": 3, "y": 0.02, "emissive": false },
+		&"stone_plaza": { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_plaza.png", "variants": 1, "y": 0.03, "emissive": false },
+		&"stone_path":  { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_path.png", "variants": 3, "y": 0.03, "emissive": false },
+		&"dirt_path":   { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_dirt_path.png", "variants": 2, "y": 0.025, "emissive": false },
+		&"flowerbed":   { "color": Color(1.0, 1.0, 1.0), "tex": "res://art/textures/garden_flowerbed.png", "variants": 2, "y": 0.025, "emissive": false },
 	},
 	# Pond inset (world coords). Aligned with the '~' cells (upper-right).
 	"pond": {

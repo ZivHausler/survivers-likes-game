@@ -7,10 +7,9 @@ extends Node3D
 const SHOTS := [
 	{ "name": "overview",  "pos": Vector3(0, 175, 150),  "look": Vector3(0, 0, 10) },
 	{ "name": "plaza",     "pos": Vector3(0, 55, 70),    "look": Vector3(0, 0, 16) },
-	{ "name": "forest_nw", "pos": Vector3(-50, 50, 5),   "look": Vector3(-55, 0, -55) },
-	{ "name": "city_ne",   "pos": Vector3(50, 50, 5),    "look": Vector3(55, 0, -55) },
-	{ "name": "tech_sw",   "pos": Vector3(-50, 50, 5),   "look": Vector3(-55, 0, 55) },
-	{ "name": "beach_se",  "pos": Vector3(50, 50, 105),  "look": Vector3(55, 0, 55) },
+	# Gameplay framing: MOBA cam pitch ~-65 deg, player near origin.
+	{ "name": "gameplay",  "pos": Vector3(0, 30, 14),    "look": Vector3(0, 0, 0) },
+	{ "name": "garden_nw", "pos": Vector3(-40, 40, -20), "look": Vector3(-40, 0, 40) },
 ]
 
 func _ready() -> void:

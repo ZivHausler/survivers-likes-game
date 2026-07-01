@@ -191,6 +191,8 @@ func _material_for(zone: StringName, variant: int, zdef: Dictionary) -> Standard
 	var tex_path: String = zdef.get("tex", "")
 	if tex_path != "" and ResourceLoader.exists(tex_path):
 		m.albedo_texture = load(tex_path)
+		# Angled MOBA camera: anisotropic + mipmaps kill shimmer on distant tiles.
+		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	if zdef.get("emissive", false):
 		m.emission_enabled = true
 		m.emission = base
