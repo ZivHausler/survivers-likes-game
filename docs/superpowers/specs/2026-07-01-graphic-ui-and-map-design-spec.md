@@ -258,3 +258,8 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   contact_shadow, plaza_medallion, path_wear, leaves, moss, crack) — props grounded with
   contact shadows. Fresh visual-only HUD (`ui/hud.*`). Suite 1103/1103. Remaining polish
   (non-blocking): plaza prop density, dirt/stone path contrast, grass tiling repetition.
+- 2026-07-01 — Mirrored the external artkit **asset-creation workflow docs** into this repo
+  at `docs/notes/artkit/` (Hunyuan3D 3D-character track only: `CHARACTER-GUIDE.md`,
+  `WORKFLOW.md`, cyber-anime PROMPTS + STYLE-GUIDE, pipeline design + plan). Docs-only —
+  toolkit code/env/models stay external. See `docs/notes/asset-pipeline.md` +
+  `docs/notes/artkit/README.md` (this-repo deltas). No visual/gameplay change.
