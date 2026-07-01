@@ -1374,8 +1374,10 @@ func _build() -> Node3D:
 	var gs := GardenScatter.new()
 	gs.recipe_path = "res://arena/maps/garden_map.gd"
 	gs.clear_radius = 12.0
-	root.add_child(gs)
+	# Do NOT add gs to root — that fires gs._ready(), which deferred-builds Props + a nav
+	# region that never land under -gexit, orphaning nodes. Build synchronously instead.
 	gs.build_props(root)
+	gs.free()
 	return root
 
 func test_props_tree_structure() -> void:
