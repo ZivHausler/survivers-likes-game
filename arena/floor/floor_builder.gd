@@ -63,6 +63,8 @@ func _build_into_root(root: Node3D) -> void:
 			mi.position = Vector3(wc.x, zdef.get("y", 0.02), wc.z)
 			base_tiles.add_child(mi, true)
 			_lay_trims(trims, grid, recipe["priority"], x, y, wc, cs)
+	_build_decals(decals, recipe.get("decals", []))
+	_build_pond(pond, recipe.get("pond", {}))
 
 ## A flat, upward-facing quad of side `size` centered on its origin (XZ plane).
 func _tile_mesh(size: float) -> ArrayMesh:
@@ -117,6 +119,63 @@ func _get_trim_mat() -> StandardMaterial3D:
 		_trim_mat.albedo_color = Color(0.74, 0.75, 0.78)
 		_trim_mat.roughness = 0.85
 	return _trim_mat
+
+func _build_decals(container: Node3D, entries: Array) -> void:
+	for e in entries:
+		var d := Decal.new()
+		var s: float = e.get("size", 8.0)
+		d.size = Vector3(s, 4.0, s)
+		var p: Vector2 = e["pos"]
+		d.position = Vector3(p.x, 1.0, p.y)  # project downward onto the floor
+		d.rotation.y = e.get("rot", 0.0)
+		var tex_path := "res://art/decals/%s.png" % e["type"]
+		if ResourceLoader.exists(tex_path):
+			d.texture_albedo = load(tex_path)
+		d.name = String(e["type"]).capitalize()
+		container.add_child(d, true)
+
+func _build_pond(container: Node3D, pond: Dictionary) -> void:
+	if pond.is_empty():
+		return
+	var c: Vector2 = pond["center"]
+	var r: float = pond["radius"]
+	# Shoreline rim: a slightly larger bright disc just below the water.
+	var rim := MeshInstance3D.new()
+	rim.mesh = _disc_mesh(r + 1.6, pond.get("rim_color", Color(0.55, 0.9, 1.0)), true)
+	rim.position = Vector3(c.x, 0.0, c.y)
+	rim.name = "PondRim"
+	container.add_child(rim, true)
+	# Water surface.
+	var water := MeshInstance3D.new()
+	water.mesh = _disc_mesh(r, pond.get("water_color", Color(0.14, 0.52, 0.68, 0.85)), true)
+	water.position = Vector3(c.x, pond.get("y", 0.0) + 0.05, c.y)
+	water.name = "PondWater"
+	container.add_child(water, true)
+
+## A flat filled disc of `radius` with a painterly material; emissive if `glow`.
+func _disc_mesh(radius: float, color: Color, glow: bool) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.set_normal(Vector3.UP)
+	var segs := 40
+	for i in segs:
+		var a0 := TAU * float(i) / segs
+		var a1 := TAU * float(i + 1) / segs
+		st.set_uv(Vector2(0.5, 0.5)); st.add_vertex(Vector3.ZERO)
+		st.set_uv(Vector2(0, 0)); st.add_vertex(Vector3(cos(a0) * radius, 0, sin(a0) * radius))
+		st.set_uv(Vector2(1, 0)); st.add_vertex(Vector3(cos(a1) * radius, 0, sin(a1) * radius))
+	var mesh := st.commit()
+	var m := StandardMaterial3D.new()
+	m.albedo_color = color
+	m.roughness = 0.3
+	if color.a < 1.0:
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	if glow:
+		m.emission_enabled = true
+		m.emission = color
+		m.emission_energy_multiplier = 0.5
+	mesh.surface_set_material(0, m)
+	return mesh
 
 func _material_for(zone: StringName, variant: int, zdef: Dictionary) -> StandardMaterial3D:
 	var key := "%s#%d" % [zone, variant]

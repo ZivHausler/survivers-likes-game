@@ -66,3 +66,15 @@ func test_trims_have_surface_material() -> void:
 	var first := trims.get_child(0) as MeshInstance3D
 	assert_not_null(first, "trim is a MeshInstance3D")
 	assert_not_null(first.mesh.surface_get_material(0), "trim mesh surface has a material")
+
+func test_authored_decals_placed() -> void:
+	var root := _build()
+	var decals := root.get_node("GardenFloor/Decals")
+	var recipe: Dictionary = load("res://arena/maps/garden_map.gd").RECIPE
+	assert_eq(decals.get_child_count(), (recipe["decals"] as Array).size(),
+		"one Decal node per authored decal entry")
+
+func test_pond_surface_and_rim_built() -> void:
+	var root := _build()
+	var pond := root.get_node("GardenFloor/Pond")
+	assert_true(pond.get_child_count() >= 2, "pond must have a water surface + a shoreline rim")
