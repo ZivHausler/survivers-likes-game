@@ -1,0 +1,47 @@
+[gd_scene load_steps=7 format=3 uid="uid://propdumpster3d001"]
+
+[sub_resource type="StandardMaterial3D" id="mat_body"]
+albedo_color = Color(0.1, 0.28, 0.22, 1)
+roughness = 0.8
+metallic = 0.1
+
+[sub_resource type="StandardMaterial3D" id="mat_lid"]
+albedo_color = Color(0.12, 0.32, 0.25, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="mat_metal"]
+albedo_color = Color(0.22, 0.22, 0.22, 1)
+roughness = 0.55
+metallic = 0.35
+
+[sub_resource type="BoxMesh" id="mesh_body"]
+size = Vector3(2.0, 1.1, 0.9)
+
+[sub_resource type="BoxMesh" id="mesh_lid"]
+size = Vector3(2.04, 0.12, 0.94)
+
+[sub_resource type="BoxMesh" id="mesh_strip"]
+size = Vector3(0.12, 1.12, 0.94)
+
+[node name="PropDumpster3D" type="Node3D"]
+
+[node name="Body" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.55, 0)
+mesh = SubResource("mesh_body")
+surface_material_override/0 = SubResource("mat_body")
+
+[node name="Lid" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.16, -0.1)
+rotation = Vector3(-0.22, 0, 0)
+mesh = SubResource("mesh_lid")
+surface_material_override/0 = SubResource("mat_lid")
+
+[node name="StripLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-0.82, 0.55, 0)
+mesh = SubResource("mesh_strip")
+surface_material_override/0 = SubResource("mat_metal")
+
+[node name="StripRight" type="MeshInstance3D" parent="."]
+position = Vector3(0.82, 0.55, 0)
+mesh = SubResource("mesh_strip")
+surface_material_override/0 = SubResource("mat_metal")

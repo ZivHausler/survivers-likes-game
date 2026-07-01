@@ -31,7 +31,7 @@ var _hit_cd: Dictionary = {}
 func _init() -> void:
 	base_cooldown = 2.5
 	vfx_id = &"orbit_cast"
-	vfx_color = Color(1.0, 0.8, 0.2)  # gold/orbit glow
+	vfx_color = VisualPalette.role(&"player_secondary")  # palette: gold/orbit glow
 
 func _ready() -> void:
 	super()

@@ -1,0 +1,36 @@
+[gd_scene load_steps=5 format=3 uid="uid://proprock3d00001"]
+
+[sub_resource type="StandardMaterial3D" id="mat_stone"]
+albedo_color = Color(0.55, 0.52, 0.5, 1)
+roughness = 0.9
+
+[sub_resource type="SphereMesh" id="mesh_rock_large"]
+radius = 0.5
+height = 0.9
+
+[sub_resource type="SphereMesh" id="mesh_rock_mid"]
+radius = 0.32
+height = 0.6
+
+[sub_resource type="BoxMesh" id="mesh_rock_flat"]
+size = Vector3(0.55, 0.28, 0.45)
+
+[node name="PropRock3D" type="Node3D"]
+
+[node name="RockA" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.45, 0)
+rotation = Vector3(0, 0.4, 0)
+mesh = SubResource("mesh_rock_large")
+surface_material_override/0 = SubResource("mat_stone")
+
+[node name="RockB" type="MeshInstance3D" parent="."]
+position = Vector3(0.52, 0.28, 0.15)
+rotation = Vector3(0.15, 1.1, 0)
+mesh = SubResource("mesh_rock_mid")
+surface_material_override/0 = SubResource("mat_stone")
+
+[node name="RockC" type="MeshInstance3D" parent="."]
+position = Vector3(-0.42, 0.14, 0.22)
+rotation = Vector3(0, -0.7, 0.15)
+mesh = SubResource("mesh_rock_flat")
+surface_material_override/0 = SubResource("mat_stone")

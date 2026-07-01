@@ -1,21 +1,16 @@
-[gd_scene load_steps=15 format=3 uid="uid://bq6n3f8p5xm2kw"]
+[gd_scene load_steps=13 format=3 uid="uid://bq6n3f8p5xm2kw"]
 
-[ext_resource type="PackedScene" uid="uid://cw4t3rpond3dv1" path="res://obstacles/water_3d.tscn" id="5_water"]
-[ext_resource type="Script" uid="uid://d3yhcfccvtnu2" path="res://arena/arena_scatter.gd" id="6_scatter"]
-[ext_resource type="Texture2D" uid="uid://x77lbs8pj4p2" path="res://art/textures/grass_diff_2k.jpg" id="1_grass_diff"]
-[ext_resource type="Texture2D" uid="uid://c6322ugkte1ja" path="res://art/textures/grass_nor_2k.jpg" id="2_grass_nor"]
-[ext_resource type="Texture2D" uid="uid://blxfo7uylgbta" path="res://art/textures/grass_rough_2k.jpg" id="3_grass_rough"]
+[ext_resource type="Script" uid="uid://rdgulrfaet1h" path="res://arena/floor/floor_builder.gd" id="1_floor_builder"]
+[ext_resource type="Script" uid="uid://dvyahd00dhjb" path="res://arena/floor/prop_scatter.gd" id="2_prop_scatter"]
 [ext_resource type="Texture2D" uid="uid://cnrrqlqe5qn7x" path="res://art/hdri/sky_2k.hdr" id="4_sky_hdri"]
+[ext_resource type="Texture2D" uid="uid://6xrubff53a8t" path="res://art/textures/final_city_grass_albedo.png" id="7_grass"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
-albedo_color = Color(1, 1, 1, 1)
-albedo_texture = ExtResource("1_grass_diff")
-normal_enabled = true
-normal_texture = ExtResource("2_grass_nor")
-roughness = 1.0
-roughness_texture = ExtResource("3_grass_rough")
+albedo_color = Color(0.12, 0.14, 0.12, 1)
+albedo_texture = ExtResource("7_grass")
+roughness = 0.85
 metallic = 0.0
-uv1_scale = Vector3(40, 40, 40)
+uv1_scale = Vector3(50, 50, 50)
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
 size = Vector2(200, 200)
@@ -33,6 +28,16 @@ sky_material = SubResource("PanoramaSkyMaterial_sky")
 background_mode = 2
 sky = SubResource("Sky_main")
 ambient_light_source = 3
+ambient_light_energy = 0.22
+tonemap_mode = 2
+ssao_enabled = true
+ssao_radius = 2.0
+ssao_intensity = 4.5
+ssao_power = 2.5
+glow_enabled = true
+glow_intensity = 0.6
+glow_bloom = 0.15
+glow_hdr_threshold = 1.1
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall_ns"]
 size = Vector3(200, 10, 2)
@@ -54,10 +59,17 @@ surface_material_override/0 = SubResource("StandardMaterial3D_ground")
 position = Vector3(0, -0.05, 0)
 shape = SubResource("BoxShape3D_floor")
 
+[node name="FloorBuilder" type="Node" parent="."]
+script = ExtResource("1_floor_builder")
+recipe_path = "res://arena/maps/garden_map.gd"
+
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.766044, 0.642788, 0, -0.642788, 0.766044, 0, 10, 0)
-light_energy = 1.2
+transform = Transform3D(0.866025, 0, 0.5, 0.353553, 0.707107, -0.612372, -0.353553, 0.707107, 0.612372, 0, 10, 0)
+light_color = Color(1, 0.95, 0.86, 1)
+light_energy = 1.5
 shadow_enabled = true
+shadow_blur = 0.7
+directional_shadow_max_distance = 320.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
@@ -96,11 +108,7 @@ collision_mask = 0
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Borders/WallWest"]
 shape = SubResource("BoxShape3D_wall_ew")
 
-[node name="WaterPond1" parent="." instance=ExtResource("5_water")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 0, -30)
-
-[node name="WaterPond2" parent="." instance=ExtResource("5_water")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0, 45)
-
-[node name="ObstacleSpawner" type="Node" parent="."]
-script = ExtResource("6_scatter")
+[node name="GardenScatter" type="Node" parent="."]
+script = ExtResource("2_prop_scatter")
+recipe_path = "res://arena/maps/garden_map.gd"
+clear_radius = 12.0

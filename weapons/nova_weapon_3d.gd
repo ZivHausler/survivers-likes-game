@@ -19,7 +19,7 @@ var charm_duration: float = 0.0
 func _init() -> void:
 	base_cooldown = 2.5
 	vfx_id = &"nova_cast"
-	vfx_color = Color(0.5, 0.8, 1.0)  # cyan/pulse blue
+	vfx_color = VisualPalette.role(&"player_primary")  # palette: cyan/pulse blue
 
 func _ready() -> void:
 	super()

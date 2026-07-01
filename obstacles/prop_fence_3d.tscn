@@ -1,0 +1,33 @@
+[gd_scene load_steps=4 format=3 uid="uid://propfence3d001"]
+
+[sub_resource type="StandardMaterial3D" id="mat_fence"]
+albedo_color = Color(0.28, 0.2, 0.12, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="mesh_post"]
+size = Vector3(0.1, 1.2, 0.1)
+
+[sub_resource type="BoxMesh" id="mesh_rail"]
+size = Vector3(3.0, 0.07, 0.07)
+
+[node name="PropFence3D" type="Node3D"]
+
+[node name="PostLeft" type="MeshInstance3D" parent="."]
+position = Vector3(-1.45, 0.6, 0)
+mesh = SubResource("mesh_post")
+surface_material_override/0 = SubResource("mat_fence")
+
+[node name="PostRight" type="MeshInstance3D" parent="."]
+position = Vector3(1.45, 0.6, 0)
+mesh = SubResource("mesh_post")
+surface_material_override/0 = SubResource("mat_fence")
+
+[node name="RailTop" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.05, 0)
+mesh = SubResource("mesh_rail")
+surface_material_override/0 = SubResource("mat_fence")
+
+[node name="RailBottom" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.3, 0)
+mesh = SubResource("mesh_rail")
+surface_material_override/0 = SubResource("mat_fence")

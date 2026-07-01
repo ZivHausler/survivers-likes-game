@@ -1,0 +1,44 @@
+[gd_scene load_steps=6 format=3]
+
+[sub_resource type="BoxMesh" id="mesh_seat"]
+size = Vector3(1.2, 0.09, 0.45)
+
+[sub_resource type="BoxMesh" id="mesh_leg"]
+size = Vector3(0.1, 0.44, 0.42)
+
+[sub_resource type="BoxMesh" id="mesh_seam"]
+size = Vector3(1.22, 0.025, 0.46)
+
+[sub_resource type="StandardMaterial3D" id="mat_gray"]
+albedo_color = Color(0.34, 0.38, 0.44, 1)
+roughness = 0.6
+metallic = 0.35
+
+[sub_resource type="StandardMaterial3D" id="mat_cyan"]
+albedo_color = Color(0.3, 0.85, 1.0, 1)
+emission_enabled = true
+emission = Color(0.3, 0.85, 1.0, 1)
+emission_energy_multiplier = 1.2
+roughness = 0.3
+
+[node name="GardenBench" type="Node3D"]
+
+[node name="Seat" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.485, 0)
+mesh = SubResource("mesh_seat")
+surface_material_override/0 = SubResource("mat_gray")
+
+[node name="LegL" type="MeshInstance3D" parent="."]
+position = Vector3(-0.47, 0.22, 0)
+mesh = SubResource("mesh_leg")
+surface_material_override/0 = SubResource("mat_gray")
+
+[node name="LegR" type="MeshInstance3D" parent="."]
+position = Vector3(0.47, 0.22, 0)
+mesh = SubResource("mesh_leg")
+surface_material_override/0 = SubResource("mat_gray")
+
+[node name="Seam" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.44, 0)
+mesh = SubResource("mesh_seam")
+surface_material_override/0 = SubResource("mat_cyan")

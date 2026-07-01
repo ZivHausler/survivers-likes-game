@@ -1,0 +1,73 @@
+[gd_scene load_steps=9 format=3]
+
+[sub_resource type="CylinderMesh" id="m_basin"]
+top_radius = 1.7
+bottom_radius = 1.85
+height = 0.5
+
+[sub_resource type="CylinderMesh" id="m_basin_water"]
+top_radius = 1.5
+bottom_radius = 1.5
+height = 0.08
+
+[sub_resource type="CylinderMesh" id="m_col"]
+top_radius = 0.28
+bottom_radius = 0.36
+height = 1.1
+
+[sub_resource type="CylinderMesh" id="m_bowl"]
+top_radius = 0.85
+bottom_radius = 0.5
+height = 0.28
+
+[sub_resource type="CylinderMesh" id="m_bowl_water"]
+top_radius = 0.7
+bottom_radius = 0.7
+height = 0.06
+
+[sub_resource type="SphereMesh" id="m_finial"]
+radius = 0.18
+height = 0.36
+
+[sub_resource type="StandardMaterial3D" id="mat_stone"]
+albedo_color = Color(0.7, 0.69, 0.64, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="mat_water"]
+albedo_color = Color(0.3, 0.8, 1.0, 1)
+emission_enabled = true
+emission = Color(0.35, 0.85, 1.0, 1)
+emission_energy_multiplier = 2.0
+roughness = 0.2
+
+[node name="GardenFountain" type="Node3D"]
+
+[node name="Basin" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.25, 0)
+mesh = SubResource("m_basin")
+surface_material_override/0 = SubResource("mat_stone")
+
+[node name="BasinWater" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.42, 0)
+mesh = SubResource("m_basin_water")
+surface_material_override/0 = SubResource("mat_water")
+
+[node name="Column" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.0, 0)
+mesh = SubResource("m_col")
+surface_material_override/0 = SubResource("mat_stone")
+
+[node name="Bowl" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.65, 0)
+mesh = SubResource("m_bowl")
+surface_material_override/0 = SubResource("mat_stone")
+
+[node name="BowlWater" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.82, 0)
+mesh = SubResource("m_bowl_water")
+surface_material_override/0 = SubResource("mat_water")
+
+[node name="Finial" type="MeshInstance3D" parent="."]
+position = Vector3(0, 2.05, 0)
+mesh = SubResource("m_finial")
+surface_material_override/0 = SubResource("mat_water")
