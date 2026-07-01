@@ -36,6 +36,12 @@ pipeline (`artkit/generation/*`), GUT tests.
   `2026-06-30-lol-swarm-visual-identity-design.md`: *stylized 3D cyber-anime bullet-heaven,
   painterly League materials (baked-AO look, color-blocked, low texture noise, matte with select
   glowing tech accents), neon cyan/magenta reserved for accents & VFX.* See §0.
+- **Technical/quality standards (binding).** All rendering, asset-pipeline, camera, style-consistency
+  and environment-quality rules in `docs/notes/visual-technical-standards.md` apply: stylized 3D only
+  (no pixel art / low-res / blurry AI textures); 1024–2048px textures for hero assets; MSAA + mipmaps
+  + anisotropic filtering; controlled bloom on emissive only; AO/contact shadows; AI meshes cleaned in
+  Blender before import; shared material families / bevel / glow across zones; assets judged from the
+  actual gameplay-camera distance.
 
 ## 0. Visual identity alignment (north-star)
 
@@ -276,3 +282,6 @@ HUD                  (CanvasLayer, separate)
 - 2026-07-01 — Added **§0.1 Zone identities** (user-authored): Central Hub, Sci-fi/Final City (main),
   Garden/Park (vertical slice, ≥5 ground materials + full prop/palette/layout detail), Industrial,
   Temple/Fantasy, Ruined/Wild — plus the global cross-zone art-DNA rule.
+- 2026-07-01 — Added binding **Technical/quality standards** constraint referencing
+  `docs/notes/visual-technical-standards.md` (rendering, AA/mipmaps/aniso, AI→Blender pipeline,
+  style consistency, gameplay-camera judging).
