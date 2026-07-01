@@ -39,8 +39,12 @@ pipeline (`artkit/generation/*`), GUT tests.
 
 ## 0. Visual identity alignment (north-star)
 
-This overhaul must read as **"Final City" cyber-anime sci-fi**, not generic fantasy. The identity
-doc and this brief pull in slightly different directions; the resolution:
+**Final City cyber-anime sci-fi is the MAIN / central identity** (the hub + sci-fi district anchor
+the world). Other districts MAY carry their own identity (per user direction, detailed per zone
+below) — but ALL districts share the same discipline: combat-board readability, painterly League
+materials, controlled lower-than-VFX saturation, and consistent lighting, so the map reads as one
+game. Per-zone identities are listed in §0.1 and filled in with the user. The resolution of the
+"rich detail vs controlled combat-board" tension:
 
 - **Ground is a readable combat stage, not the star.** Achieve the brief's "rich floor detail"
   through **value, pattern, trims, seams and decals** — NOT loud color. The environment stays
@@ -59,6 +63,87 @@ doc and this brief pull in slightly different directions; the resolution:
   borders (identity §12).
 - **Camera/composition:** top-down slightly-iso tactical field; combat center open; big readable
   shapes first, small detail second (identity §9).
+
+### 0.1 Zone identities (authoritative — user-authored)
+
+**Global rule across all zones:** same base art DNA — stylized 3D, readable top-down silhouettes,
+medium-detail props, clean ground shapes, controlled neon accents, strong color separation, no
+photoreal noise, no random prop scattering, gameplay-first layout. Zones feel different but belong to
+the same game world. Every district branches out from the Central Hub.
+
+**1. Central Hub — connective anchor.** Clean sci-fi civic plaza; heroic, readable, slightly
+ceremonial. Floor: circular plaza tiles, radial rings, medallion shapes, glowing cyan inlays, subtle
+concentric patterns, LARGE tile shapes. Landmark: central power-core / energy fountain / holographic
+reactor — tall & iconic but not blocking readability. Props: low sci-fi benches, small terminals,
+glowing pylons, hologram projectors, circular vents, energy conduits leading into each district.
+Colors: neutral gray stone/metal, cyan energy, small magenta highlights, white-blue glow.
+Do: symmetrical, clean, iconic, radial composition. Avoid: random props, noisy floor, too many
+vertical objects near center.
+
+**2. Sci-fi / Final City — MAIN zone (north-star).** Cyber-anime city combat arena: sleek, polished,
+futuristic, saturated, arcade-readable. Floor: metallic panels, asphalt roads, sci-fi pavement, road
+markings, glowing lane strips, circular landing-pad motifs, tech seams, modular hex/panel shapes.
+Architecture: circular sci-fi structures, curved walls, clean barriers, elevated platforms, energy
+gates, neon signage, holo-panels. Props: traffic bollards, energy barriers, street terminals, sci-fi
+crates, cable channels, antenna boxes, glowing vents, small drones / inactive turrets. Colors: dark
+blue-gray, clean concrete gray, cyan, magenta, purple, white road markings. Do: large readable
+shapes, clean modular tiling, strong neon accents, clear lanes. Avoid: grime, realistic clutter, thin
+tiny props, cyberpunk darkness that hurts readability.
+
+**3. Garden / Park — VERTICAL SLICE (build first; must prove the full standard).** A **neon
+cyber-park**: natural garden forms integrated into a futuristic city — a *designed sci-fi public park*,
+not a forest. Formula: soft organic nature + hard sci-fi structure + neon energy accents.
+- **≥5 ground materials:** (a) **park path** — smooth curved pale-stone/warm-gray pavement w/ subtle
+  tile seams; (b) **grass** — stylized soft grass in BROAD shapes (not tiny-texture everywhere),
+  saturated but not noisy; (c) **cyber-tile** — hexagonal/circular sci-fi tiles embedded in the park;
+  (d) **water / energy stream** — shallow cyan glowing canal / fountain runoff / neon-underlit water;
+  (e) **flower beds** — controlled patches of pink/purple/blue/white plants in clean shapes.
+- **Layout (architect-planned, not scattered):** curved paths, circular garden islands, ring planters,
+  small bridge over a neon stream, central mini-fountain, garden islands linked by sci-fi pavement,
+  raised planters with metal rims, glowing irrigation lines.
+- **Props (medium density, deliberate):** sci-fi benches, glowing planters, holographic flower
+  displays, cyber-lamp posts, trimmed bushes, small ornamental trees, curved metal fences, energy
+  pylons, park signs, water fountains, flower beds, maintenance drones, abstract sculptures/small
+  statues, glass biodome fragments, bioluminescent plants/mushrooms.
+- **Vegetation:** stylized & CHUNKY — rounded bushes, simplified tree canopies, clean leaf clusters,
+  flower patches as readable color groups, glow-plant accents (not everywhere), large silhouettes (no
+  thin realistic branches).
+- **Palette:** base emerald green, teal grass shadow, warm gray pavement, dark blue-gray metal;
+  accents cyan glow, magenta/violet flowers, soft yellow lamps, white-blue water glow. Brighter &
+  calmer than Industrial, still sci-fi.
+- **Lighting:** soft daylight OR soft night-with-neon; cyan underglow on water/planters/path seams;
+  subtle bloom, keep enemy/projectile readability.
+- Do: clear curved paths; intentional prop clusters; mix nature + sci-fi; glowing water channels;
+  flower beds as color accents; every floor region feels designed. Avoid: scattered trees; flat green
+  with no tile variation; too many tiny plants; realistic forest; props blocking movement; overusing
+  neon until everything glows.
+
+**4. Industrial — dark heavy contrast zone.** Sci-fi factory / power plant / maintenance district;
+mechanical, dangerous, dense, still readable. Floor: dark metal plates, grated floors, concrete slabs,
+oil-stained panels, yellow-black hazard stripes, red warning zones, cable trenches. Architecture:
+large machines, generators, cooling towers, vents, conveyors, metal walls, pipe networks, pressure
+doors. Props: crates, barrels, pipes, valves, vents, turbines, warning lights, control panels,
+forklifts, mechanical arms, cable coils. Colors: dark gray, black metal, rusty orange, warning yellow,
+red lights, cyan machine glow. Do: strong rectangular shapes, heavy props, hazard markings, steam/
+smoke VFX. Avoid: too dark, too noisy, realistic-grimy — readability first.
+
+**5. Temple / Fantasy — ancient ceremonial contrast zone.** Ancient fantasy shrine upgraded with
+subtle energy/magic accents. Floor: large stone tiles, cracked slabs, circular rune patterns,
+gold-trimmed borders, mosaic medallions, ceremonial stairs. Architecture: shrines, statues, pillars,
+arches, broken walls, banners, altar platforms, golden gates. Props: braziers, candles, banners, stone
+vases, offering bowls, floating runes, old statues, broken columns, magical crystals. Colors:
+sandstone, ivory, muted brown, gold trim, deep red banners, cyan/violet magic glow. Do: symmetry,
+sacred geometry, repeated motifs, large readable stone forms. Avoid: overly medieval realism — keep
+stylized, clean, top-down readable.
+
+**6. Ruined / Wild — chaotic natural reclamation zone.** Civilization collapsed; nature/alien energy
+reclaims the map. Floor: dirt paths, cracked pavement, grass overgrowth, root-covered ground, rocky
+patches, broken tile fragments, crystal-corrupted zones. Architecture: collapsed walls, broken roads,
+ruined pillars, half-buried sci-fi panels, destroyed bridges, old machines under vines. Props: rocks,
+roots, logs, vines, crystal clusters, broken crates, ruined lamps, dead trees, glowing spores, fallen
+signs. Colors: earth brown, moss green, dark stone, muted gray, crystal cyan/violet, small magenta
+corruption accents. Do: asymmetry, broken shapes, roots crossing old tiles, glowing crystals as focal
+points. Avoid: generic forest — must connect to the sci-fi world via broken city remnants.
 
 ## 1. Floor — modular 3D tile system (new)
 
@@ -182,3 +267,12 @@ HUD                  (CanvasLayer, separate)
 - New gameplay systems (coins, waves, dash). Alien enemy/boss meshes (separate phase).
 - The paused/parked ability-icon roster batch (54 prompts already drafted) — revisit if the new HUD
   keeps per-skill icons.
+
+## Change log
+
+- 2026-07-01 — Initial spec: scope (Garden vertical slice), architecture, global constraints, floor
+  tile system, prop clustering, visual-only HUD, lighting, scene hierarchy, QA loop, testing.
+- 2026-07-01 — Aligned with LoL Swarm visual-identity north-star (added §0 identity alignment).
+- 2026-07-01 — Added **§0.1 Zone identities** (user-authored): Central Hub, Sci-fi/Final City (main),
+  Garden/Park (vertical slice, ≥5 ground materials + full prop/palette/layout detail), Industrial,
+  Temple/Fantasy, Ruined/Wild — plus the global cross-zone art-DNA rule.
