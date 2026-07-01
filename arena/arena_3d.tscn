@@ -28,12 +28,12 @@ sky_material = SubResource("PanoramaSkyMaterial_sky")
 background_mode = 2
 sky = SubResource("Sky_main")
 ambient_light_source = 3
-ambient_light_energy = 0.32
+ambient_light_energy = 0.22
 tonemap_mode = 2
 ssao_enabled = true
-ssao_radius = 1.6
-ssao_intensity = 3.0
-ssao_power = 2.0
+ssao_radius = 2.0
+ssao_intensity = 4.5
+ssao_power = 2.5
 glow_enabled = true
 glow_intensity = 0.6
 glow_bloom = 0.15
@@ -65,10 +65,10 @@ recipe_path = "res://arena/maps/garden_map.gd"
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.866025, 0, 0.5, 0.353553, 0.707107, -0.612372, -0.353553, 0.707107, 0.612372, 0, 10, 0)
-light_color = Color(1, 0.96, 0.9, 1)
-light_energy = 1.25
+light_color = Color(1, 0.95, 0.86, 1)
+light_energy = 1.5
 shadow_enabled = true
-shadow_blur = 1.0
+shadow_blur = 0.7
 directional_shadow_max_distance = 320.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]

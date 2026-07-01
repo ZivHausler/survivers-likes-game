@@ -13,6 +13,8 @@ const TileVariants = preload("res://arena/floor/tile_variants.gd")
 var _mat_cache: Dictionary = {}  # "zone#variant" -> StandardMaterial3D
 var _skirt_m: StandardMaterial3D = null
 var _curb_m: StandardMaterial3D = null
+var _tuft_m: ArrayMesh = null
+var _tuft_material: StandardMaterial3D = null
 
 ## Seam offsets/rotations: N,E,S,W -> edge strip along that side of the cell.
 const _EDGE_DIR := [Vector3(0, 0, -1), Vector3(1, 0, 0), Vector3(0, 0, 1), Vector3(-1, 0, 0)]
@@ -47,11 +49,13 @@ func _build_into_root(root: Node3D) -> void:
 	var decals := Node3D.new(); decals.name = "Decals"
 	var pond := Node3D.new(); pond.name = "Pond"
 	var centre := Node3D.new(); centre.name = "Centerpiece"
+	var seams := Node3D.new(); seams.name = "SeamScatter"
 	root.add_child(base_tiles)
 	root.add_child(trims)
 	root.add_child(decals)
 	root.add_child(pond)
 	root.add_child(centre)
+	root.add_child(seams)
 
 	var cs: float = recipe["cell_size"]
 	var plaza_sum := Vector3.ZERO
@@ -71,6 +75,7 @@ func _build_into_root(root: Node3D) -> void:
 			mi.position = Vector3(wc.x, zdef.get("y", 0.02), wc.z)
 			base_tiles.add_child(mi, true)
 			_lay_curbs(trims, grid, zone_y, z, x, y, wc, cs)
+			_scatter_seam(seams, grid, zone_y, z, x, y, wc, cs)
 			if z == &"stone_plaza":
 				plaza_sum += wc
 				plaza_n += 1
@@ -149,22 +154,26 @@ func _curb_mat() -> StandardMaterial3D:
 ## steps, keeps the combat top open) with a glowing emissive medallion inlay. Replaces
 ## the flat pasted-on decal ring so the arena has real, lit visual hierarchy at center.
 func _build_centerpiece(container: Node3D, cx: float, cz: float, top_y: float) -> void:
-	# Outer step (wide, low) then inner step — reads as a designed dais, not a slab.
+	# Three tall concentric steps -> reads as a real raised dais at every camera distance.
 	var s0 := MeshInstance3D.new()
-	s0.mesh = _cyl_mesh(18.0, 0.22, _curb_mat())
-	s0.position = Vector3(cx, top_y + 0.11, cz)
+	s0.mesh = _cyl_mesh(20.0, 0.34, _curb_mat())
+	s0.position = Vector3(cx, top_y + 0.17, cz)
 	container.add_child(s0, true)
 	var s1 := MeshInstance3D.new()
-	s1.mesh = _cyl_mesh(15.5, 0.22, _skirt_mat())
-	s1.position = Vector3(cx, top_y + 0.33, cz)
+	s1.mesh = _cyl_mesh(16.5, 0.34, _skirt_mat())
+	s1.position = Vector3(cx, top_y + 0.51, cz)
 	container.add_child(s1, true)
+	var s2 := MeshInstance3D.new()
+	s2.mesh = _cyl_mesh(13.5, 0.34, _curb_mat())
+	s2.position = Vector3(cx, top_y + 0.85, cz)
+	container.add_child(s2, true)
 	# Glowing medallion inlay on the dais top (square texture -> flat quad for clean UVs).
 	if ResourceLoader.exists("res://art/decals/plaza_medallion.png"):
 		var med := MeshInstance3D.new()
-		var mesh := _tile_mesh(26.0)
+		var mesh := _tile_mesh(24.0)
 		mesh.surface_set_material(0, _medallion_mat())
 		med.mesh = mesh
-		med.position = Vector3(cx, top_y + 0.45, cz)
+		med.position = Vector3(cx, top_y + 1.02, cz)
 		container.add_child(med, true)
 
 func _cyl_mesh(radius: float, height: float, mat: StandardMaterial3D) -> ArrayMesh:
@@ -178,6 +187,69 @@ func _cyl_mesh(radius: float, height: float, mat: StandardMaterial3D) -> ArrayMe
 	am.surface_set_material(0, mat)
 	return am
 
+## Break the hard straight border where soft ground (grass/dirt/flowerbed) meets a raised
+## hard zone: sprinkle small grass tufts along the seam, jittered + overhanging, so the
+## eye reads an organic edge instead of a ruler line. Deterministic (hash by cell+dir).
+const _SOFT := { &"grass": true, &"flowerbed": true, &"dirt_path": true }
+
+func _scatter_seam(seams: Node3D, grid: ZoneGrid, zone_y: Dictionary,
+		this_zone: StringName, x: int, y: int, wc: Vector3, cs: float) -> void:
+	if not _SOFT.has(this_zone):
+		return  # scatter from the soft side onto the seam
+	var gy: float = zone_y.get(this_zone, 0.02)
+	for i in 4:
+		var d: Vector3 = _EDGE_DIR[i]
+		var nz := grid.zone_at(x + int(d.x), y + int(d.z))
+		if nz == this_zone or _SOFT.has(nz) or nz == &"void":
+			continue  # only soft -> hard(raised) boundaries
+		var tang := Vector3(d.z, 0.0, -d.x)  # along the edge
+		var mid := Vector3(wc.x + d.x * cs * 0.5, gy, wc.z + d.z * cs * 0.5)
+		for k in 4:
+			var h := _hash01(x * 91 + y * 47 + i * 13 + k * 7)
+			var h2 := _hash01(x * 31 + y * 17 + i * 5 + k * 101)
+			var along := (float(k) / 3.0 - 0.5) * cs + (h - 0.5) * cs * 0.22
+			var pos := mid + tang * along + d * ((h2 - 0.4) * cs * 0.12)
+			var tuft := MeshInstance3D.new()
+			tuft.mesh = _tuft_mesh()
+			var s := 0.7 + h2 * 0.8
+			tuft.scale = Vector3(s, s * (0.8 + h * 0.6), s)
+			tuft.rotation.y = h * TAU
+			tuft.position = pos
+			seams.add_child(tuft, true)
+
+func _hash01(n: int) -> float:
+	var h := (n * 73856093) ^ (n * 19349663)
+	return float(absi(h) % 10000) / 10000.0
+
+func _tuft_mesh() -> ArrayMesh:
+	if _tuft_m != null:
+		return _tuft_m
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# three crossed blades (thin tapered quads) -> a small grass clump
+	var blades: Array[float] = [0.0, 0.66, 1.33]
+	for b in blades:
+		var a: float = b * PI
+		var dx: float = cos(a) * 0.14
+		var dz: float = sin(a) * 0.14
+		var tip := Vector3(dx * 0.4, 0.55, dz * 0.4)
+		var p0 := Vector3(-dz * 0.08, 0.0, dx * 0.08)
+		var p1 := Vector3(dz * 0.08, 0.0, -dx * 0.08)
+		st.set_normal(Vector3.UP)
+		st.add_vertex(p0); st.add_vertex(p1); st.add_vertex(tip)
+		st.add_vertex(p1); st.add_vertex(p0); st.add_vertex(tip)
+	_tuft_m = st.commit()
+	_tuft_m.surface_set_material(0, _tuft_mat())
+	return _tuft_m
+
+func _tuft_mat() -> StandardMaterial3D:
+	if _tuft_material == null:
+		_tuft_material = StandardMaterial3D.new()
+		_tuft_material.albedo_color = Color(0.32, 0.55, 0.26)
+		_tuft_material.roughness = 0.95
+		_tuft_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return _tuft_material
+
 func _medallion_mat() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	var t := load("res://art/decals/plaza_medallion.png")
@@ -185,8 +257,8 @@ func _medallion_mat() -> StandardMaterial3D:
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.emission_enabled = true
 	m.emission_texture = t
-	m.emission = Color(0.5, 0.95, 1.0)
-	m.emission_energy_multiplier = 3.0
+	m.emission = Color(0.45, 0.9, 1.0)
+	m.emission_energy_multiplier = 1.3
 	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	return m
 

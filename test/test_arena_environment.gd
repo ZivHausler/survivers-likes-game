@@ -12,6 +12,9 @@ func test_environment_glow_and_ambient() -> void:
 	var we: WorldEnvironment = root.get_node("WorldEnvironment")
 	assert_true(we.environment.glow_enabled,
 		"WorldEnvironment must have glow enabled")
-	assert_true(we.environment.ambient_light_energy >= 0.3,
-		"ambient_light_energy must be >= 0.3, got %f" % we.environment.ambient_light_energy)
+	# Ambient kept low on purpose so the directional key + shadows + SSAO create form
+	# (high ambient washes everything flat). Still positive so the scene isn't black.
+	assert_true(we.environment.ambient_light_energy >= 0.1,
+		"ambient_light_energy must be > 0, got %f" % we.environment.ambient_light_energy)
+	assert_true(we.environment.ssao_enabled, "SSAO must be enabled for grounded form")
 	root.free()
