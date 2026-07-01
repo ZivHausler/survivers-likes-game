@@ -49,6 +49,8 @@ var hp: float = 0.0
 ## Non-melee attack strategy (RangedAttack / DashAttack); null for MELEE (inline default).
 var _attack: EnemyAttack = null
 var _contact_cd: float = 0.0
+## Seconds until the next nearest-player retarget scan (throttled — see _physics_process).
+var _retarget_cd: float = 0.0
 ## Remaining charm time in seconds. While > 0, movement is suppressed.
 var _charm_timer: float = 0.0
 ## Knockback (hop-back) state. While _knockback_timer > 0, nav/attack logic is
@@ -230,6 +232,17 @@ func _on_velocity_computed(safe_velocity: Vector3) -> void:
 	move_and_slide()
 
 func _physics_process(dt: float) -> void:
+	_retarget_cd -= dt
+	if _retarget_cd <= 0.0:
+		_retarget_cd = 0.4
+		var players := get_tree().get_nodes_in_group("player")
+		var alive: Array = []
+		for p in players:
+			if is_instance_valid(p) and (not p.has_method("is_downed") or not p.is_downed()):
+				alive.append(p)
+		var nearest := nearest_target(global_position, alive)
+		if nearest != null:
+			target = nearest
 	if data == null:
 		return
 	if _dying:
@@ -680,3 +693,18 @@ static func face_angle(velocity: Vector3) -> float:
 	if velocity.is_zero_approx():
 		return 0.0
 	return atan2(velocity.x, velocity.z)
+
+## Pure static targeting helper — unit-testable without a live scene tree.
+## Returns the candidate closest to `from` (by squared distance), ignoring
+## null/freed entries. Returns null when no valid candidate exists.
+static func nearest_target(from: Vector3, candidates: Array) -> Node3D:
+	var best: Node3D = null
+	var best_d := INF
+	for c in candidates:
+		if c == null or not is_instance_valid(c):
+			continue
+		var d := from.distance_squared_to((c as Node3D).global_position)
+		if d < best_d:
+			best_d = d
+			best = c
+	return best
