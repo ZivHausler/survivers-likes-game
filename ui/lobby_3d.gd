@@ -22,6 +22,8 @@ func _ready() -> void:
 	NetworkManager.registry_changed.connect(_refresh)
 	NetworkManager.host_aborted.connect(_on_host_aborted)
 	NetworkManager.steam_lobby_ready.connect(_on_steam_lobby_ready)
+	NetworkManager.steam_init()  # Task C2: connect Steam signals + start pump so a cold
+	# joiner who accepts an overlay invite from the lobby screen actually gets routed.
 	_build_fighter_grid()
 	_host_btn.pressed.connect(_on_host_pressed)
 	_join_btn.pressed.connect(_on_join_pressed.bind("127.0.0.1"))

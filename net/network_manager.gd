@@ -80,7 +80,7 @@ func steam_init() -> bool:
 	if not _steam_signals_connected:
 		s.connect("lobby_created", _on_lobby_created)
 		s.connect("lobby_joined", _on_lobby_joined)
-		s.connect("lobby_join_requested", _on_lobby_join_requested)
+		s.connect("join_requested", _on_lobby_join_requested)
 		_steam_signals_connected = true
 	return true
 
