@@ -53,7 +53,7 @@ static var RECIPE := {
 	},
 	# Pond inset (world coords). Aligned with the '~' cells (upper-right).
 	"pond": {
-		"center": Vector2(30.0, -60.0), "radius": 20.0, "y": 0.0,
+		"center": Vector2(52.0, -60.0), "radius": 26.0, "y": 0.0,
 		"water_color": Color(0.14, 0.52, 0.68, 0.85), "rim_color": Color(0.55, 0.9, 1.0),
 	},
 	# Authored floor decals (Task 8). type maps to a texture in Task 10; size in world units.
