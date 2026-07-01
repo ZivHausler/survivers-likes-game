@@ -239,6 +239,8 @@ func _tuft_mesh() -> ArrayMesh:
 	var cards := 3
 	var hw := 0.55  # half-width
 	var hgt := 0.6
+	var base_c := Color(0.19, 0.40, 0.15)  # shaded root
+	var tip_c := Color(0.47, 0.74, 0.33)   # sunlit tip
 	for c in cards:
 		var a := PI * float(c) / float(cards)
 		var dx := cos(a) * hw
@@ -248,8 +250,13 @@ func _tuft_mesh() -> ArrayMesh:
 		var t0 := Vector3(-dx, hgt, -dz)
 		var t1 := Vector3(dx, hgt, dz)
 		st.set_normal(Vector3.UP)
-		st.add_vertex(b0); st.add_vertex(b1); st.add_vertex(t1)
-		st.add_vertex(b0); st.add_vertex(t1); st.add_vertex(t0)
+		# per-vertex gradient (base dark -> tip bright) so cards read as grass, not flat paddles
+		st.set_color(base_c); st.add_vertex(b0)
+		st.set_color(base_c); st.add_vertex(b1)
+		st.set_color(tip_c); st.add_vertex(t1)
+		st.set_color(base_c); st.add_vertex(b0)
+		st.set_color(tip_c); st.add_vertex(t1)
+		st.set_color(tip_c); st.add_vertex(t0)
 	_tuft_m = st.commit()
 	_tuft_m.surface_set_material(0, _tuft_mat())
 	return _tuft_m
@@ -257,7 +264,8 @@ func _tuft_mesh() -> ArrayMesh:
 func _tuft_mat() -> StandardMaterial3D:
 	if _tuft_material == null:
 		_tuft_material = StandardMaterial3D.new()
-		_tuft_material.albedo_color = Color(0.32, 0.55, 0.26)
+		_tuft_material.albedo_color = Color(1, 1, 1)
+		_tuft_material.vertex_color_use_as_albedo = true  # let the base->tip gradient show
 		_tuft_material.roughness = 0.95
 		_tuft_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return _tuft_material
