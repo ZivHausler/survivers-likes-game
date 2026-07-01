@@ -48,3 +48,25 @@ func test_zero_blend_is_sharp() -> void:
 	for tx in range(seam_tx - 2, seam_tx + 2):
 		var g := img.get_pixel(tx, ty).g
 		assert_true(g < 0.05 or g > 0.95, "sharp seam texel is fully grass or fully path, got g=%f" % g)
+
+func test_ao_darkens_low_side_of_tier_drop() -> void:
+	# Plaza (tier 1) block in grass (tier 0); grass just outside the block is shadowed.
+	var tier := { &"stone_plaza": 1 }  # everything else defaults to 0
+	var img := SplatField.build_ao(_grid(), tier, K, 6.0, 0.4)
+	# Grass texel one texel outside the top edge of the plaza block (cell (1,2) top is ty=2*K).
+	var outside := img.get_pixel(1 * K + K / 2, 2 * K - 1)
+	assert_lt(outside.r, 0.999, "grass just outside the plaza is darkened (AO band)")
+
+func test_ao_high_side_and_far_are_unshadowed() -> void:
+	var tier := { &"stone_plaza": 1 }
+	var img := SplatField.build_ao(_grid(), tier, K, 6.0, 0.4)
+	# Inside plaza (high side) -> no shadow.
+	var inside := img.get_pixel(1 * K + K / 2, 2 * K + K / 2)
+	assert_almost_eq(inside.r, 1.0, 0.001, "high side (plaza) is not shadowed")
+	# Far corner grass -> no shadow.
+	var far := img.get_pixel(K / 2, K / 2)
+	assert_almost_eq(far.r, 1.0, 0.001, "grass far from any tier drop is not shadowed")
+
+func test_ao_flat_tiers_are_all_white() -> void:
+	var img := SplatField.build_ao(_grid(), {}, K, 6.0, 0.4)  # all tier 0
+	assert_almost_eq(img.get_pixel(1 * K + K / 2, 2 * K - 1).r, 1.0, 0.001, "no tier drop -> no shadow")
