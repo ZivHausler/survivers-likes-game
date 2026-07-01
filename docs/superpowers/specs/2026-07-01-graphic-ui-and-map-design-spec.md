@@ -343,3 +343,14 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   batch → driver spilled to system RAM, ~400× slower): added per-image cache-clear + a
   `--skip-existing` resume flag, and switched to **one process per character** so each fully
   releases VRAM on exit. Committed on `feature/ability-icons-roster`.
+- 2026-07-01 — Enemy navigation now ROUTES AROUND terrain instead of walking into it. Two
+  changes: (1) the arena navmesh is BAKED with every obstacle footprint carved out (was a flat
+  quad that only activated RVO) — `GardenScatter._activate_navigation` / `build_carved_navmesh`
+  in `arena/floor/prop_scatter.gd` collects each `Obstacle3D` footprint and cuts a hole via a
+  projected obstruction, baked with 1.0-unit agent clearance (cell_size 0.5); (2) enemies steer
+  toward their `NavigationAgent3D` next path corner with throttled repathing (`REPATH_INTERVAL`
+  0.3s) so a 50–200 swarm stays cheap, with a straight-line fallback so they never freeze when
+  no path exists (`Enemy3D._path_toward` / `nav_desired_velocity`). RVO still layers on top for
+  enemy-vs-enemy jostling. **Map-authoring note:** any new map's collidable props must be wrapped
+  in `Obstacle3D` and have their footprints fed to the navmesh bake, or enemies will path straight
+  through them. Suite 1129/1129.

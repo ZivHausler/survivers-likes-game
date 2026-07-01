@@ -21,6 +21,16 @@ const MOVE_THRESHOLD := 0.05
 ## (no active nav map, or headless). See _on_velocity_computed.
 const AVOID_EPSILON_SQ := 0.01
 
+## Seconds between NavigationAgent3D path refreshes. Enemies steer toward the agent's
+## next path corner every frame, but only re-run the A* query (set target_position)
+## this often — so a swarm of ~50-200 doesn't re-path every physics frame. The player
+## is slow relative to this window, so a slightly stale route is imperceptible.
+const REPATH_INTERVAL := 0.3
+## World-unit distance under which the navmesh "next corner" is treated as coincident
+## with the enemy (no usable path step) → fall back to a straight line so we never
+## freeze when navigation has no route (headless / inactive map / target reached).
+const NAV_STEP_EPSILON := 0.05
+
 ## Bob frequency in Hz — how many bounces per second at full move speed.
 const BOB_FREQ_HZ := 2.0
 ## Maximum Y-bob amplitude in world units (visual only, never gameplay-affecting).
@@ -67,6 +77,11 @@ var _bob_phase: float = 0.0
 ## True once the death sequence begins — blocks re-kills, contact damage, and movement
 ## during the 0.4 s dissolve animation before queue_free().
 var _dying := false
+
+## Accumulated time since the last NavigationAgent3D path refresh. Initialized to
+## REPATH_INTERVAL so the very first _physics_process frame publishes a target and a
+## route exists immediately (no one-interval stall on spawn).
+var _repath_accum: float = REPATH_INTERVAL
 
 ## True once the first velocity_computed callback has been received.
 ## False on warmup frames (NavigationServer not yet joined); used by _apply_movement
@@ -247,7 +262,13 @@ func _physics_process(dt: float) -> void:
 		velocity = _attack.desired_velocity(self, target, dt)
 	else:
 		var desired := 0.0 if (data.is_ranged and dist < RANGED_STANDOFF) else data.move_speed
-		velocity = steer_velocity(global_position, target.global_position, desired)
+		if desired > 0.0:
+			# Route toward the player along the baked navmesh so we go AROUND terrain,
+			# not straight into it. RVO (set_velocity, below) then handles the last-meter
+			# dodging and enemy-vs-enemy jostling on top of the routed velocity.
+			velocity = _path_toward(target.global_position, desired, dt)
+		else:
+			velocity = Vector3.ZERO   # ranged enemy holding its stand-off distance
 	_apply_movement(dt)
 	_attack_anim_left = max(0.0, _attack_anim_left - dt)
 	var moving: bool = velocity.length_squared() > MOVE_THRESHOLD * MOVE_THRESHOLD
@@ -611,6 +632,35 @@ static func retarget_tracks_to_skeleton(anim: Animation, skel: Skeleton3D, skel_
 		anim.track_set_path(t, NodePath(base + ":" + bone_name))
 		kept += 1
 	return kept
+
+## Route toward `goal` (the player) using the NavigationAgent3D so the enemy follows
+## the navmesh AROUND carved terrain instead of steering blindly into it. The A* query
+## (target_position assignment) is throttled to REPATH_INTERVAL so a large swarm stays
+## cheap; the per-frame steer reads the agent's next path corner. Falls back to a plain
+## straight line when there is no agent / we are outside the tree (headless unit tests),
+## and nav_desired_velocity falls back again if the corner yields no usable step — so
+## the enemy never freezes when navigation has no route.
+func _path_toward(goal: Vector3, speed: float, dt: float) -> Vector3:
+	if _agent == null or not is_inside_tree():
+		return steer_velocity(global_position, goal, speed)
+	_repath_accum += dt
+	if _repath_accum >= REPATH_INTERVAL:
+		_repath_accum = 0.0
+		_agent.target_position = goal
+	var next_corner := _agent.get_next_path_position()
+	return nav_desired_velocity(global_position, next_corner, goal, speed)
+
+## Pure static path-follow helper — unit-testable without a live NavigationServer.
+## Steers from `from` toward `next_corner` (the navmesh path point) when that corner is
+## a meaningful step away; otherwise falls back to a straight line toward `target` so
+## the enemy keeps moving when navigation produced no usable path (headless / inactive
+## map / already at the corner). Always XZ-flattened; Y is 0.
+static func nav_desired_velocity(from: Vector3, next_corner: Vector3, target: Vector3, speed: float) -> Vector3:
+	var to_next := next_corner - from
+	to_next.y = 0.0
+	if to_next.length() > NAV_STEP_EPSILON:
+		return to_next.normalized() * speed
+	return steer_velocity(from, target, speed)
 
 ## Pure static steering helper — unit-testable without a live physics step.
 ## Returns XZ-flattened direction from `from` toward `to`, scaled by `speed`.

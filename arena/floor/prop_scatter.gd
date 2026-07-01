@@ -7,6 +7,18 @@ class_name GardenScatter extends Node
 @export var recipe_path: String = "res://arena/maps/garden_map.gd"
 @export var clear_radius: float = 12.0
 
+## Half-extent (world units) of the flat playfield the navmesh covers — matches the
+## 200x200 ground plane. Passed to the bake so paths span the whole arena.
+const NAV_EXTENT := 100.0
+## Clearance baked into the navmesh so routed paths keep a body-width away from carved
+## terrain (enemy NavigationAgent3D radius is 0.6). Kept an exact multiple of the bake
+## cell_size (0.5) so the radius is not voxel-ceiled and no bake warning is emitted.
+const NAV_AGENT_RADIUS := 1.0
+
+## Footprints ({pos:Vector3, radius:float}) of every collidable obstacle placed this
+## build, collected in _spawn_obstacle and carved out of the navmesh in _activate_navigation.
+var _carve_footprints: Array = []
+
 const PropLayout = preload("res://arena/floor/prop_layout.gd")
 const ZoneGrid = preload("res://arena/floor/zone_grid.gd")
 const Obstacle3D = preload("res://obstacles/obstacle_3d.gd")
@@ -24,10 +36,10 @@ func _ready() -> void:
 	var parent := get_parent()
 	if parent == null:
 		return
-	_activate_navigation(parent)
 	var props := Node3D.new()
 	props.name = "Props"
-	_fill_props(props)
+	_fill_props(props)                 # populates _carve_footprints as obstacles are placed
+	_activate_navigation(parent)       # bakes the navmesh with those footprints carved out
 	parent.add_child.call_deferred(props)
 
 ## Synchronous test entry (no nav, no deferral).
@@ -38,6 +50,7 @@ func build_props(parent: Node3D) -> void:
 	parent.add_child(props)
 
 func _fill_props(props: Node3D) -> void:
+	_carve_footprints.clear()
 	var groups := {
 		&"landmark": Node3D.new(), &"medium": Node3D.new(), &"small": Node3D.new(),
 	}
@@ -85,6 +98,12 @@ func _spawn_obstacle(container: Node3D, pl: Dictionary) -> void:
 	obs.position = Vector3(pl["pos"].x, pl.get("ground_y", 0.0), pl["pos"].z)
 	if scale_mul != 1.0:
 		obs.scale = Vector3.ONE * scale_mul
+	# Record the world footprint so the navmesh bake carves a hole here (obs.scale scales
+	# the whole node, so the effective collision radius is fp[0] * scale_mul).
+	_carve_footprints.append({
+		"pos": Vector3(pl["pos"].x, 0.0, pl["pos"].z),
+		"radius": fp[0] * scale_mul,
+	})
 	_add_contact_shadow(obs)
 	container.add_child(obs, true)
 
@@ -116,15 +135,38 @@ func _add_contact_shadow(node: Node3D) -> void:
 	d.name = "ContactShadow"
 	node.add_child(d)
 
-## Flat NavigationRegion3D so NavigationAgent3D RVO avoidance yields non-zero velocity.
+## NavigationRegion3D whose navmesh is BAKED with every obstacle footprint carved out,
+## so enemy NavigationAgent3D pathfinding routes AROUND terrain (not just RVO-dodges it).
 func _activate_navigation(parent: Node) -> void:
 	var region := NavigationRegion3D.new()
 	region.name = "ArenaNavRegion"
-	var navmesh := NavigationMesh.new()
-	var e := 100.0
-	navmesh.set_vertices(PackedVector3Array([
-		Vector3(-e, 0.0, -e), Vector3(e, 0.0, -e), Vector3(e, 0.0, e), Vector3(-e, 0.0, e),
-	]))
-	navmesh.add_polygon(PackedInt32Array([0, 1, 2, 3]))
-	region.navigation_mesh = navmesh
+	region.navigation_mesh = build_carved_navmesh(NAV_EXTENT, NAV_AGENT_RADIUS, _carve_footprints)
 	parent.add_child.call_deferred(region)
+
+## Pure static bake: a flat [-extent, extent] floor navmesh with each `footprints`
+## entry ({pos:Vector3, radius:float}) carved out as a hole, keeping `agent_radius`
+## clearance. Runs headless (no rendering) so it is unit-testable. Uses projected
+## obstructions rather than parsing 3D collider geometry: deterministic and cheap.
+static func build_carved_navmesh(extent: float, agent_radius: float, footprints: Array) -> NavigationMesh:
+	var src := NavigationMeshSourceGeometryData3D.new()
+	# Walkable floor: two triangles spanning the playfield quad.
+	src.add_faces(PackedVector3Array([
+		Vector3(-extent, 0.0, -extent), Vector3(extent, 0.0, -extent), Vector3(extent, 0.0, extent),
+		Vector3(-extent, 0.0, -extent), Vector3(extent, 0.0, extent), Vector3(-extent, 0.0, extent),
+	]), Transform3D.IDENTITY)
+	# Carve a square hole per obstacle footprint (half-side = footprint radius). A vertical
+	# span around the floor (elevation -1 → height 3) guarantees the projection cuts the mesh.
+	for fp: Dictionary in footprints:
+		var c: Vector3 = fp["pos"]
+		var r: float = fp["radius"]
+		src.add_projected_obstruction(PackedVector3Array([
+			Vector3(c.x - r, 0.0, c.z - r), Vector3(c.x + r, 0.0, c.z - r),
+			Vector3(c.x + r, 0.0, c.z + r), Vector3(c.x - r, 0.0, c.z + r),
+		]), -1.0, 3.0, true)
+	var navmesh := NavigationMesh.new()
+	navmesh.agent_radius = agent_radius
+	navmesh.agent_height = 1.0
+	navmesh.agent_max_climb = 0.5
+	navmesh.cell_size = 0.5
+	NavigationServer3D.bake_from_source_geometry_data(navmesh, src)
+	return navmesh
