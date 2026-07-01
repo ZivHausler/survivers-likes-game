@@ -6,14 +6,14 @@
 [ext_resource type="Texture2D" uid="uid://6xrubff53a8t" path="res://art/textures/final_city_grass_albedo.png" id="7_grass"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
-albedo_color = Color(0.12, 0.14, 0.12, 1)
+albedo_color = Color(0.26, 0.33, 0.24, 1)
 albedo_texture = ExtResource("7_grass")
 roughness = 0.85
 metallic = 0.0
-uv1_scale = Vector3(50, 50, 50)
+uv1_scale = Vector3(200, 200, 200)
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
-size = Vector2(200, 200)
+size = Vector2(800, 800)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
 size = Vector3(200, 0.1, 200)
@@ -38,6 +38,11 @@ glow_enabled = true
 glow_intensity = 0.6
 glow_bloom = 0.15
 glow_hdr_threshold = 1.1
+fog_enabled = true
+fog_light_color = Color(0.62, 0.7, 0.82, 1)
+fog_light_energy = 1.0
+fog_density = 0.0014
+fog_sky_affect = 0.15
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall_ns"]
 size = Vector3(200, 10, 2)
