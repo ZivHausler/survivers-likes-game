@@ -474,6 +474,27 @@ func test_is_invulnerable_false_by_default() -> void:
 	var p := _make_player()
 	assert_false(p.is_invulnerable(), "player must not be invulnerable at start")
 
+func test_non_blinking_invuln_keeps_model_visible() -> void:
+	# Level-up invuln (blink=false) must not flicker the model off across frames.
+	var p := _make_player()
+	p.set_invulnerable(2.0, false)
+	for i in range(6):
+		await get_tree().physics_frame
+	assert_true(p._model.visible, "non-blinking invuln window must keep the model visible")
+
+func test_blinking_invuln_toggles_model_visibility() -> void:
+	# Default (blink=true) i-frames still flicker: over many frames the model is hidden
+	# on at least one of them (visibility is time-sliced every 0.1 s).
+	var p := _make_player()
+	p.set_invulnerable(2.0, true)
+	var saw_hidden := false
+	for i in range(30):
+		await get_tree().physics_frame
+		if not p._model.visible:
+			saw_hidden = true
+			break
+	assert_true(saw_hidden, "blinking invuln must hide the model on some frame")
+
 func test_take_damage_ignored_while_invulnerable() -> void:
 	var p := _make_player(100.0, 0.0)
 	p.set_invulnerable(2.0)

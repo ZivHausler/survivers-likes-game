@@ -451,7 +451,7 @@ class StubPlayer3D extends Node3D:
 	# Note: apply_stat_upgrade is defined so Object.has_method("apply_stat_upgrade") → true.
 	func apply_stat_upgrade(kind: StringName, v: float) -> void:
 		stat_upgrades[kind] = stat_upgrades.get(kind, 0.0) + v
-	func set_invulnerable(duration: float) -> void:
+	func set_invulnerable(duration: float, _blink: bool = true) -> void:
 		invuln_calls.append(duration)
 
 # ---------------------------------------------------------------------------

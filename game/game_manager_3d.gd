@@ -309,7 +309,8 @@ func _resolve_next_or_unpause() -> void:
 		get_tree().paused = false
 		# Grant i-frame window only on the final resolve (not per stacked level-up).
 		if is_instance_valid(_player) and _player.has_method("set_invulnerable"):
-			_player.set_invulnerable(LEVELUP_INVULN)
+			# blink=false: the level-up safety window must not flicker the model.
+			_player.set_invulnerable(LEVELUP_INVULN, false)
 
 
 ## Courtesy bonus for a level-up gained when every upgrade is already maxed:
