@@ -41,6 +41,62 @@ func test_setup_sets_hp_to_max_hp() -> void:
 	var e: Enemy3D = _make_enemy(30.0)
 	assert_almost_eq(e.hp, 30.0, 0.001, "hp should equal data.max_hp after setup")
 
+# ── knockback (hop-back) ──────────────────────────────────────────────────────
+
+func test_apply_knockback_sets_window_and_velocity() -> void:
+	var e: Enemy3D = _make_enemy()
+	e.apply_knockback(Vector3(1.0, 0.0, 0.0), 2.5)
+	assert_almost_eq(e._knockback_timer, Enemy3D.KNOCKBACK_DURATION, 0.001,
+		"apply_knockback must start the hop window")
+	# Speed carries `distance` over the window: |vel| == distance / duration.
+	assert_almost_eq(e._knockback_vel.length(), 2.5 / Enemy3D.KNOCKBACK_DURATION, 0.01,
+		"knockback speed must deliver the requested distance across the window")
+	assert_almost_eq(e._knockback_vel.y, 0.0, 0.001, "knockback velocity stays on XZ")
+
+func test_apply_knockback_moves_enemy_outward() -> void:
+	var e: Enemy3D = _make_enemy()
+	e.global_position = Vector3.ZERO
+	e.apply_knockback(Vector3(1.0, 0.0, 0.0), 2.5)
+	for i in range(20):
+		await get_tree().physics_frame
+	assert_gt(e.global_position.x, 0.5, "enemy must travel outward along the knockback direction")
+
+func test_knockback_does_not_weaken_existing_stronger_hop() -> void:
+	var e: Enemy3D = _make_enemy()
+	e.apply_knockback(Vector3(1.0, 0.0, 0.0), 4.0)
+	var strong := e._knockback_vel.length()
+	e.apply_knockback(Vector3(1.0, 0.0, 0.0), 1.0)  # weaker, mid-hop
+	assert_almost_eq(e._knockback_vel.length(), strong, 0.001,
+		"a weaker overlapping knockback must not reduce an active stronger one")
+
+func test_knockback_settles_model_on_ground_after_window() -> void:
+	var e: Enemy3D = _make_enemy()
+	e.apply_knockback(Vector3(1.0, 0.0, 0.0), 2.5)
+	for i in range(20):
+		await get_tree().physics_frame
+	assert_almost_eq(e._knockback_timer, 0.0, 0.001, "hop window must elapse")
+	assert_almost_eq(e._model.position.y, 0.0, 0.001, "model must settle flush with the ground")
+
+func test_mini_boss_is_immune_to_knockback() -> void:
+	var e: Enemy3D = _make_enemy()
+	e.configure_boss(Enemy3D.BossKind.MINI)
+	e.apply_knockback(Vector3(1.0, 0.0, 0.0), 2.5)
+	assert_almost_eq(e._knockback_timer, 0.0, 0.001, "mini-boss must not enter the knockback window")
+	assert_almost_eq(e._knockback_vel.length(), 0.0, 0.001, "mini-boss must get no knockback velocity")
+
+func test_big_boss_is_immune_to_knockback() -> void:
+	var e: Enemy3D = _make_enemy()
+	e.configure_boss(Enemy3D.BossKind.BIG)
+	e.apply_knockback(Vector3(1.0, 0.0, 0.0), 2.5)
+	assert_almost_eq(e._knockback_timer, 0.0, 0.001, "big boss must not enter the knockback window")
+
+func test_normal_enemy_still_knocked_back() -> void:
+	# Guard: the boss immunity must not accidentally block regular monsters.
+	var e: Enemy3D = _make_enemy()
+	assert_eq(e.boss_kind, Enemy3D.BossKind.NONE, "regular enemy defaults to non-boss")
+	e.apply_knockback(Vector3(1.0, 0.0, 0.0), 2.5)
+	assert_gt(e._knockback_timer, 0.0, "regular monster must still be knocked back")
+
 # ── steer_velocity static helper ──────────────────────────────────────────────
 
 func test_steer_velocity_toward_positive_x() -> void:

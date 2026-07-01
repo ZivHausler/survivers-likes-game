@@ -11,6 +11,10 @@ class_name OrbitWeapon3D extends Weapon3D
 
 ## Milliseconds between hits on the same enemy by any orbiter.
 const HIT_CD_MS: int = 500
+## World units an enemy is hopped radially outward (away from the character) when an
+## orb touches it. Delivered as a short arc via Enemy3D.apply_knockback (throttled by
+## HIT_CD_MS), not an instant teleport.
+const ORB_KNOCKBACK_DIST: float = 2.5
 
 ## Number of orbiter nodes (Area3D) maintained around the player.
 var orbit_count: int = 3
@@ -46,12 +50,29 @@ func _process(dt: float) -> void:
 		if i < offsets.size():
 			_orbiters[i].position = offsets[i]
 
-## Timer-driven fire: scan every orbiter's overlapping bodies and deal damage,
-## respecting per-enemy hit cooldown to avoid frame-rate-dependent burst damage.
+## Continuous grind: the orbiters are an always-on aura, so the damage scan runs
+## every physics frame — NOT gated by base_cooldown. The per-enemy HIT_CD_MS window
+## throttles repeat hits so a spinning orbiter grinds an enemy at a steady rate
+## instead of every-frame spam. Damaging here (not only in the timer-driven fire())
+## is what makes orbiters actually connect: enemies pass through the ring between
+## cooldown ticks, so a once-per-cooldown scan almost never overlapped anyone.
+func _physics_process(_dt: float) -> void:
+	if _orbiters.is_empty():
+		return
+	_apply_orbit_damage(Time.get_ticks_msec())
+
+## Timer-driven fire: kept for the cast-VFX pulse and direct test calls. The actual
+## grinding is done continuously in _physics_process; this is a harmless extra scan
+## (HIT_CD_MS dedupes it against the per-frame scan).
 func fire() -> void:
+	_apply_orbit_damage(Time.get_ticks_msec())
+
+## Scan every orbiter's overlapping bodies and deal damage, respecting the per-enemy
+## hit cooldown so the same enemy is only hit once per HIT_CD_MS regardless of how
+## many orbiters (or how many frames) touch it.
+func _apply_orbit_damage(now: int) -> void:
 	if not stats:
 		return
-	var now: int = Time.get_ticks_msec()
 	_expire_hit_cd(now)
 	var dmg: float = damage * stats.damage_mult
 	for orbiter: Area3D in _orbiters:
@@ -65,6 +86,22 @@ func fire() -> void:
 			if body.has_method("take_damage"):
 				body.take_damage(dmg)
 				GameEvents.skill_hit.emit(vfx_id, vfx_color, (body as Node3D).global_position)
+			# Knockback: hop the enemy radially OUTWARD from the character (XZ plane).
+			# `global_position` is this weapon's origin, which sits on the player, so the
+			# ring's centre = the character. Pushing outward from there (rather than away
+			# from the orb) keeps enemies from being flung sideways in the orb's travel
+			# direction. Prefer the enemy's animated hop; fall back to a direct nudge for
+			# bodies without it. Only happens on an actual orb overlap.
+			var enemy3d := body as Node3D
+			if enemy3d:
+				var away: Vector3 = enemy3d.global_position - global_position
+				away.y = 0.0
+				if away.length_squared() < 0.0001:
+					away = Vector3(1.0, 0.0, 0.0)
+				if enemy3d.has_method("apply_knockback"):
+					enemy3d.apply_knockback(away, ORB_KNOCKBACK_DIST)
+				else:
+					enemy3d.global_position += away.normalized() * ORB_KNOCKBACK_DIST
 
 ## Level up: +1 orbiter, +4 damage, rebuild ring.
 func level_up() -> void:
