@@ -24,6 +24,9 @@ var _invuln_timer: float = 0.0
 var _invuln_blink: bool = true
 
 var stats: StatBlock
+## Owning peer id (network authority). 1 for solo / host. Set in GameManager3D._do_spawn_player
+## inside the MultiplayerSpawner callback, before _ready(), so it matches across all peers.
+var peer_id: int = 1
 ## The character this player was built from — exposed so the HUD can read the
 ## portrait and per-skill ability icons (SkillData.icon). Set in setup().
 var character_data: CharacterData = null
