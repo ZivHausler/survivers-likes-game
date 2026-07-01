@@ -11,6 +11,17 @@ const GEM_SCENE_PATH := "res://pickups/xp_gem_3d.tscn"
 const GAME_OVER_SCENE := "res://ui/game_over.tscn"
 const ZIV_3D_PATH := "res://characters/ziv_3d.tres"
 const PLAYER_SCENE := preload("res://player/player_3d.tscn")
+const ENEMY_SCENE := preload("res://enemies/enemy_3d.tscn")
+
+# ── Enemy snapshot networking (Task E1, M3) ───────────────────────────────────
+## Quantization frame for the batched enemy snapshot. Enemy XZ positions are mapped
+## into [0, NET_SPAN] from NET_ORIGIN and packed as u16 — covers the playable arena
+## with ~3 mm precision. MUST match on host and client (both read these consts).
+const NET_ORIGIN := Vector3(-100, 0, -100)
+const NET_SPAN := 200.0
+## Host broadcast period (~20 Hz) and the proxy despawn threshold in snapshot ticks.
+const SNAP_INTERVAL := 0.05
+const PROXY_STALE_TICKS := 10
 ## Radius of the party spawn ring (world units). Single player ignores it (spawns at centre).
 const PARTY_SPAWN_RADIUS := 3.0
 const GENERIC_UPGRADE_PATHS := [
@@ -47,6 +58,14 @@ var _skill_by_id: Dictionary = {}
 # unpauses once every queued level-up has been resolved.
 var _choosing: bool = false
 var _pending_levelups: int = 0
+
+# ── Enemy snapshot state ──────────────────────────────────────────────────────
+## Host: accumulator + wrapping u16 tick counter driving the ~20 Hz broadcast.
+var _snap_accum: float = 0.0
+var _snap_tick: int = 0
+## Client: net_id → proxy Enemy3D, and net_id → snapshot tick last seen (for despawn).
+var _proxies: Dictionary = {}
+var _last_seen: Dictionary = {}
 
 
 ## Assemble a run's skill list: the type-filtered shared pool only.
@@ -152,6 +171,77 @@ func _process(dt: float) -> void:
 	if get_tree().paused:
 		return
 	elapsed += dt
+	# Host-only enemy snapshot broadcast (~20 Hz). No-op in solo / with zero clients:
+	# get_peers() is empty, so nothing is gathered or sent and the accumulator idles.
+	if not multiplayer.get_peers().is_empty() and multiplayer.is_server():
+		_snap_accum += dt
+		if _snap_accum >= SNAP_INTERVAL:
+			_snap_accum = 0.0
+			_broadcast_enemy_snapshot()
+
+
+# ── Enemy snapshot: host broadcast ────────────────────────────────────────────
+
+## Gather every enemy in group "enemies" into one quantized snapshot and send it,
+## unreliably, to each connected client. Guards on empty peers so a direct call in solo
+## (or a host with no clients) is a clean no-op that sends nothing and mutates no state.
+func _broadcast_enemy_snapshot() -> void:
+	var peers := multiplayer.get_peers()
+	if peers.is_empty():
+		return
+	var entries: Array = []
+	for e in get_tree().get_nodes_in_group("enemies"):
+		entries.append({
+			"id": e.net_id,
+			"pos": e.global_position,
+			"yaw": e.rotation.y,
+			"state": e.snapshot_state(),
+		})
+	var inv := 65535.0 / NET_SPAN
+	var bytes := EnemySnapshot.pack(entries, NET_ORIGIN, inv, _snap_tick)
+	_snap_tick = (_snap_tick + 1) & 0xFFFF
+	for pid in peers:
+		receive_enemy_snapshot.rpc_id(pid, bytes)
+
+
+# ── Enemy snapshot: client receive + proxy lifecycle ──────────────────────────
+
+## Forward tick distance accounting for u16 wraparound (0..65535). Returns how many
+## ticks `now` is ahead of `then`.
+static func _tick_gap(now: int, then: int) -> int:
+	return (now - then) & 0xFFFF
+
+
+## Runs on CLIENTS (authority = host). Unpack the snapshot and reconcile proxies:
+## spawn a visual-only Enemy3D for each unseen id, retarget existing ones, and despawn
+## proxies not present for PROXY_STALE_TICKS ticks. Never runs on the host (call_remote).
+@rpc("authority", "call_remote", "unreliable")
+func receive_enemy_snapshot(bytes: PackedByteArray) -> void:
+	var scale := NET_SPAN / 65535.0
+	var snap := EnemySnapshot.unpack(bytes, NET_ORIGIN, scale)
+	var tick: int = snap["tick"]
+	var parent := get_parent()
+	for e in snap["entries"]:
+		var id: int = e["id"]
+		var proxy = _proxies.get(id)
+		if proxy == null or not is_instance_valid(proxy):
+			proxy = ENEMY_SCENE.instantiate()
+			proxy.net_id = id
+			if parent:
+				parent.add_child(proxy)
+			proxy.add_to_group("enemies")
+			proxy.configure_proxy()
+			proxy.global_position = e["pos"]
+			_proxies[id] = proxy
+		proxy.set_interp_target(e["pos"], e["yaw"])
+		_last_seen[id] = tick
+	# Despawn proxies not present in recent snapshots (killed on the host / out of range).
+	for id in _proxies.keys():
+		if not _last_seen.has(id) or _tick_gap(tick, _last_seen[id]) > PROXY_STALE_TICKS:
+			if is_instance_valid(_proxies[id]):
+				_proxies[id].queue_free()
+			_proxies.erase(id)
+			_last_seen.erase(id)
 
 
 func _unhandled_input(event: InputEvent) -> void:

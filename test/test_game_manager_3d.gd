@@ -839,6 +839,25 @@ func test_two_member_party_spawns_two_players() -> void:
 	assert_not_null(p1.stats, "Player_1 must be set up with stats")
 	assert_not_null(p2.stats, "Player_2 must be set up with stats")
 
+# ---------------------------------------------------------------------------
+# Enemy snapshot broadcast — solo no-op (Task E1, M3)
+# ---------------------------------------------------------------------------
+
+## In solo (no connected peers) the host broadcast path must send nothing and mutate no
+## state. Calling it directly must early-return cleanly without advancing the tick.
+func test_broadcast_enemy_snapshot_no_peers_is_noop() -> void:
+	var root := _make_run_scene()
+	var manager := root.get_node("GameManager3D") as GameManager3D
+	var tick_before := manager._snap_tick
+	manager._broadcast_enemy_snapshot()  # no peers → early return, no crash
+	assert_eq(manager._snap_tick, tick_before,
+			"no-peers broadcast must not advance the snapshot tick (clean no-op)")
+
+func test_tick_gap_handles_u16_wraparound() -> void:
+	assert_eq(GameManager3D._tick_gap(5, 3), 2, "forward gap is a simple difference")
+	assert_eq(GameManager3D._tick_gap(1, 65535), 2,
+			"gap must wrap across the u16 boundary (65535 → 0 → 1 == 2 ticks)")
+
 func test_manager_tracks_full_party_in_players_list() -> void:
 	var root := _make_party_rig()
 	RunState.party = {
