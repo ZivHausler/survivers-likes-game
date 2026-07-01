@@ -40,7 +40,7 @@ func attack_tick(enemy, target: Node3D, dt: float) -> void:
 			if dist <= d.dash_trigger_range:
 				_phase = Phase.WINDUP
 				_timer = d.dash_windup
-				GameEvents.skill_cast.emit(&"enemy_dash_windup", Color.WHITE, enemy.global_position)
+				# Ground telegraph circle removed as requested — the WINDUP brace is the tell.
 		Phase.WINDUP:
 			_timer -= dt
 			if _timer <= 0.0:

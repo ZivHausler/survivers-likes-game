@@ -103,9 +103,6 @@ func _on_boss_killed_3d(boss_kind: int) -> void:
 	_add_trauma(amount)
 
 func _on_evolution_unlocked(_weapon_id: StringName) -> void:
-	var parent := _safe_parent()
-	if parent == null:
-		return
-	var flash: EvolutionFlash = _EvolutionFlashScene.instantiate()
-	parent.add_child(flash)
-	# Full intensity (default ~0.85 alpha) for evolution
+	# White evolution/synergy screen flash removed as requested (too distracting). Handler
+	# kept + connected so the signal still has a subscriber and future juice can hook here.
+	pass

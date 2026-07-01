@@ -47,9 +47,9 @@ func attack_tick(enemy: Enemy3D, target: Node3D, dt: float) -> void:
 	var los_clear := not _los_blocked(enemy, target)
 	if _can_fire(dist, los_clear, enemy.data.attack_range):
 		_windup_left = enemy.data.windup_time   # telegraph, then _launch
-		# Play the visible cast gesture for the length of the windup (best-effort).
+		# Play the visible cast gesture for the length of the windup (best-effort). The
+		# ground telegraph circle was removed as requested — the gesture is the tell now.
 		enemy.play_attack_gesture(enemy.data.windup_time)
-		GameEvents.skill_cast.emit(&"enemy_ranged_windup", Color.WHITE, enemy.global_position)
 
 ## Raycast enemy→player against terrain layer 16. True if a wall/obstacle blocks the shot.
 func _los_blocked(enemy: Enemy3D, target: Node3D) -> bool:
