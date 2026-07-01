@@ -8,6 +8,10 @@ signal host_aborted()
 
 var registry: LobbyRegistry = LobbyRegistry.new()
 var local_name: String = "Player"
+# The GodotSteam addon may be present before Steam is actually initialized (Task C2).
+# Only pump Steam callbacks once C2 has called steamInit and set this true, so ordinary
+# ENet/solo runs never invoke the Steam API.
+var _steam_ready: bool = false
 
 func _ready() -> void:
 	# CRITICAL: never let pause stop the Steam pump, or P2P silently stalls.
@@ -20,10 +24,11 @@ func _ready() -> void:
 func _process(_dt: float) -> void:
 	# Pump Steam callbacks every frame (no-op until Steam is initialized in Task C2).
 	# NOTE: called via Engine.get_singleton(...).call(...) rather than the bare
-	# `Steam` identifier because GodotSteam is not installed yet; referencing an
-	# undeclared global identifier is a GDScript parse error, not just a runtime
-	# no-op, and would break autoload boot entirely.
-	if Engine.has_singleton("Steam"):
+	# `Steam` identifier so the code parses whether or not GodotSteam is installed
+	# (an undeclared global identifier is a parse error, not a runtime no-op).
+	# Gated on _steam_ready so the pump stays inert until C2 initializes Steam,
+	# even now that the addon binaries are present in the project.
+	if _steam_ready and Engine.has_singleton("Steam"):
 		Engine.get_singleton("Steam").call("run_callbacks")
 
 func host_enet(port: int = NetTransport.DEFAULT_PORT) -> int:
