@@ -8,6 +8,7 @@ class_name GardenScatter extends Node
 @export var clear_radius: float = 12.0
 
 const PropLayout = preload("res://arena/floor/prop_layout.gd")
+const ZoneGrid = preload("res://arena/floor/zone_grid.gd")
 const Obstacle3D = preload("res://obstacles/obstacle_3d.gd")
 const _OBSTACLE_SCENE := preload("res://obstacles/obstacle_3d.tscn")
 
@@ -15,6 +16,7 @@ const _FP := {
 	"garden_hero_tree_3d": [1.0, 6.0], "garden_bench_3d": [1.0, 0.6],
 	"garden_planter_3d": [0.8, 0.8], "garden_trellis_3d": [1.2, 4.0],
 	"garden_bollard_3d": [0.3, 1.1], "prop_lamp_3d": [0.4, 3.0],
+	"garden_fountain_3d": [1.9, 2.2],
 }
 
 func _ready() -> void:
@@ -45,13 +47,25 @@ func _fill_props(props: Node3D) -> void:
 		props.add_child(g)
 
 	var recipe: Dictionary = load(recipe_path).RECIPE
+	# Grid + per-zone elevation so props sit ON the raised plaza/paths, not sunk in them.
+	var grid := ZoneGrid.new(recipe["rows"], recipe["legend"], recipe["cell_size"])
+	var zone_y := {}
+	for zn in recipe["zones"]:
+		zone_y[zn] = float(recipe["zones"][zn].get("y", 0.02))
 	var placements := PropLayout.resolve(recipe["prop_clusters"], clear_radius)
 	for pl in placements:
+		pl["ground_y"] = _ground_y(grid, zone_y, pl["pos"].x, pl["pos"].z)
 		var container: Node3D = groups.get(pl["role"], groups[&"small"])
 		if pl["collide"]:
 			_spawn_obstacle(container, pl)
 		else:
 			_spawn_decor(container, pl)
+
+## World XZ -> the elevation of the zone under that point (props rest on top of it).
+func _ground_y(grid: ZoneGrid, zone_y: Dictionary, wx: float, wz: float) -> float:
+	var cx := int(round(wx / grid.cell_size + (float(grid.width) - 1.0) * 0.5))
+	var cy := int(round(wz / grid.cell_size + (float(grid.height) - 1.0) * 0.5))
+	return float(zone_y.get(grid.zone_at(cx, cy), 0.02))
 
 func _spawn_obstacle(container: Node3D, pl: Dictionary) -> void:
 	var key: String = pl["key"]
@@ -67,7 +81,7 @@ func _spawn_obstacle(container: Node3D, pl: Dictionary) -> void:
 			obs.set_model(model as Node3D, fp[0], fp[1])
 		elif model != null:
 			model.free()
-	obs.position = Vector3(pl["pos"].x, 0.0, pl["pos"].z)
+	obs.position = Vector3(pl["pos"].x, pl.get("ground_y", 0.0), pl["pos"].z)
 	if scale_mul != 1.0:
 		obs.scale = Vector3.ONE * scale_mul
 	_add_contact_shadow(obs)
@@ -80,7 +94,7 @@ func _spawn_decor(container: Node3D, pl: Dictionary) -> void:
 	var node := scene.instantiate()
 	if node is Node3D:
 		var n := node as Node3D
-		n.position = Vector3(pl["pos"].x, 0.0, pl["pos"].z)
+		n.position = Vector3(pl["pos"].x, pl.get("ground_y", 0.0), pl["pos"].z)
 		var scale_mul: float = pl["scale"]
 		if scale_mul != 1.0:
 			n.scale = Vector3.ONE * scale_mul  # decor honors recipe scale, like colliders

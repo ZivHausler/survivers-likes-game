@@ -42,6 +42,6 @@ func test_role_counts_match_budget_ranges() -> void:
 	var by_role := { &"landmark": 0, &"medium": 0, &"small": 0 }
 	for e in out:
 		by_role[e["role"]] += 1
-	assert_eq(by_role[&"landmark"], 1, "exactly 1 landmark")
-	assert_true(by_role[&"medium"] >= 3 and by_role[&"medium"] <= 6, "3–6 medium, got %d" % by_role[&"medium"])
-	assert_true(by_role[&"small"] >= 10 and by_role[&"small"] <= 25, "10–25 small, got %d" % by_role[&"small"])
+	assert_true(by_role[&"landmark"] >= 1 and by_role[&"landmark"] <= 3, "1–3 landmarks, got %d" % by_role[&"landmark"])
+	assert_true(by_role[&"medium"] >= 8 and by_role[&"medium"] <= 30, "8–30 medium, got %d" % by_role[&"medium"])
+	assert_true(by_role[&"small"] >= 40 and by_role[&"small"] <= 130, "40–130 small, got %d" % by_role[&"small"])

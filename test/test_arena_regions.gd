@@ -33,7 +33,8 @@ func test_props_are_built_and_clustered() -> void:
 	var root := await _build_arena()
 	var props := root.get_node_or_null("Props")
 	assert_not_null(props, "GardenScatter must build Props")
-	assert_eq(props.get_node("Landmarks").get_child_count(), 1, "one landmark")
+	var land := props.get_node("Landmarks").get_child_count()
+	assert_true(land >= 1 and land <= 3, "1-3 landmarks, got %d" % land)
 
 func test_spawn_disc_clear() -> void:
 	var root := await _build_arena()

@@ -68,18 +68,48 @@ static var RECIPE := {
 	],
 	# Prop clusters (Task 5 PropLayout shape). role ∈ landmark|medium|small.
 	# item = [scene_key, count, collide, scale].
+	# Dense, clustered, intentional layout (~90 props). Landmarks anchor; trees + furniture
+	# ring the plaza; lamps/bollards line the paths; foliage fills the four grass quadrants.
 	"prop_clusters": [
-		{ "role": &"landmark", "center": Vector2(0, 40), "ext": 1.0, "seed": 1, "sep": 1.0,
+		# --- Landmarks (hero tree + off-center fountain; center stays open for combat) ---
+		{ "role": &"landmark", "center": Vector2(0, 44), "ext": 1.0, "seed": 1, "sep": 1.0,
 			"items": [["garden_hero_tree_3d", 1, true, 1.8]] },
+		{ "role": &"landmark", "center": Vector2(-34, -34), "ext": 1.0, "seed": 2, "sep": 1.0,
+			"items": [["garden_fountain_3d", 1, true, 1.6]] },
+		# --- Ornamental trees in the grass quadrants ---
+		{ "role": &"medium", "center": Vector2(46, 46), "ext": 14.0, "seed": 30, "sep": 8.0,
+			"items": [["garden_hero_tree_3d", 3, true, 0.9]] },
+		{ "role": &"medium", "center": Vector2(-48, 46), "ext": 14.0, "seed": 31, "sep": 8.0,
+			"items": [["garden_hero_tree_3d", 2, true, 0.85]] },
+		{ "role": &"medium", "center": Vector2(48, -44), "ext": 12.0, "seed": 32, "sep": 8.0,
+			"items": [["garden_hero_tree_3d", 2, true, 0.9]] },
+		# --- Plaza-edge furniture ---
 		{ "role": &"medium", "center": Vector2(-30, 20), "ext": 10.0, "seed": 10, "sep": 6.0,
 			"items": [["garden_bench_3d", 2, true, 1.4], ["garden_planter_3d", 2, true, 1.4]] },
-		{ "role": &"medium", "center": Vector2(34, 30), "ext": 10.0, "seed": 11, "sep": 6.0,
-			"items": [["garden_trellis_3d", 1, true, 1.4], ["prop_lamp_3d", 1, false, 1.3]] },
-		{ "role": &"small", "center": Vector2(-40, 40), "ext": 10.0, "seed": 20, "sep": 3.0,
-			"items": [["prop_bush_3d", 3, false, 1.3], ["prop_flowers_3d", 4, false, 1.3]] },
-		{ "role": &"small", "center": Vector2(40, -20), "ext": 10.0, "seed": 21, "sep": 3.0,
-			"items": [["prop_tall_grass_3d", 5, false, 1.3], ["prop_mushroom_3d", 2, false, 1.3]] },
-		{ "role": &"small", "center": Vector2(-44, -20), "ext": 8.0, "seed": 22, "sep": 3.0,
-			"items": [["garden_bollard_3d", 3, true, 1.3], ["prop_flowers_3d", 3, false, 1.3]] },
+		{ "role": &"medium", "center": Vector2(30, 22), "ext": 10.0, "seed": 11, "sep": 6.0,
+			"items": [["garden_trellis_3d", 1, true, 1.4], ["garden_planter_3d", 2, true, 1.3]] },
+		{ "role": &"medium", "center": Vector2(20, -30), "ext": 10.0, "seed": 12, "sep": 6.0,
+			"items": [["garden_bench_3d", 2, true, 1.3], ["garden_planter_3d", 1, true, 1.3]] },
+		# --- Lamps + bollards lining the four paths ---
+		{ "role": &"small", "center": Vector2(0, 66), "ext": 6.0, "seed": 40, "sep": 5.0,
+			"items": [["prop_lamp_3d", 2, false, 1.3], ["garden_bollard_3d", 3, true, 1.2]] },
+		{ "role": &"small", "center": Vector2(0, -66), "ext": 6.0, "seed": 41, "sep": 5.0,
+			"items": [["prop_lamp_3d", 2, false, 1.3], ["garden_bollard_3d", 3, true, 1.2]] },
+		{ "role": &"small", "center": Vector2(66, 4), "ext": 6.0, "seed": 42, "sep": 5.0,
+			"items": [["prop_lamp_3d", 2, false, 1.3], ["garden_bollard_3d", 2, true, 1.2]] },
+		{ "role": &"small", "center": Vector2(-66, 4), "ext": 6.0, "seed": 43, "sep": 5.0,
+			"items": [["prop_lamp_3d", 2, false, 1.3], ["garden_bollard_3d", 2, true, 1.2]] },
+		# --- Dense foliage in the four grass quadrants ---
+		{ "role": &"small", "center": Vector2(44, 38), "ext": 16.0, "seed": 50, "sep": 3.5,
+			"items": [["prop_bush_3d", 5, false, 1.3], ["prop_flowers_3d", 5, false, 1.3], ["prop_tall_grass_3d", 5, false, 1.3]] },
+		{ "role": &"small", "center": Vector2(-46, 38), "ext": 16.0, "seed": 51, "sep": 3.5,
+			"items": [["prop_bush_3d", 5, false, 1.3], ["prop_tall_grass_3d", 6, false, 1.3], ["prop_mushroom_3d", 3, false, 1.3]] },
+		{ "role": &"small", "center": Vector2(46, -40), "ext": 14.0, "seed": 52, "sep": 3.5,
+			"items": [["prop_bush_3d", 4, false, 1.3], ["prop_flowers_3d", 5, false, 1.3], ["prop_tall_grass_3d", 4, false, 1.3]] },
+		{ "role": &"small", "center": Vector2(-46, -42), "ext": 14.0, "seed": 53, "sep": 3.5,
+			"items": [["prop_bush_3d", 4, false, 1.3], ["prop_mushroom_3d", 3, false, 1.3], ["prop_tall_grass_3d", 4, false, 1.3]] },
+		# --- Flowers hugging the pond shore ---
+		{ "role": &"small", "center": Vector2(52, -44), "ext": 8.0, "seed": 60, "sep": 3.0,
+			"items": [["prop_flowers_3d", 5, false, 1.3], ["prop_bush_3d", 2, false, 1.2]] },
 	],
 }

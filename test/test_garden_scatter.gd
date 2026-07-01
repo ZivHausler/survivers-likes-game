@@ -23,11 +23,15 @@ func test_props_tree_structure() -> void:
 func test_budget_counts() -> void:
 	var root := _build()
 	var props := root.get_node("Props")
-	assert_eq(props.get_node("Landmarks").get_child_count(), 1, "exactly 1 landmark")
+	# Dense art-directed budget (superseded the old sparse 1/3-6/10-25, which itself
+	# tripped the "props are sparse" visual auto-fail). Ranges stay bounded to still
+	# catch runaway or empty scatter.
+	var land := props.get_node("Landmarks").get_child_count()
 	var med := props.get_node("MediumProps").get_child_count()
 	var small := props.get_node("SmallDetails").get_child_count()
-	assert_true(med >= 3 and med <= 6, "3-6 medium props, got %d" % med)
-	assert_true(small >= 10 and small <= 25, "10-25 small props, got %d" % small)
+	assert_true(land >= 1 and land <= 3, "1-3 landmarks, got %d" % land)
+	assert_true(med >= 8 and med <= 30, "8-30 medium props, got %d" % med)
+	assert_true(small >= 40 and small <= 130, "40-130 small props, got %d" % small)
 
 func test_spawn_disc_clear() -> void:
 	var root := _build()
