@@ -203,8 +203,8 @@ func _scatter_seam(seams: Node3D, grid: ZoneGrid, zone_y: Dictionary,
 	for i in 4:
 		var d: Vector3 = _EDGE_DIR[i]
 		var nz := grid.zone_at(x + int(d.x), y + int(d.z))
-		if nz == this_zone or _SOFT.has(nz) or nz == &"void":
-			continue  # only soft -> hard(raised) boundaries
+		if not (nz == &"stone_plaza" or nz == &"stone_path"):
+			continue  # creep ONLY onto raised stone edges — never pond (water), void, dirt, grass
 		var tang := Vector3(d.z, 0.0, -d.x)  # along the edge
 		var mid := Vector3(wc.x + d.x * cs * 0.5, gy, wc.z + d.z * cs * 0.5)
 		# Dense overhanging fringe: many clumps along the edge, jittered, and pushed a little
@@ -309,7 +309,7 @@ func _build_pond(container: Node3D, pond: Dictionary) -> void:
 	container.add_child(rim, true)
 	# Water surface.
 	var water := MeshInstance3D.new()
-	water.mesh = _disc_mesh(r, pond.get("water_color", Color(0.14, 0.52, 0.68, 0.85)), true)
+	water.mesh = _disc_mesh(r, pond.get("water_color", Color(0.14, 0.52, 0.68, 0.85)), false)
 	water.position = Vector3(c.x, pond.get("y", 0.0) + 0.05, c.y)
 	water.name = "PondWater"
 	container.add_child(water, true)
@@ -319,7 +319,7 @@ func _disc_mesh(radius: float, color: Color, glow: bool) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	st.set_normal(Vector3.UP)
-	var segs := 40
+	var segs := 72
 	for i in segs:
 		var a0 := TAU * float(i) / segs
 		var a1 := TAU * float(i + 1) / segs
@@ -329,7 +329,7 @@ func _disc_mesh(radius: float, color: Color, glow: bool) -> ArrayMesh:
 	var mesh := st.commit()
 	var m := StandardMaterial3D.new()
 	m.albedo_color = color
-	m.roughness = 0.3
+	m.roughness = 0.55
 	if color.a < 1.0:
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	if glow:
