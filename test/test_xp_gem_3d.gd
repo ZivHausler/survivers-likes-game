@@ -134,39 +134,38 @@ func test_gem_latches_and_stays_latched_when_player_flees_out_of_range() -> void
 
 func test_collect_adds_xp_to_player() -> void:
 	var gem := _make_gem(10)
-	gem._collect()
+	gem._collect_for(_player)
 	assert_eq(_player.xp_total, 10,
 			"Player should receive 10 XP on first collection")
 
 func test_collect_emits_xp_collected_signal() -> void:
 	var gem := _make_gem(5)
 	watch_signals(GameEvents)
-	gem._collect()
+	gem._collect_for(_player)
 	assert_signal_emitted_with_parameters(GameEvents, "xp_collected", [5])
 
 func test_no_double_collection() -> void:
 	var gem := _make_gem(10)
-	gem._collect()
-	gem._collect()  # second call must be a no-op
+	gem._collect_for(_player)
+	gem._collect_for(_player)  # second call must be a no-op
 	assert_eq(_player.xp_total, 10,
-			"XP must only be added once even if _collect() is called twice")
+			"XP must only be added once even if _collect_for() is called twice")
 
 func test_collect_sets_collected_flag() -> void:
 	var gem := _make_gem(7)
-	gem._collect()
+	gem._collect_for(_player)
 	assert_true(gem._collected, "Gem must mark itself collected")
 
 func test_collect_safe_with_null_player() -> void:
 	var gem := _make_gem(7)
-	gem._player = null  # simulate freed/null player
-	gem._collect()      # must not crash
+	gem._collect_for(null)  # simulate freed/null player — must not crash
 	assert_true(gem._collected,
 			"Gem should still mark itself collected even with null player")
 
 func test_second_collect_is_noop_for_xp() -> void:
 	var gem := _make_gem(20)
-	gem._collect()
+	gem._collect_for(_player)
 	var xp_after_first := _player.xp_total
-	gem._collect()
+	gem._collect_for(_player)
 	assert_eq(_player.xp_total, xp_after_first,
-			"Second _collect() must not add more XP")
+			"Second _collect_for() must not add more XP")

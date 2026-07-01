@@ -28,6 +28,7 @@ var elapsed: float = 0.0
 var kills: int = 0
 
 var _player = null  # Player3D at runtime; duck-typed so test stubs work
+var _players: Array = []  # party list gems magnet toward; single-player until Task D2
 var _spawner = null  # Spawner3D at runtime; duck-typed so test stubs work
 var _gem_scene: PackedScene = null
 var _upgrade_ui: Node = null  # UpgradeUI CanvasLayer
@@ -63,6 +64,7 @@ func start() -> void:
 		return
 
 	_player = parent.get_node_or_null("Player") as Player3D
+	_players = [_player]
 	_spawner = parent.get_node_or_null("Spawner3D")  # duck-typed; no cast needed
 	_upgrade_ui = parent.get_node_or_null("UpgradeUI")
 	_pause_menu = parent.get_node_or_null("PauseMenu")
@@ -186,7 +188,7 @@ func _on_enemy_killed(pos: Vector3, xp: int) -> void:
 	if _gem_scene == null or _player == null:
 		return
 	var gem: XPGem3D = _gem_scene.instantiate() as XPGem3D
-	gem.setup(xp, _player)
+	gem.setup_party(xp, _players)
 	var parent := get_parent()
 	if parent:
 		# Defer insertion: enemy_killed_3d can fire from inside a physics callback.

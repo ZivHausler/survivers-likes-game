@@ -24,7 +24,9 @@ const MAGNET_ACCEL: float = 60.0
 const COLLECT_DIST: float = 0.35
 
 var _value: int = 0
-var _player: Node3D = null
+var _players: Array = []
+## Nearest valid player this frame — recomputed each _process(); magnet homes on this.
+var _target: Node3D = null
 var _collected: bool = false
 ## True once the gem has entered pickup range; latched for the gem's lifetime.
 var _magnetized: bool = false
@@ -41,9 +43,23 @@ func _ready() -> void:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
-func setup(value: int, player: Node3D) -> void:
+## Static helper for later tasks — picks the nearest valid player to the gem, skipping
+## null/freed entries. Returns null if no valid player is found.
+static func nearest_player(gem_pos: Vector3, players: Array) -> Node3D:
+	var best: Node3D = null
+	var best_d := INF
+	for p in players:
+		if p == null or not is_instance_valid(p):
+			continue
+		var d := gem_pos.distance_squared_to((p as Node3D).global_position)
+		if d < best_d:
+			best_d = d; best = p
+	return best
+
+
+func setup_party(value: int, players: Array) -> void:
 	_value = value
-	_player = player
+	_players = players
 	# Apply tier color to the gem mesh so the orb's color signals its XP value.
 	# A fresh StandardMaterial3D is created per gem — never mutates a shared resource.
 	var mesh := get_node_or_null("MeshInstance3D") as MeshInstance3D
@@ -56,6 +72,10 @@ func setup(value: int, player: Node3D) -> void:
 		mat.emission_energy_multiplier = 2.0
 		mesh.material_override = mat
 	body_entered.connect(_on_body_entered)
+
+
+func setup(value: int, player: Node3D) -> void:
+	setup_party(value, [player])
 
 
 ## Maps an XP value to a tier color sourced from VisualPalette.
@@ -80,12 +100,13 @@ static func tier_color(value: int) -> Color:
 func _process(dt: float) -> void:
 	if _collected:
 		return
-	if not is_instance_valid(_player):
+	_target = nearest_player(global_position, _players)
+	if _target == null:
 		return
-	var player_pos: Vector3 = _player.global_position
+	var player_pos: Vector3 = _target.global_position
 	# Latch on first entry into pickup range; never release afterwards.
 	if not _magnetized:
-		if in_pickup_range(global_position, player_pos, _player.get_pickup_range()):
+		if in_pickup_range(global_position, player_pos, _target.get_pickup_range()):
 			_magnetized = true
 			_magnet_speed = MAGNET_SPEED_MIN
 		else:
@@ -96,21 +117,21 @@ func _process(dt: float) -> void:
 	# Arrival safety net: collect once close, in case a fast step skipped the overlap.
 	var flat := Vector3(player_pos.x - global_position.x, 0.0, player_pos.z - global_position.z)
 	if flat.length() < COLLECT_DIST:
-		_collect()
+		_collect_for(_target)
 
 
 func _on_body_entered(body: Node3D) -> void:
-	if body == _player:
-		_collect()
+	if body in _players:
+		_collect_for(body)
 
 
-## Public for unit tests — also called by _on_body_entered.
-func _collect() -> void:
+## Public for unit tests — also called by _on_body_entered / the magnet arrival check.
+func _collect_for(player: Node3D) -> void:
 	if _collected:
 		return
 	_collected = true
-	if is_instance_valid(_player):
-		_player.add_xp(_value)
+	if is_instance_valid(player):
+		player.add_xp(_value)
 	GameEvents.xp_collected.emit(_value)
 	queue_free()
 
