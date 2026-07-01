@@ -156,14 +156,39 @@ func _curb_mat() -> StandardMaterial3D:
 ## LoL-Swarm plaza floor-decal reference). It must NOT be raised: the player spawns/fights
 ## on the plaza center, and raised geometry there swallows the character (flat entity plane).
 func _build_centerpiece(container: Node3D, cx: float, cz: float, top_y: float) -> void:
-	if not ResourceLoader.exists("res://art/decals/plaza_medallion.png"):
-		return
-	var med := MeshInstance3D.new()
-	var mesh := _tile_mesh(30.0)
-	mesh.surface_set_material(0, _medallion_mat())
-	med.mesh = mesh
-	med.position = Vector3(cx, top_y + 0.03, cz)  # a hair above the plaza, still flush/walkable
-	container.add_child(med, true)
+	# Concentric inlaid bands: stack filled discs largest-first, each smaller one a hair higher,
+	# so the outer colours survive as rings (teal field / gold rim / teal field). All within
+	# ~0.1u of the plaza top -> reads as a flush floor inlay, never a raised dais that swallows
+	# the player. Matches the LoL-Swarm teal+gold plaza medallion.
+	var bands := [
+		[8.6, Color(0.09, 0.29, 0.35), false],  # outer teal field
+		[7.5, Color(0.74, 0.57, 0.24), true],   # gold rim ring (subtle glow)
+		[6.7, Color(0.07, 0.24, 0.30), false],  # inner teal field
+	]
+	var yy := top_y + 0.02
+	for b in bands:
+		var r: float = b[0]
+		var col: Color = b[1]
+		var gl: bool = b[2]
+		var d := MeshInstance3D.new()
+		d.mesh = _disc_mesh(r, col, gl)
+		d.position = Vector3(cx, yy, cz)
+		container.add_child(d, true)
+		yy += 0.012
+	# Glowing seal ring (authored decal) nested inside the gold rim.
+	if ResourceLoader.exists("res://art/decals/plaza_medallion.png"):
+		var med := MeshInstance3D.new()
+		var mesh := _tile_mesh(15.0)
+		mesh.surface_set_material(0, _medallion_mat())
+		med.mesh = mesh
+		med.position = Vector3(cx, yy + 0.02, cz)
+		container.add_child(med, true)
+		yy += 0.02
+	# Center emblem dot.
+	var dot := MeshInstance3D.new()
+	dot.mesh = _disc_mesh(1.7, Color(0.78, 0.62, 0.30), true)
+	dot.position = Vector3(cx, yy + 0.02, cz)
+	container.add_child(dot, true)
 
 ## Break the hard straight border where soft ground (grass/dirt/flowerbed) meets a raised
 ## hard zone: sprinkle small grass tufts along the seam, jittered + overhanging, so the
