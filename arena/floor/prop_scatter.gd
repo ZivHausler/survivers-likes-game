@@ -62,7 +62,9 @@ func _spawn_obstacle(container: Node3D, pl: Dictionary) -> void:
 	if scene != null:
 		var model := scene.instantiate()
 		if model is Node3D:
-			obs.set_model(model as Node3D, fp[0] * scale_mul, fp[1] * scale_mul)
+			# Unscaled footprint: obs.scale (below) scales the whole node — collision cylinder
+			# AND model — uniformly. Pre-multiplying here too would double-scale collision.
+			obs.set_model(model as Node3D, fp[0], fp[1])
 		elif model != null:
 			model.free()
 	obs.position = Vector3(pl["pos"].x, 0.0, pl["pos"].z)
