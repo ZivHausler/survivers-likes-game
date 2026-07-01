@@ -190,10 +190,15 @@ boss_hp_changed, boss_died`. Duck-typed: `_game_manager.get_elapsed()/get_kills(
 `_player.xp/level/xp_to_next()/weapons/ultimate/passives`. Helpers `collect_cooldowns`,
 `collect_passives`. Reuse `RadialCooldown` for the ultimate ring. `process_mode = ALWAYS`.
 
-### 4.3 v2 additions (from ref #6, after v1 lands)
-Character portrait in the bar; ability row with **keybind labels**; **"Ultimate Ready!"**
-glow popup; **enemy-count** counter; **minimap**; ornate frame chrome. Per-skill **ability
-icons** (generated — Phase 6.2) fill the cooldown slot `TextureRect`s.
+### 4.3 v2 additions (from ref #6) — SHIPPED
+Done (commit on `feature/arena-floor-first`): centered **portrait** + capped HP cluster
+(no more full-width HP slab); weapon-slot **keybind badges** (1..N) + SPACE on ult;
+**"ULTIMATE READY"** popup on the ult's rising edge (`HUD._flash_ult_ready`); live
+**enemy-count** (group `enemies`) in the top strip; circular **radar minimap**
+(`ui/minimap.gd`, player-centered, plots the `enemies` group). Node skeleton kept so all
+HUD tests still pass. *Still open:* per-skill **ability icons** (Phase 6.2) to replace the
+slot text abbreviations; a real character **portrait** texture (placeholder letter now);
+ornate frame chrome; wiring the minimap `world_radius` to actual arena bounds.
 
 ### 4.4 Styling
 Dark neon theme `ui/theme/swarm_hud_theme.tres`. Palette (`core/visual_palette.gd`): HP
@@ -209,7 +214,8 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   organic blob biomes, winding paths, glowing plaza medallion + capture rings, water +
   shoreline rim, grass tonal variation, dense clustered scatter. *Remaining polish:* glowing
   `Decal`s, more flora color, AI-painted hero textures, prettier grass at distance.
-- [ ] **HUD v2** — ref-#6 richness (portrait, keybinds, ultimate popup, enemy count, minimap).
+- [x] **HUD v2** — SHIPPED (§4.3): portrait, keybinds, ultimate popup, enemy count, radar
+  minimap. *Remaining:* ability icons (Phase 6.2), real portrait art, frame chrome.
 - [ ] **Decal pipeline** — generate glowing floor-decal textures + alpha-key + `Decal` placement.
 - [ ] **New decoration props** — crystal shard, pebble/rubble, building facade, billboard, statue.
 - [ ] **More maps / biomes** — each map = pick biomes from §1.4, compose per §1.1–1.3.
@@ -229,3 +235,7 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   organic floor-first composition. Arena structure tests updated; suite 1067/1067 green.
   Committed on branch `feature/arena-floor-first`. Approach chosen with user: best visual
   quality + modifiable/replicable per map.
+- 2026-07-01 — HUD v2 shipped (§4.3): centered portrait + capped HP, keybind badges,
+  ULTIMATE-READY popup, live enemy count, radar minimap (`ui/minimap.gd`). Kept the tested
+  node skeleton; suite 1067/1067. Added `tools/hud_preview.*` harness. User picked "HUD v2
+  now" after the arena rebuild.
