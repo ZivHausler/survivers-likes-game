@@ -185,6 +185,22 @@ func test_all_characters_define_positive_hp_regen() -> void:
 		assert_not_null(cd, "%s_3d.tres must load" % id)
 		assert_true(cd.base_stats.hp_regen > 0.0, "%s must define a base hp_regen > 0" % id)
 
+func test_apply_stat_upgrade_hp_regen_raises_regen_stat() -> void:
+	var p := _make_player(100.0, 0.0)
+	p.stats.hp_regen = 0.0
+	p.apply_stat_upgrade(&"hp_regen", 1.0)
+	assert_almost_eq(p.stats.hp_regen, 1.0, 0.001, "hp_regen upgrade must add to the regen stat")
+	# And the raised stat then actually heals over time.
+	p.take_damage(50.0)               # hp 100 → 50
+	p._physics_process(2.0)           # +1/s × 2s → 52
+	assert_almost_eq(p.hp, 52.0, 0.001, "raised hp_regen must heal over time")
+
+func test_generic_hp_regen_upgrade_resource_loads() -> void:
+	var u: Upgrade = load("res://upgrades/generic/hp_regen.tres")
+	assert_not_null(u, "hp_regen.tres must load")
+	assert_eq(u.effect_kind, &"hp_regen", "effect_kind must be hp_regen")
+	assert_eq(u.kind, Upgrade.Kind.GENERIC, "must be a GENERIC upgrade")
+
 # ── get_pickup_range ─────────────────────────────────────────────────────────
 
 func test_get_pickup_range_matches_stat() -> void:

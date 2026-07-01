@@ -428,3 +428,5 @@ func apply_stat_upgrade(kind: StringName, value: float) -> void:
 			stats.damage_mult += value
 		&"armor":
 			stats.armor += value
+		&"hp_regen":
+			stats.hp_regen += value
