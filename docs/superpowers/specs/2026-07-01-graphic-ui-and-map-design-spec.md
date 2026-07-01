@@ -354,3 +354,12 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   enemy-vs-enemy jostling. **Map-authoring note:** any new map's collidable props must be wrapped
   in `Obstacle3D` and have their footprints fed to the navmesh bake, or enemies will path straight
   through them. Suite 1129/1129.
+- 2026-07-01 — CO-OP transformation kicked off. Decided to transform the game's systems toward
+  Riot's *Swarm / Operation: Anima Squad* bullet-heaven while keeping our friends roster/art
+  (IP-safe). Decomposed into 9 slices; designing **Slice #1 (Co-op Foundation)** first: 1–4
+  player Steam P2P co-op, host-authoritative world / client-owned avatar, team XP & gold,
+  synced level-up, downed/revival. **UI additions from this slice:** a networked **lobby /
+  character-select** screen (reuses the existing `character_select` UI + a per-player ready
+  flag) and **portrait ready-bubbles** during the synced level-up pause. Full HUD overhaul for
+  Swarm (Augments/Passives/Weapons panels, scoreboard, boss bar) remains Slice #9. Design:
+  `2026-07-01-coop-foundation-design.md`.
