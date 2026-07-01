@@ -9,8 +9,8 @@ func _build() -> Node3D:
 	add_child_autofree(root)
 	var fb := FloorBuilder.new()
 	fb.recipe_path = "res://arena/maps/garden_map.gd"
-	root.add_child(fb)
-	fb.build_into(root)  # synchronous path for tests
+	fb.build_into(root)
+	fb.free()
 	return root
 
 func _count_non_floor_cells() -> int:

@@ -18,17 +18,17 @@ func _ready() -> void:
 		return
 	var root := Node3D.new()
 	root.name = "GardenFloor"
-	build_into_root(root)
+	_build_into_root(root)
 	parent.add_child.call_deferred(root)
 
 ## Test/direct entry: build the floor under `parent` synchronously.
 func build_into(parent: Node3D) -> void:
 	var root := Node3D.new()
 	root.name = "GardenFloor"
-	build_into_root(root)
+	_build_into_root(root)
 	parent.add_child(root)
 
-func build_into_root(root: Node3D) -> void:
+func _build_into_root(root: Node3D) -> void:
 	var recipe: Dictionary = load(recipe_path).RECIPE
 	var grid := ZoneGrid.new(recipe["rows"], recipe["legend"], recipe["cell_size"])
 	var zones: Dictionary = recipe["zones"]
