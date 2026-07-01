@@ -89,6 +89,20 @@ static var RECIPE := {
 			"items": [["garden_hero_tree_3d", 1, true, 1.8]] },
 		{ "role": &"landmark", "center": Vector2(-34, -34), "ext": 1.0, "seed": 2, "sep": 1.0,
 			"items": [["garden_fountain_3d", 1, true, 1.6]] },
+		# --- Arena-ring props: real 3D mass INSIDE the gameplay frustum but OUTSIDE the 12u
+		# spawn-clear disc, so the combat view has form + cast shadows (Battlerite-style) without
+		# raising the walkable floor (raised combat floor swallows the character). Lamps give
+		# vertical mass + glow; planters/bushes give grounded greenery. Center stays open. ---
+		{ "role": &"medium", "center": Vector2(0, -15),  "ext": 2.5, "seed": 70, "sep": 2.5,
+			"items": [["prop_lamp_3d", 1, true, 1.5], ["prop_bush_3d", 2, false, 1.2]] },
+		{ "role": &"medium", "center": Vector2(-15, -7), "ext": 2.5, "seed": 71, "sep": 2.5,
+			"items": [["garden_planter_3d", 1, true, 1.4], ["prop_bush_3d", 2, false, 1.2]] },
+		{ "role": &"medium", "center": Vector2(15, -7),  "ext": 2.5, "seed": 72, "sep": 2.5,
+			"items": [["prop_lamp_3d", 1, true, 1.5], ["prop_bush_3d", 2, false, 1.2]] },
+		{ "role": &"medium", "center": Vector2(-15, 13), "ext": 2.5, "seed": 73, "sep": 2.5,
+			"items": [["garden_planter_3d", 1, true, 1.4], ["prop_bush_3d", 2, false, 1.2]] },
+		{ "role": &"medium", "center": Vector2(15, 13),  "ext": 2.5, "seed": 74, "sep": 2.5,
+			"items": [["prop_lamp_3d", 1, true, 1.5], ["prop_bush_3d", 2, false, 1.2]] },
 		# --- Ornamental trees in the grass quadrants ---
 		{ "role": &"medium", "center": Vector2(46, 46), "ext": 14.0, "seed": 30, "sep": 8.0,
 			"items": [["garden_hero_tree_3d", 3, true, 0.9]] },

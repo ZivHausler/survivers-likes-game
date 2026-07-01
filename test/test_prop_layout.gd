@@ -43,5 +43,5 @@ func test_role_counts_match_budget_ranges() -> void:
 	for e in out:
 		by_role[e["role"]] += 1
 	assert_true(by_role[&"landmark"] >= 1 and by_role[&"landmark"] <= 3, "1–3 landmarks, got %d" % by_role[&"landmark"])
-	assert_true(by_role[&"medium"] >= 8 and by_role[&"medium"] <= 30, "8–30 medium, got %d" % by_role[&"medium"])
+	assert_true(by_role[&"medium"] >= 8 and by_role[&"medium"] <= 38, "8–38 medium, got %d" % by_role[&"medium"])
 	assert_true(by_role[&"small"] >= 40 and by_role[&"small"] <= 130, "40–130 small, got %d" % by_role[&"small"])
