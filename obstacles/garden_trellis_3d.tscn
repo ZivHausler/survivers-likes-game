@@ -1,0 +1,41 @@
+[gd_scene load_steps=5 format=3]
+
+[sub_resource type="BoxMesh" id="mesh_upright"]
+size = Vector3(0.14, 4.0, 0.14)
+
+[sub_resource type="BoxMesh" id="mesh_bar"]
+size = Vector3(2.5, 0.14, 0.14)
+
+[sub_resource type="StandardMaterial3D" id="mat_gray"]
+albedo_color = Color(0.33, 0.37, 0.43, 1)
+roughness = 0.6
+metallic = 0.4
+
+[sub_resource type="StandardMaterial3D" id="mat_cyan"]
+albedo_color = Color(0.3, 0.85, 1.0, 1)
+emission_enabled = true
+emission = Color(0.3, 0.85, 1.0, 1)
+emission_energy_multiplier = 1.0
+roughness = 0.3
+
+[node name="GardenTrellis" type="Node3D"]
+
+[node name="UpRight1" type="MeshInstance3D" parent="."]
+position = Vector3(-1.12, 2.0, 0)
+mesh = SubResource("mesh_upright")
+surface_material_override/0 = SubResource("mat_gray")
+
+[node name="UpRight2" type="MeshInstance3D" parent="."]
+position = Vector3(1.12, 2.0, 0)
+mesh = SubResource("mesh_upright")
+surface_material_override/0 = SubResource("mat_gray")
+
+[node name="TopBar" type="MeshInstance3D" parent="."]
+position = Vector3(0, 3.93, 0)
+mesh = SubResource("mesh_bar")
+surface_material_override/0 = SubResource("mat_gray")
+
+[node name="GlowBar" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.4, 0, 0, 0, 1, 0, 3.93, 0)
+mesh = SubResource("mesh_bar")
+surface_material_override/0 = SubResource("mat_cyan")
