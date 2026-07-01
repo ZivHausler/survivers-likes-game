@@ -1,5 +1,6 @@
 class_name FloorBuilder extends Node
-## Builds the Garden floor as ONE flat splatmapped ground surface (y=0): a merged quad mesh
+## Builds the Garden floor as ONE flat splatmapped ground surface (y=_GROUND_Y, a hair above the
+## arena's base surround plane to avoid z-fighting): a merged quad mesh
 ## over every non-void cell, driven by splat_ground.gdshader, which blends the zone textures
 ## per-pixel from a ZoneGrid-derived control map (SplatField). Pond water, authored decals and
 ## the plaza centerpiece are added on top. Replaces the old per-tile + alpha-feather approach.
@@ -7,6 +8,12 @@ class_name FloorBuilder extends Node
 
 const ZoneGrid := preload("res://arena/floor/zone_grid.gd")
 const SplatField := preload("res://arena/floor/splat_field.gd")
+
+# Draw-order lift above the arena's base surround plane (arena_3d.tscn Ground/GroundMesh sits at
+# y=0). The splat ground must render ABOVE it or the two coplanar surfaces z-fight (extreme
+# flicker). 0.02 is the same tiny offset the old per-tile floor used — draw order only, far too
+# small to swallow the character; the walkable floor is still effectively flat.
+const _GROUND_Y := 0.02
 
 @export var recipe_path: String = "res://arena/maps/garden_map.gd"
 
@@ -53,7 +60,7 @@ func _build_into_root(root: Node3D) -> void:
 				plaza_n += 1
 	if plaza_n > 0:
 		var pc := plaza_sum / float(plaza_n)
-		_build_centerpiece(centre, pc.x, pc.z, 0.0)
+		_build_centerpiece(centre, pc.x, pc.z, _GROUND_Y)
 
 ## One merged flat ground mesh (y=0) over every non-void cell (pond cells included, so the
 ## pond's soft-edged water reveals grass at the shore). UV = world XZ mapped to [0,1] across
@@ -89,6 +96,7 @@ func _build_ground(root: Node3D, grid: ZoneGrid, zones: Dictionary, recipe: Dict
 	var mi := MeshInstance3D.new()
 	mi.name = "Ground"
 	mi.mesh = mesh
+	mi.position = Vector3(0.0, _GROUND_Y, 0.0)  # lift above the base surround plane (kills z-fight)
 	root.add_child(mi, true)
 
 func _splat_material(grid: ZoneGrid, zones: Dictionary, recipe: Dictionary) -> ShaderMaterial:
