@@ -146,8 +146,10 @@ func _skirt_mat() -> StandardMaterial3D:
 func _curb_mat() -> StandardMaterial3D:
 	if _curb_m == null:
 		_curb_m = StandardMaterial3D.new()
-		_curb_m.albedo_color = Color(0.72, 0.70, 0.64)
-		_curb_m.roughness = 0.8
+		# Darker cool stone so the lip reads as intentional edging, not cream piping (the light
+		# warm cap was the harsh straight "line" at every plaza border).
+		_curb_m.albedo_color = Color(0.48, 0.48, 0.52)
+		_curb_m.roughness = 0.85
 	return _curb_m
 
 ## Hero centerpiece = a FLAT glowing emissive medallion inlay on the plaza floor (like the
@@ -180,15 +182,20 @@ func _scatter_seam(seams: Node3D, grid: ZoneGrid, zone_y: Dictionary,
 			continue  # only soft -> hard(raised) boundaries
 		var tang := Vector3(d.z, 0.0, -d.x)  # along the edge
 		var mid := Vector3(wc.x + d.x * cs * 0.5, gy, wc.z + d.z * cs * 0.5)
-		for k in 4:
+		# Dense overhanging fringe: many clumps along the edge, jittered, and pushed a little
+		# ONTO the hard zone (positive d) so grass creeps over the lip and hides the ruler line.
+		var n := 9
+		for k in n:
 			var h := _hash01(x * 91 + y * 47 + i * 13 + k * 7)
 			var h2 := _hash01(x * 31 + y * 17 + i * 5 + k * 101)
-			var along := (float(k) / 3.0 - 0.5) * cs + (h - 0.5) * cs * 0.22
-			var pos := mid + tang * along + d * ((h2 - 0.4) * cs * 0.12)
+			var along := (float(k) / float(n - 1) - 0.5) * cs + (h - 0.5) * cs * 0.14
+			# spill from just inside the soft side to well over the seam onto the hard zone
+			var over := (h2 - 0.25) * cs * 0.5
+			var pos := mid + tang * along + d * over
 			var tuft := MeshInstance3D.new()
 			tuft.mesh = _tuft_mesh()
-			var s := 0.7 + h2 * 0.8
-			tuft.scale = Vector3(s, s * (0.8 + h * 0.6), s)
+			var s := 1.0 + h2 * 1.1
+			tuft.scale = Vector3(s, s * (0.9 + h * 0.7), s)
 			tuft.rotation.y = h * TAU
 			tuft.position = pos
 			seams.add_child(tuft, true)
@@ -202,18 +209,22 @@ func _tuft_mesh() -> ArrayMesh:
 		return _tuft_m
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	# three crossed blades (thin tapered quads) -> a small grass clump
-	var blades: Array[float] = [0.0, 0.66, 1.33]
-	for b in blades:
-		var a: float = b * PI
-		var dx: float = cos(a) * 0.14
-		var dz: float = sin(a) * 0.14
-		var tip := Vector3(dx * 0.4, 0.55, dz * 0.4)
-		var p0 := Vector3(-dz * 0.08, 0.0, dx * 0.08)
-		var p1 := Vector3(dz * 0.08, 0.0, -dx * 0.08)
+	# three crossed FILLED cards (grass-billboard style) -> a low green clump that reads as
+	# MASS from the angled cam. Tapered spikes were sub-pixel; solid cards fill the seam.
+	var cards := 3
+	var hw := 0.55  # half-width
+	var hgt := 0.6
+	for c in cards:
+		var a := PI * float(c) / float(cards)
+		var dx := cos(a) * hw
+		var dz := sin(a) * hw
+		var b0 := Vector3(-dx, 0.0, -dz)
+		var b1 := Vector3(dx, 0.0, dz)
+		var t0 := Vector3(-dx, hgt, -dz)
+		var t1 := Vector3(dx, hgt, dz)
 		st.set_normal(Vector3.UP)
-		st.add_vertex(p0); st.add_vertex(p1); st.add_vertex(tip)
-		st.add_vertex(p1); st.add_vertex(p0); st.add_vertex(tip)
+		st.add_vertex(b0); st.add_vertex(b1); st.add_vertex(t1)
+		st.add_vertex(b0); st.add_vertex(t1); st.add_vertex(t0)
 	_tuft_m = st.commit()
 	_tuft_m.surface_set_material(0, _tuft_mat())
 	return _tuft_m
