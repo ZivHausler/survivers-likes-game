@@ -1,18 +1,19 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" uid="uid://dg51ebxxt1vyo" path="res://ui/hud.gd" id="1_hud"]
 [ext_resource type="Theme" path="res://ui/theme/swarm_hud_theme.tres" id="2_theme"]
 [ext_resource type="Script" path="res://ui/hud_icon.gd" id="3_icon"]
 [ext_resource type="Script" uid="uid://jrfkswbgsu2j" path="res://ui/radial_cooldown.gd" id="4_radial"]
+[ext_resource type="Script" path="res://ui/minimap.gd" id="5_minimap"]
 
 [sub_resource type="StyleBoxFlat" id="SB_strip"]
 bg_color = Color(0.04, 0.05, 0.09, 0.93)
 border_width_bottom = 2
 border_color = Color(0.3, 0.8, 1.0, 0.70)
-content_margin_left = 8.0
-content_margin_top = 4.0
-content_margin_right = 8.0
-content_margin_bottom = 3.0
+content_margin_left = 12.0
+content_margin_top = 5.0
+content_margin_right = 12.0
+content_margin_bottom = 4.0
 
 [sub_resource type="StyleBoxFlat" id="SB_cmdbar"]
 bg_color = Color(0.05, 0.06, 0.10, 0.92)
@@ -21,12 +22,12 @@ border_width_top = 2
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.3, 0.8, 1.0, 0.70)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-content_margin_left = 8.0
-content_margin_top = 6.0
-content_margin_right = 8.0
-content_margin_bottom = 6.0
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
 
 [sub_resource type="StyleBoxFlat" id="SB_lvlbadge"]
 bg_color = Color(0.10, 0.20, 0.35, 0.90)
@@ -39,22 +40,34 @@ corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
-content_margin_left = 4.0
-content_margin_top = 1.0
-content_margin_right = 4.0
-content_margin_bottom = 1.0
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+
+[sub_resource type="StyleBoxFlat" id="SB_portrait"]
+bg_color = Color(0.08, 0.13, 0.20, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.8, 1.0, 0.85)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="SB_ultslot"]
 bg_color = Color(0.10, 0.08, 0.04, 0.92)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(1.0, 0.8, 0.2, 0.60)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1.0, 0.8, 0.2, 0.75)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 content_margin_left = 4.0
 content_margin_top = 4.0
 content_margin_right = 4.0
@@ -124,45 +137,58 @@ script = ExtResource("1_hud")
 [node name="TopStrip" type="PanelContainer" parent="."]
 theme = ExtResource("2_theme")
 anchor_right = 1.0
-offset_bottom = 52.0
+offset_bottom = 58.0
 theme_override_styles/panel = SubResource("SB_strip")
 
 [node name="StripVBox" type="VBoxContainer" parent="TopStrip"]
-theme_override_constants/separation = 2
+theme_override_constants/separation = 3
 
 [node name="StripRow" type="HBoxContainer" parent="TopStrip/StripVBox"]
-theme_override_constants/separation = 6
+theme_override_constants/separation = 8
 
 [node name="ClockIcon" type="Control" parent="TopStrip/StripVBox/StripRow"]
 script = ExtResource("3_icon")
-custom_minimum_size = Vector2(20, 20)
+custom_minimum_size = Vector2(24, 24)
 icon_type = 0
 icon_color = Color(0.6, 0.85, 1.0, 1.0)
 
 [node name="TimerLabel" type="Label" parent="TopStrip/StripVBox/StripRow"]
 text = "0:00"
+theme_override_font_sizes/font_size = 22
 
 [node name="HSpacer" type="Control" parent="TopStrip/StripVBox/StripRow"]
 size_flags_horizontal = 3
 
 [node name="SkullIcon" type="Control" parent="TopStrip/StripVBox/StripRow"]
 script = ExtResource("3_icon")
-custom_minimum_size = Vector2(20, 20)
+custom_minimum_size = Vector2(22, 22)
 icon_type = 1
 icon_color = Color(0.9, 0.95, 1.0, 1.0)
 
 [node name="KillsLabel" type="Label" parent="TopStrip/StripVBox/StripRow"]
 text = "0"
+theme_override_font_sizes/font_size = 16
+
+[node name="EnemyIcon" type="Control" parent="TopStrip/StripVBox/StripRow"]
+script = ExtResource("3_icon")
+custom_minimum_size = Vector2(22, 22)
+icon_type = 1
+icon_color = Color(1.0, 0.4, 0.5, 1.0)
+
+[node name="EnemyCountLabel" type="Label" parent="TopStrip/StripVBox/StripRow"]
+text = "0"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1.0, 0.6, 0.65, 1.0)
 
 [node name="LevelBadge" type="PanelContainer" parent="TopStrip/StripVBox/StripRow"]
 theme_override_styles/panel = SubResource("SB_lvlbadge")
 
 [node name="LevelLabel" type="Label" parent="TopStrip/StripVBox/StripRow/LevelBadge"]
 text = "LV 1"
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 13
 
 [node name="XPBar" type="ProgressBar" parent="TopStrip/StripVBox"]
-custom_minimum_size = Vector2(0, 10)
+custom_minimum_size = Vector2(0, 12)
 size_flags_horizontal = 3
 max_value = 10.0
 value = 0.0
@@ -170,36 +196,58 @@ show_percentage = false
 theme_override_styles/background = SubResource("SB_xpbg")
 theme_override_styles/fill = SubResource("SB_xpfill")
 
+[node name="Minimap" type="Control" parent="."]
+script = ExtResource("5_minimap")
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -176.0
+offset_top = 66.0
+offset_right = -12.0
+offset_bottom = 230.0
+
 [node name="CommandBar" type="PanelContainer" parent="."]
 theme = ExtResource("2_theme")
-anchor_left = 0.05
-anchor_right = 0.95
+anchor_left = 0.04
+anchor_right = 0.96
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_top = -80.0
-offset_bottom = -4.0
+offset_top = -94.0
+offset_bottom = -6.0
 grow_vertical = 0
 theme_override_styles/panel = SubResource("SB_cmdbar")
 
 [node name="CBContent" type="HBoxContainer" parent="CommandBar"]
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="PassivesBox" type="HBoxContainer" parent="CommandBar/CBContent"]
 theme_override_constants/separation = 4
 
-[node name="HPZone" type="HBoxContainer" parent="CommandBar/CBContent"]
+[node name="LeftSpacer" type="Control" parent="CommandBar/CBContent"]
 size_flags_horizontal = 3
+
+[node name="HPZone" type="HBoxContainer" parent="CommandBar/CBContent"]
+theme_override_constants/separation = 8
+
+[node name="Portrait" type="PanelContainer" parent="CommandBar/CBContent/HPZone"]
+custom_minimum_size = Vector2(68, 68)
+theme_override_styles/panel = SubResource("SB_portrait")
+
+[node name="PortraitLabel" type="Label" parent="CommandBar/CBContent/HPZone/Portrait"]
+text = "A"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 34
+theme_override_colors/font_color = Color(0.55, 0.9, 1.0, 1.0)
 
 [node name="HeartIcon" type="Control" parent="CommandBar/CBContent/HPZone"]
 script = ExtResource("3_icon")
-custom_minimum_size = Vector2(24, 24)
+custom_minimum_size = Vector2(26, 26)
 icon_type = 2
 icon_color = Color(1.0, 0.35, 0.1, 1.0)
 
 [node name="HPBarContainer" type="Control" parent="CommandBar/CBContent/HPZone"]
-size_flags_horizontal = 3
-size_flags_vertical = 3
-custom_minimum_size = Vector2(80, 36)
+size_flags_vertical = 5
+custom_minimum_size = Vector2(240, 28)
 
 [node name="HPBar" type="ProgressBar" parent="CommandBar/CBContent/HPZone/HPBarContainer"]
 anchor_right = 1.0
@@ -217,7 +265,10 @@ mouse_filter = 2
 text = "100 / 100"
 horizontal_alignment = 1
 vertical_alignment = 1
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 13
+
+[node name="RightSpacer" type="Control" parent="CommandBar/CBContent"]
+size_flags_horizontal = 3
 
 [node name="RightZone" type="HBoxContainer" parent="CommandBar/CBContent"]
 theme_override_constants/separation = 6
@@ -226,15 +277,15 @@ theme_override_constants/separation = 6
 theme_override_constants/separation = 6
 
 [node name="UltSlot" type="PanelContainer" parent="CommandBar/CBContent/RightZone"]
-custom_minimum_size = Vector2(60, 60)
+custom_minimum_size = Vector2(66, 66)
 theme_override_styles/panel = SubResource("SB_ultslot")
 
 [node name="UltSlotContent" type="VBoxContainer" parent="CommandBar/CBContent/RightZone/UltSlot"]
-theme_override_constants/separation = 2
+theme_override_constants/separation = 1
 
 [node name="UltRadial" type="Control" parent="CommandBar/CBContent/RightZone/UltSlot/UltSlotContent"]
 script = ExtResource("4_radial")
-custom_minimum_size = Vector2(50, 50)
+custom_minimum_size = Vector2(52, 52)
 visible = false
 
 [node name="SpaceLabel" type="Label" parent="CommandBar/CBContent/RightZone/UltSlot/UltSlotContent"]
@@ -242,14 +293,33 @@ text = "SPACE"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 9
 
+[node name="UltReadyPopup" type="Label" parent="."]
+visible = false
+mouse_filter = 2
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -180.0
+offset_right = 180.0
+offset_top = -150.0
+offset_bottom = -110.0
+text = "ULTIMATE READY"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_colors/font_color = Color(1.0, 0.85, 0.25, 1)
+theme_override_colors/font_outline_color = Color(0.4, 0.25, 0.0, 0.9)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 30
+
 [node name="BossBar" type="PanelContainer" parent="."]
 visible = false
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -330.0
-offset_top = 4.0
+offset_top = 66.0
 offset_right = 330.0
-offset_bottom = 76.0
+offset_bottom = 138.0
 grow_horizontal = 2
 theme = ExtResource("2_theme")
 

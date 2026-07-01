@@ -19,10 +19,15 @@ class_name HUD extends CanvasLayer
 @onready var _passives_box:  HBoxContainer  = $CommandBar/CBContent/PassivesBox
 @onready var _weapons_box:   HBoxContainer  = $CommandBar/CBContent/RightZone/WeaponsBox
 @onready var _ult_radial:    RadialCooldown = $CommandBar/CBContent/RightZone/UltSlot/UltSlotContent/UltRadial
+@onready var _enemy_label:   Label          = $TopStrip/StripVBox/StripRow/EnemyCountLabel
+@onready var _minimap                       = $Minimap  # ui/minimap.gd (dynamic to avoid class-cache dep)
+@onready var _ult_popup:     Label          = $UltReadyPopup
 
 var _game_manager: Node = null  # duck-typed: GameManager (2D) or GameManager3D
 var _player: Node = null        # duck-typed: Player (2D) or Player3D
 var _evolve_tween: Tween = null
+var _ult_popup_tween: Tween = null
+var _ult_was_ready: bool = false
 var _passive_panels: Array = []
 var _passive_last_count: int = 0
 var _cd_bars: Array[ProgressBar] = []
@@ -57,6 +62,8 @@ func _find_siblings() -> void:
 	_player = get_tree().get_first_node_in_group("player")
 	if _player == null:
 		_player = parent.get_node_or_null("Player")
+	if _minimap != null and _minimap.has_method("set_player"):
+		_minimap.set_player(_player)
 
 func _process(_dt: float) -> void:
 	if _game_manager and is_instance_valid(_game_manager):
@@ -65,6 +72,8 @@ func _process(_dt: float) -> void:
 			_timer_label.text = "%d:%02d" % [int(secs / 60.0), secs % 60]
 		if _game_manager.has_method("get_kills"):
 			_kills_label.text = "%d" % _game_manager.get_kills()
+	if _enemy_label != null:
+		_enemy_label.text = "%d" % get_tree().get_nodes_in_group("enemies").size()
 	if _player and is_instance_valid(_player):
 		if _player.has_method("xp_to_next") and "level" in _player:
 			_xp_bar.max_value = _player.xp_to_next(_player.get("level"))
@@ -105,6 +114,18 @@ func _on_boss_hp_changed(current: float, max_hp: float) -> void:
 
 func _on_boss_died() -> void:
 	_boss_bar.visible = false
+
+## Briefly show the "ULTIMATE READY" popup when the ultimate finishes cooling down.
+func _flash_ult_ready() -> void:
+	if _ult_popup == null:
+		return
+	if _ult_popup_tween and _ult_popup_tween.is_valid():
+		_ult_popup_tween.kill()
+	_ult_popup.visible = true
+	_ult_popup.modulate = Color.WHITE
+	_ult_popup_tween = create_tween()
+	_ult_popup_tween.tween_property(_ult_popup, "modulate:a", 0.0, 1.8).set_delay(1.2)
+	_ult_popup_tween.tween_callback(func(): _ult_popup.visible = false)
 
 ## Gather one cooldown entry per active skill: weapons first, ultimate last.
 ## Each entry: { "id": StringName, "fraction": float, "is_ultimate": bool }.
@@ -157,7 +178,7 @@ func _update_cooldown_bars() -> void:
 		_cd_bars.clear()
 		for i in weapon_entries.size():
 			var panel := Panel.new()
-			panel.custom_minimum_size = Vector2(48, 48)
+			panel.custom_minimum_size = Vector2(52, 52)
 			var style := StyleBoxFlat.new()
 			style.bg_color = Color(0.06, 0.08, 0.12, 0.9)
 			style.set_corner_radius_all(4)
@@ -199,6 +220,17 @@ func _update_cooldown_bars() -> void:
 			id_lbl.add_theme_font_size_override("font_size", 8)
 			id_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			panel.add_child(id_lbl)
+			# Keybind badge (1..N) in the top-left corner.
+			var key_lbl := Label.new()
+			key_lbl.name = "KeyLabel"
+			key_lbl.text = str(i + 1)
+			key_lbl.position = Vector2(3, 0)
+			key_lbl.add_theme_font_size_override("font_size", 11)
+			key_lbl.add_theme_color_override("font_color", Color(0.55, 0.9, 1.0))
+			key_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+			key_lbl.add_theme_constant_override("outline_size", 3)
+			key_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			panel.add_child(key_lbl)
 			# READY glow label
 			var ready_lbl := Label.new()
 			ready_lbl.name = "ReadyLabel"
@@ -223,13 +255,18 @@ func _update_cooldown_bars() -> void:
 		if ready_lbl:
 			ready_lbl.visible = frac >= 1.0
 
-	# --- Ultimate slot: radial sweep ---
+	# --- Ultimate slot: radial sweep + "ready" popup on the rising edge ---
 	if _ult_radial != null:
 		if ult_entry != null:
 			_ult_radial.visible = true
 			_ult_radial.set_fraction(ult_entry["fraction"])
+			var ready: bool = ult_entry["fraction"] >= 1.0
+			if ready and not _ult_was_ready:
+				_flash_ult_ready()
+			_ult_was_ready = ready
 		else:
 			_ult_radial.visible = false
+			_ult_was_ready = false
 
 	# --- Left zone: passives ---
 	if _passives_box != null:
