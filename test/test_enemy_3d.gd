@@ -224,6 +224,41 @@ func test_lethal_damage_frees_node() -> void:
 	await get_tree().process_frame
 	assert_false(is_instance_valid(e), "enemy should be freed after lethal damage")
 
+# ── proxy routing → host arbitration (Task E2, M3) ────────────────────────────
+
+## Stub manager recording client_deal_damage() calls; duck-typed for the proxy branch
+## in Enemy3D.take_damage (the real GameManager3D.client_deal_damage RPCs to the host).
+class StubNetManager3D extends Node:
+	var calls: Array = []  # each entry: [net_id, amount]
+	func client_deal_damage(net_id: int, amount: float) -> void:
+		calls.append([net_id, amount])
+
+func test_proxy_take_damage_forwards_to_net_manager_and_leaves_hp_unchanged() -> void:
+	var e: Enemy3D = _make_enemy(20.0)
+	e._is_proxy = true
+	e.net_id = 42
+	var mgr := StubNetManager3D.new()
+	e._net_manager = mgr
+	var hp_before := e.hp
+
+	e.take_damage(7.0)
+
+	assert_eq(mgr.calls.size(), 1, "proxy take_damage must forward exactly once to the net manager")
+	assert_eq(mgr.calls[0][0], 42, "forwarded call must carry the proxy's net_id")
+	assert_almost_eq(mgr.calls[0][1], 7.0, 0.001, "forwarded call must carry the damage amount")
+	assert_almost_eq(e.hp, hp_before, 0.001, "proxy take_damage must NOT change hp locally")
+
+func test_proxy_take_damage_does_not_emit_enemy_killed_3d() -> void:
+	var e: Enemy3D = _make_enemy(5.0)  # low hp — a real enemy would die from 7.0 damage
+	e._is_proxy = true
+	e.net_id = 1
+	e._net_manager = StubNetManager3D.new()
+	watch_signals(GameEvents)
+
+	e.take_damage(7.0)
+
+	assert_signal_not_emitted(GameEvents, "enemy_killed_3d")
+
 # ── null / freed-target guards ────────────────────────────────────────────────
 
 func test_physics_process_before_setup_does_not_crash() -> void:

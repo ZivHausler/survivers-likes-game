@@ -869,3 +869,46 @@ func test_manager_tracks_full_party_in_players_list() -> void:
 	root.add_child(manager)
 	assert_eq(manager._players.size(), 2,
 		"GameManager3D._players must hold both spawned party members")
+
+# ---------------------------------------------------------------------------
+# Host-side enemy net_id lookup (Task E2, M3)
+# ---------------------------------------------------------------------------
+
+## Bare GameManager3D added under a plain root (no Players/PlayerSpawner scaffold) —
+## mirrors _make_manager_with_stub_player_and_skill_system's pattern: start() runs but
+## _spawn_party() early-returns (no "Players" child), so get_tree() is still usable.
+func _make_bare_manager() -> GameManager3D:
+	var root := Node3D.new()
+	add_child_autofree(root)
+	var manager := GameManager3D.new()
+	manager.name = "GM"
+	root.add_child(manager)
+	return manager
+
+## Minimal stand-in for a group member with a net_id — avoids instancing the full
+## Enemy3D scene (whose @onready children require the .tscn) for a pure lookup test.
+class StubNetEnemy3D extends Node3D:
+	var net_id: int = 0
+
+func test_host_enemy_by_net_id_finds_matching_enemy() -> void:
+	var manager := _make_bare_manager()
+	var e1: StubNetEnemy3D = add_child_autofree(StubNetEnemy3D.new())
+	e1.net_id = 5
+	e1.add_to_group("enemies")
+	var e2: StubNetEnemy3D = add_child_autofree(StubNetEnemy3D.new())
+	e2.net_id = 9
+	e2.add_to_group("enemies")
+
+	var found := manager._host_enemy_by_net_id(9)
+
+	assert_eq(found, e2, "_host_enemy_by_net_id must return the enemy whose net_id matches")
+
+func test_host_enemy_by_net_id_returns_null_when_absent() -> void:
+	var manager := _make_bare_manager()
+	var e1: StubNetEnemy3D = add_child_autofree(StubNetEnemy3D.new())
+	e1.net_id = 5
+	e1.add_to_group("enemies")
+
+	var found := manager._host_enemy_by_net_id(999)
+
+	assert_null(found, "_host_enemy_by_net_id must return null when no enemy matches")

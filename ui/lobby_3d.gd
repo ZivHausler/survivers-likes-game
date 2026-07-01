@@ -18,6 +18,13 @@ const CHARACTER_PATHS: Array[String] = preload("res://ui/character_select_3d.gd"
 
 var _local_fighter_path: String = ""
 
+# Dev join-by-ID controls (built in code): the Steam overlay can't render over an
+# engine-launched Vulkan build, so invites can't be accepted the usual way. Instead the
+# host reads its numeric lobby id off-screen and a client joins by typing it in.
+var _lobby_id_row: HBoxContainer
+var _lobby_id_field: LineEdit
+var _join_id_edit: LineEdit
+
 func _ready() -> void:
 	NetworkManager.registry_changed.connect(_refresh)
 	NetworkManager.host_aborted.connect(_on_host_aborted)
@@ -32,7 +39,44 @@ func _ready() -> void:
 	_ready_toggle.toggled.connect(_on_ready_toggled)
 	_start_btn.pressed.connect(_on_start_pressed)
 	_solo_btn.pressed.connect(_on_solo_pressed)
+	_build_join_by_id()
 	_refresh()
+
+## Add a "lobby id" field + Join button to the net row, and a host-side id readout label.
+func _build_join_by_id() -> void:
+	var net_row := _host_btn.get_parent()
+	_join_id_edit = LineEdit.new()
+	_join_id_edit.placeholder_text = "lobby id"
+	_join_id_edit.custom_minimum_size = Vector2(200, 0)
+	net_row.add_child(_join_id_edit)
+	var join_id_btn := Button.new()
+	join_id_btn.text = "Join by ID"
+	join_id_btn.pressed.connect(_on_join_by_id_pressed)
+	net_row.add_child(join_id_btn)
+	# Host lobby-id readout: a selectable read-only field + one-click Copy button.
+	_lobby_id_row = HBoxContainer.new()
+	_lobby_id_row.visible = false
+	var lbl := Label.new()
+	lbl.text = "Lobby ID:"
+	_lobby_id_row.add_child(lbl)
+	_lobby_id_field = LineEdit.new()
+	_lobby_id_field.editable = false
+	_lobby_id_field.custom_minimum_size = Vector2(230, 0)
+	_lobby_id_row.add_child(_lobby_id_field)
+	var copy_btn := Button.new()
+	copy_btn.text = "Copy"
+	copy_btn.pressed.connect(_on_copy_id_pressed)
+	_lobby_id_row.add_child(copy_btn)
+	net_row.get_parent().add_child(_lobby_id_row)
+	net_row.get_parent().move_child(_lobby_id_row, net_row.get_index() + 1)
+
+func _on_copy_id_pressed() -> void:
+	DisplayServer.clipboard_set(_lobby_id_field.text)
+
+func _on_join_by_id_pressed() -> void:
+	var id := _join_id_edit.text.strip_edges().to_int()
+	if id != 0:
+		NetworkManager.join_steam(id)
 
 func _on_host_pressed() -> void:
 	NetworkManager.host_enet()   # or host_steam() when Steam selected
@@ -45,8 +89,11 @@ func _on_steam_host_pressed() -> void:
 	NetworkManager.host_steam()
 	_refresh()
 
-func _on_steam_lobby_ready(_lobby_id: int) -> void:
+func _on_steam_lobby_ready(lobby_id: int) -> void:
 	_invite_btn.disabled = false
+	_lobby_id_field.text = "%d" % lobby_id
+	_lobby_id_row.visible = true
+	print("[lobby] Steam lobby created — id=", lobby_id)
 
 func _on_fighter_picked(path: String) -> void:
 	_local_fighter_path = path

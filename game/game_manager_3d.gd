@@ -232,6 +232,7 @@ func receive_enemy_snapshot(bytes: PackedByteArray) -> void:
 				parent.add_child(proxy)
 			proxy.add_to_group("enemies")
 			proxy.configure_proxy()
+			proxy._net_manager = self
 			proxy.global_position = e["pos"]
 			_proxies[id] = proxy
 		proxy.set_interp_target(e["pos"], e["yaw"])
@@ -243,6 +244,46 @@ func receive_enemy_snapshot(bytes: PackedByteArray) -> void:
 				_proxies[id].queue_free()
 			_proxies.erase(id)
 			_last_seen.erase(id)
+
+
+# ── Client weapon damage → host arbitration by net_id (Task E2, M3) ──────────
+
+## Host-side lookup: the host has no proxies, so every "enemies" group member is a
+## real enemy. Returns null when no enemy has a matching net_id.
+func _host_enemy_by_net_id(net_id: int) -> Node:
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e.net_id == net_id and is_instance_valid(e):
+			return e
+	return null
+
+
+## Called on a CLIENT by a proxy's take_damage; forwards the hit to the host authority.
+func client_deal_damage(net_id: int, amount: float) -> void:
+	request_damage.rpc_id(1, net_id, amount)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_damage(net_id: int, amount: float) -> void:
+	if not multiplayer.is_server():
+		return
+	var e := _host_enemy_by_net_id(net_id)
+	if e == null:
+		return
+	var was_valid := is_instance_valid(e)
+	e.take_damage(maxf(0.0, amount))   # host applies; may emit enemy_killed_3d/XP + start dissolve
+	# If the hit killed it, tell clients to drop the proxy immediately (snapshot despawn is the
+	# slower fallback). e may already be _dying (still valid until dissolve frees it).
+	if was_valid and (not is_instance_valid(e) or e.hp <= 0.0):
+		confirm_kill.rpc(net_id)
+
+
+@rpc("authority", "call_remote", "reliable")
+func confirm_kill(net_id: int) -> void:
+	# Runs on CLIENTS: free the dead enemy's proxy now for responsive feedback.
+	var proxy = _proxies.get(net_id)
+	if proxy != null and is_instance_valid(proxy):
+		proxy.queue_free()
+	_proxies.erase(net_id)
 
 
 func _unhandled_input(event: InputEvent) -> void:
