@@ -48,4 +48,4 @@ func test_floor_tiles_built_at_runtime() -> void:
 	await get_tree().process_frame
 	var floor := root.get_node_or_null("GardenFloor")
 	assert_not_null(floor, "GardenFloor must be built at runtime")
-	assert_true(floor.get_node("BaseTiles").get_child_count() > 0, "base tiles built")
+	assert_not_null(floor.get_node_or_null("Ground"), "splat Ground mesh built")
