@@ -22,9 +22,12 @@ class_name HUD extends CanvasLayer
 @onready var _enemy_label:   Label          = $TopStrip/StripVBox/StripRow/EnemyCountLabel
 @onready var _minimap                       = $Minimap  # ui/minimap.gd (dynamic to avoid class-cache dep)
 @onready var _ult_popup:     Label          = $UltReadyPopup
+@onready var _portrait_label: Label         = $CommandBar/CBContent/HPZone/Portrait/PortraitLabel
+@onready var _portrait_tex:  TextureRect    = $CommandBar/CBContent/HPZone/Portrait/PortraitTexture
 
 var _game_manager: Node = null  # duck-typed: GameManager (2D) or GameManager3D
 var _player: Node = null        # duck-typed: Player (2D) or Player3D
+var _icon_map: Dictionary = {}  # skill_id → Texture2D, built from the player's character_data
 var _evolve_tween: Tween = null
 var _ult_popup_tween: Tween = null
 var _ult_was_ready: bool = false
@@ -64,6 +67,49 @@ func _find_siblings() -> void:
 		_player = parent.get_node_or_null("Player")
 	if _minimap != null and _minimap.has_method("set_player"):
 		_minimap.set_player(_player)
+	_build_icon_map()
+
+## Build skill_id → ability-icon lookup from the player's character_data (skills +
+## ultimate) and set the command-bar portrait. Duck-typed so a 2D/stub player without
+## character_data simply yields no icons (slots fall back to their text abbreviation).
+func _build_icon_map() -> void:
+	_icon_map.clear()
+	if _player == null or not is_instance_valid(_player):
+		return
+	var cd = _player.get("character_data")
+	if cd == null:
+		return
+	var skills = cd.get("skills")
+	if skills is Array:
+		for sd in skills:
+			if sd != null:
+				_register_icon(sd)
+	_register_icon(cd.get("ultimate"))
+	# Command-bar portrait: explicit field, else convention art/icons/portraits/<id>.png.
+	var portrait = cd.get("portrait")
+	if portrait == null:
+		portrait = _load_convention("res://art/icons/portraits/%s.png" % cd.get("id"))
+	if portrait != null and _portrait_tex != null:
+		_portrait_tex.texture = portrait
+		_portrait_tex.visible = true
+		if _portrait_label != null:
+			_portrait_label.visible = false
+
+## Map a SkillData's id to its icon: explicit SkillData.icon wins, else the
+## convention path art/icons/abilities/<id>.png (so new icons need no .tres edits).
+func _register_icon(sd) -> void:
+	if sd == null:
+		return
+	var icon = sd.icon
+	if icon == null:
+		icon = _load_convention("res://art/icons/abilities/%s.png" % sd.id)
+	if icon != null:
+		_icon_map[sd.id] = icon
+
+func _load_convention(path: String):
+	if ResourceLoader.exists(path):
+		return load(path)
+	return null
 
 func _process(_dt: float) -> void:
 	if _game_manager and is_instance_valid(_game_manager):
@@ -188,13 +234,16 @@ func _update_cooldown_bars() -> void:
 			style.border_width_bottom = 1
 			style.border_color = Color(0.3, 0.8, 1.0, 0.5)
 			panel.add_theme_stylebox_override("panel", style)
-			# TextureRect placeholder (real art assigned in a later task)
+			# Ability icon (from SkillData.icon via _icon_map); text label is the fallback.
 			var icon_rect := TextureRect.new()
 			icon_rect.name = "IconTexture"
 			icon_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 			icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var slot_icon = _icon_map.get(weapon_entries[i]["id"], null)
+			if slot_icon != null:
+				icon_rect.texture = slot_icon
 			panel.add_child(icon_rect)
 			# Cooldown overlay bar (transparent bg, cyan fill)
 			var bar := ProgressBar.new()
@@ -219,6 +268,7 @@ func _update_cooldown_bars() -> void:
 			id_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 			id_lbl.add_theme_font_size_override("font_size", 8)
 			id_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			id_lbl.visible = slot_icon == null  # hide the abbreviation once a real icon loads
 			panel.add_child(id_lbl)
 			# Keybind badge (1..N) in the top-left corner.
 			var key_lbl := Label.new()

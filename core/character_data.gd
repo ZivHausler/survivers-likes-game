@@ -4,6 +4,7 @@ class_name CharacterData extends Resource
 @export var id: StringName
 @export var display_name: String = ""
 @export var color: Color = Color.WHITE          # placeholder art tint
+@export var portrait: Texture2D                 # HUD command-bar portrait (null → letter placeholder)
 @export var base_stats: StatBlock
 @export var weapon_scene: PackedScene
 @export var passive_id: StringName               # dedicated passive's id

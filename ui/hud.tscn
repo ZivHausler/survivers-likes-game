@@ -239,6 +239,12 @@ vertical_alignment = 1
 theme_override_font_sizes/font_size = 34
 theme_override_colors/font_color = Color(0.55, 0.9, 1.0, 1.0)
 
+[node name="PortraitTexture" type="TextureRect" parent="CommandBar/CBContent/HPZone/Portrait"]
+visible = false
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
 [node name="HeartIcon" type="Control" parent="CommandBar/CBContent/HPZone"]
 script = ExtResource("3_icon")
 custom_minimum_size = Vector2(26, 26)
