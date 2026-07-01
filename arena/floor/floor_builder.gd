@@ -161,9 +161,9 @@ func _build_centerpiece(container: Node3D, cx: float, cz: float, top_y: float) -
 	# ~0.1u of the plaza top -> reads as a flush floor inlay, never a raised dais that swallows
 	# the player. Matches the LoL-Swarm teal+gold plaza medallion.
 	var bands := [
-		[8.6, Color(0.09, 0.29, 0.35), false],  # outer teal field
-		[7.5, Color(0.74, 0.57, 0.24), true],   # gold rim ring (subtle glow)
-		[6.7, Color(0.07, 0.24, 0.30), false],  # inner teal field
+		[6.4, Color(0.09, 0.29, 0.35), false],  # outer teal field
+		[5.6, Color(0.74, 0.57, 0.24), true],   # gold rim ring (subtle glow)
+		[4.9, Color(0.07, 0.24, 0.30), false],  # inner teal field
 	]
 	var yy := top_y + 0.02
 	for b in bands:
@@ -178,7 +178,7 @@ func _build_centerpiece(container: Node3D, cx: float, cz: float, top_y: float) -
 	# Glowing seal ring (authored decal) nested inside the gold rim.
 	if ResourceLoader.exists("res://art/decals/plaza_medallion.png"):
 		var med := MeshInstance3D.new()
-		var mesh := _tile_mesh(15.0)
+		var mesh := _tile_mesh(11.0)
 		mesh.surface_set_material(0, _medallion_mat())
 		med.mesh = mesh
 		med.position = Vector3(cx, yy + 0.02, cz)
@@ -186,7 +186,7 @@ func _build_centerpiece(container: Node3D, cx: float, cz: float, top_y: float) -
 		yy += 0.02
 	# Center emblem dot.
 	var dot := MeshInstance3D.new()
-	dot.mesh = _disc_mesh(1.7, Color(0.78, 0.62, 0.30), true)
+	dot.mesh = _disc_mesh(1.3, Color(0.78, 0.62, 0.30), true)
 	dot.position = Vector3(cx, yy + 0.02, cz)
 	container.add_child(dot, true)
 
