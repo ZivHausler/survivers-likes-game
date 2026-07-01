@@ -1,0 +1,20 @@
+[
+  {"kind": "icon", "seed": 4301, "size_out": 256,
+   "subject": "three fierce amber-brown hound silhouettes circling a glowing paw-print emblem",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/barak_loyal_hounds.png"},
+  {"kind": "icon", "seed": 4302, "size_out": 256,
+   "subject": "a snarling wolf-pack emblem of five glowing amber hounds converging inward",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/barak_pack_tactics.png"},
+  {"kind": "icon", "seed": 4303, "size_out": 256,
+   "subject": "a howling wolf head silhouette emitting glowing amber sound-wave rings",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/barak_howl.png"},
+  {"kind": "icon", "seed": 4304, "size_out": 256,
+   "subject": "a glowing amber-brown hound leaping with bared fangs in a burst of impact lines",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/barak_fetch.png"},
+  {"kind": "icon", "seed": 4305, "size_out": 256,
+   "subject": "an epic emblem of three glowing amber hounds breaking free of a snapped chain, gold accents",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/barak_hounds.png"},
+  {"kind": "portrait", "seed": 4310, "size_out": 512,
+   "subject": "a rugged wild-haired man with a wolfish grin flanked by hound silhouettes, amber-brown neon rim light",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/portraits/barak.png"}
+]

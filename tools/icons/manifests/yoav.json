@@ -1,0 +1,20 @@
+[
+  {"kind": "icon", "seed": 4801, "size_out": 256,
+   "subject": "a glowing sky-blue delivery scooter speeding forward with motion streaks",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yoav_drive_by.png"},
+  {"kind": "icon", "seed": 4802, "size_out": 256,
+   "subject": "four glowing sky-blue delivery parcels orbiting a scooter wheel emblem",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yoav_delivery_orbit.png"},
+  {"kind": "icon", "seed": 4803, "size_out": 256,
+   "subject": "a glowing sky-blue takeout food bag bursting into fiery steam on delivery",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yoav_hot_meal.png"},
+  {"kind": "icon", "seed": 4804, "size_out": 256,
+   "subject": "six glowing sky-blue delivery drones ringing a speeding scooter in formation",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yoav_express_run.png"},
+  {"kind": "icon", "seed": 4805, "size_out": 256,
+   "subject": "an epic sky-blue emblem of a delivery scooter blazing through three speed-line strikes, gold accents",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yoav_express_delivery.png"},
+  {"kind": "portrait", "seed": 4810, "size_out": 512,
+   "subject": "a courier in a delivery helmet on a scooter giving a thumbs up, sky-blue neon rim light",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/portraits/yoav.png"}
+]

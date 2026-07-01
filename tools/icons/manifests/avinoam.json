@@ -1,0 +1,20 @@
+[
+  {"kind": "icon", "seed": 4201, "size_out": 256,
+   "subject": "a radiant golden lightning bolt of divine light striking down from a holy sunburst",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/avinoam_holy_smite.png"},
+  {"kind": "icon", "seed": 4202, "size_out": 256,
+   "subject": "three glowing golden holy orbs orbiting a bright divine core",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/avinoam_smite_orbs.png"},
+  {"kind": "icon", "seed": 4203, "size_out": 256,
+   "subject": "a wide radiant golden shockwave of holy light bursting outward in concentric rings",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/avinoam_radiant_pulse.png"},
+  {"kind": "icon", "seed": 4204, "size_out": 256,
+   "subject": "a concentrated golden pillar of divine judgment light striking a single focused point",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/avinoam_judgment.png"},
+  {"kind": "icon", "seed": 4205, "size_out": 256,
+   "subject": "an epic radiant golden holy cross emblem blazing with divine light rays and gold accents",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/avinoam_judgment_day.png"},
+  {"kind": "portrait", "seed": 4210, "size_out": 512,
+   "subject": "a serene holy man with a glowing golden halo of divine light, radiant gold neon rim light",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/portraits/avinoam.png"}
+]

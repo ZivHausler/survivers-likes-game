@@ -1,0 +1,17 @@
+[
+  {"kind": "icon", "seed": 4901, "size_out": 256,
+   "subject": "a glowing electric-cyan sonic pulse of concentric sound-wave rings",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yuval_soundwave.png"},
+  {"kind": "icon", "seed": 4902, "size_out": 256,
+   "subject": "three glowing cyan echo sound-wave rings orbiting a pulsing core",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yuval_echo_orbit.png"},
+  {"kind": "icon", "seed": 4903, "size_out": 256,
+   "subject": "a glowing electric-cyan subwoofer speaker blasting a heavy bass shockwave",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yuval_bass_drop.png"},
+  {"kind": "icon", "seed": 4904, "size_out": 256,
+   "subject": "a wide electric-cyan harmonic resonance wave rippling outward in rings",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yuval_resonance.png"},
+  {"kind": "portrait", "seed": 4910, "size_out": 512,
+   "subject": "a cool music producer wearing large headphones, electric-cyan neon rim light",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/portraits/yuval.png"}
+]

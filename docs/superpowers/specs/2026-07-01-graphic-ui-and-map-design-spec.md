@@ -216,6 +216,20 @@ HUD tests still pass. *Still open:* per-skill **ability icons** (Phase 6.2) to r
 slot text abbreviations; a real character **portrait** texture (placeholder letter now);
 ornate frame chrome; wiring the minimap `world_radius` to actual arena bounds.
 
+### 4.5 Ability icons + portraits — SHIPPED (full roster)
+Per-skill **ability icons** and per-character **command-bar portraits** for all 10 characters,
+generated with SDXL (DreamShaper-XL). Each icon is a single centered glowing emblem tinted to
+the character's theme colour (Avinoam gold, Barak amber, Ido toxic-violet, Matan lime, Natali
+rose-pink, Yinon fiery-orange, Yoav sky-blue, Yuval cyan, Ziv magenta), themed off the ability's
+own description. The HUD + upgrade cards **auto-resolve by convention** — icon
+`art/icons/abilities/<skill_id>.png`, portrait `art/icons/portraits/<char_id>.png` — so new art
+needs no `.tres` edits (`SkillData.icon` / `CharacterData.portrait` still win if set; text
+abbreviation is the fallback). Where an ultimate shares a skill id (Natali `comic_relief`, Yuval
+`bass_drop`) one icon serves both. **The generation pipeline now lives in-repo** at
+`tools/icons/` (`gen_icon.py` + per-character prompt manifests) — no external `/swarm`
+dependency; only the WSL venv + model weights stay outside git. Commit only the final PNGs
+(`.import` is regenerated on import).
+
 ### 4.4 Styling
 Dark neon theme `ui/theme/swarm_hud_theme.tres`. Palette (`core/visual_palette.gd`): HP
 `danger`; XP/weapons `player_primary` cyan; ultimate-ready `player_secondary` gold; boss
@@ -236,7 +250,8 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
 - [ ] **New decoration props** — crystal shard, pebble/rubble, building facade, billboard, statue.
 - [ ] **More maps / biomes** — each map = pick biomes from §1.4, compose per §1.1–1.3.
 - [ ] **Interiors** (stretch) — enterable building with roof cutaway (ref #6).
-- [ ] **Ability/counter icons** — Phase 6.2.
+- [x] **Ability icons + portraits** — SHIPPED for the full 10-character roster (§4.5).
+      *Remaining:* counter/status icons.
 
 ## 6. Change log
 - 2026-07-01 — Created. Captured map design language (floor-first density, non-blocking,
@@ -317,3 +332,14 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   edge-shadow (AO) band on the low side of a `tier` drop + optional albedo-luminance depth
   blend — geometry stays flat so the character is never swallowed. Elevation curbs removed.
   Full design in `2026-07-01-splatmap-ground-blending-design.md`.
+- 2026-07-01 — ABILITY ICONS + PORTRAITS shipped for the full 10-character roster (§4.5),
+  continuing the earlier "Avihay slice." 43 SDXL ability icons (single centered glowing emblem,
+  character theme-colour, themed off each ability's description) + 9 character portraits, all
+  auto-resolved by the `art/icons/abilities/<skill_id>.png` / `portraits/<char_id>.png`
+  convention (no `.tres` edits). **Moved the generation pipeline in-repo** to `tools/icons/`
+  (`gen_icon.py` + per-character prompt manifests) at the user's request — the game no longer
+  depends on the external `/swarm` project; only the WSL venv + model weights stay outside git.
+  Fixed a VRAM-exhaustion slowdown (SDXL cached activations filled the 16 GB GPU across a long
+  batch → driver spilled to system RAM, ~400× slower): added per-image cache-clear + a
+  `--skip-existing` resume flag, and switched to **one process per character** so each fully
+  releases VRAM on exit. Committed on `feature/ability-icons-roster`.

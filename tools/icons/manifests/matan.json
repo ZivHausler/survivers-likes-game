@@ -1,0 +1,20 @@
+[
+  {"kind": "icon", "seed": 4501, "size_out": 256,
+   "subject": "a glowing lime-green irritation aura of buzzing angry insects radiating outward",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/matan_irritation_aura.png"},
+  {"kind": "icon", "seed": 4502, "size_out": 256,
+   "subject": "three glowing lime-green buzzing mosquito irritants orbiting a core",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/matan_annoyance_orbit.png"},
+  {"kind": "icon", "seed": 4503, "size_out": 256,
+   "subject": "an explosive lime-green burst of angry frustration marks and jagged shout lines",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/matan_outburst.png"},
+  {"kind": "icon", "seed": 4504, "size_out": 256,
+   "subject": "a swirling lime-green swarm of five pestering buzzing gnats around a vortex",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/matan_pestering_swarm.png"},
+  {"kind": "icon", "seed": 4505, "size_out": 256,
+   "subject": "an epic glowing lime-green emblem of a giant buzzing wasp with energized speed streaks, gold accents",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/matan_buzzkill.png"},
+  {"kind": "portrait", "seed": 4510, "size_out": 512,
+   "subject": "a smirking man swatting at buzzing insects around his head, lime-green neon rim light",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/portraits/matan.png"}
+]

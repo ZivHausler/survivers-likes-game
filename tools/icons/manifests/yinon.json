@@ -1,0 +1,20 @@
+[
+  {"kind": "icon", "seed": 4701, "size_out": 256,
+   "subject": "a volley of glowing fiery-orange rockets streaking upward with smoke trails",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yinon_rocket_barrage.png"},
+  {"kind": "icon", "seed": 4702, "size_out": 256,
+   "subject": "four glowing orange cluster-bomb shells orbiting a fiery explosive core",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yinon_cluster_bomb.png"},
+  {"kind": "icon", "seed": 4703, "size_out": 256,
+   "subject": "a fiery-orange targeting reticle over a diving fighter jet dropping a bomb",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yinon_airstrike.png"},
+  {"kind": "icon", "seed": 4704, "size_out": 256,
+   "subject": "a fiery-orange artillery shell arcing over a wide field of explosion bursts",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yinon_bombardment.png"},
+  {"kind": "icon", "seed": 4705, "size_out": 256,
+   "subject": "an epic fiery-orange emblem of a bomber silhouette raining a carpet of explosions, gold accents",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/yinon_carpet_bomb.png"},
+  {"kind": "portrait", "seed": 4710, "size_out": 512,
+   "subject": "a tough soldier with an explosives bandolier and a confident grin, fiery-orange neon rim light",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/portraits/yinon.png"}
+]

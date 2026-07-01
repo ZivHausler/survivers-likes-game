@@ -1,0 +1,17 @@
+[
+  {"kind": "icon", "seed": 4601, "size_out": 256,
+   "subject": "a joyful rose-pink burst of laughter with a glowing smiling face and heart sparkles",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/natali_laughter.png"},
+  {"kind": "icon", "seed": 4602, "size_out": 256,
+   "subject": "three glowing rose-pink cheerful star sparks orbiting a happy core",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/natali_joy_orbit.png"},
+  {"kind": "icon", "seed": 4603, "size_out": 256,
+   "subject": "a glowing rose-pink comedy theater mask emblem bursting with joyful confetti",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/natali_comic_relief.png"},
+  {"kind": "icon", "seed": 4604, "size_out": 256,
+   "subject": "a wide rose-pink ripple of giggling laughter waves radiating outward in rings",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/natali_giggle_burst.png"},
+  {"kind": "portrait", "seed": 4610, "size_out": 512,
+   "subject": "a laughing cheerful young woman with bright joyful eyes, rose-pink neon rim light",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/portraits/natali.png"}
+]

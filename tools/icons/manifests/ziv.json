@@ -1,0 +1,20 @@
+[
+  {"kind": "icon", "seed": 5001, "size_out": 256,
+   "subject": "three glowing hot-pink magenta mirror glass shards orbiting a reflective core",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/ziv_mirror_shards.png"},
+  {"kind": "icon", "seed": 5002, "size_out": 256,
+   "subject": "a glowing hot-pink magenta winking eye with dazzling charm sparkles and hearts",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/ziv_charm.png"},
+  {"kind": "icon", "seed": 5003, "size_out": 256,
+   "subject": "a glowing hot-pink magenta smartphone camera bursting with a dazzling selfie flash star",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/ziv_selfie_flash.png"},
+  {"kind": "icon", "seed": 5004, "size_out": 256,
+   "subject": "a radiant hot-pink magenta aura of floating hearts enchanting outward",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/ziv_adoring_aura.png"},
+  {"kind": "icon", "seed": 5005, "size_out": 256,
+   "subject": "an epic hot-pink magenta emblem of a glamorous star with a sparkling crown and hearts, gold accents",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/ziv_main_character.png"},
+  {"kind": "portrait", "seed": 5010, "size_out": 512,
+   "subject": "a glamorous confident woman striking a pose with sparkling charm, hot-pink magenta neon rim light",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/portraits/ziv.png"}
+]

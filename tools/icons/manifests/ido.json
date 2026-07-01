@@ -1,0 +1,20 @@
+[
+  {"kind": "icon", "seed": 4401, "size_out": 256,
+   "subject": "a billowing toxic violet-purple poison cloud with a glowing skull haze",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/ido_toxic_cloud.png"},
+  {"kind": "icon", "seed": 4402, "size_out": 256,
+   "subject": "three glowing violet venom orbs dripping toxic ooze orbiting a core",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/ido_venom_orbs.png"},
+  {"kind": "icon", "seed": 4403, "size_out": 256,
+   "subject": "a wide expanding violet-purple toxic fog pulse in concentric hazy rings",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/ido_miasma.png"},
+  {"kind": "icon", "seed": 4404, "size_out": 256,
+   "subject": "a concentrated splash of glowing violet corrosive acid burning through metal",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/ido_corrosion.png"},
+  {"kind": "icon", "seed": 4405, "size_out": 256,
+   "subject": "an epic glowing violet-purple biohazard symbol wreathed in erupting toxic smoke, gold accents",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/abilities/ido_biohazard.png"},
+  {"kind": "portrait", "seed": 4410, "size_out": 512,
+   "subject": "a sly hooded man in a gas mask wreathed in toxic purple fog, violet-purple neon rim light",
+   "out": "/mnt/c/Users/avino/survivers-likes-game/art/icons/portraits/ido.png"}
+]
