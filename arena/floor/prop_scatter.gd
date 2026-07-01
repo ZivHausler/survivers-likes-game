@@ -79,9 +79,13 @@ func _spawn_decor(container: Node3D, pl: Dictionary) -> void:
 		return
 	var node := scene.instantiate()
 	if node is Node3D:
-		(node as Node3D).position = Vector3(pl["pos"].x, 0.0, pl["pos"].z)
-		_add_contact_shadow(node as Node3D)
-		container.add_child(node, true)
+		var n := node as Node3D
+		n.position = Vector3(pl["pos"].x, 0.0, pl["pos"].z)
+		var scale_mul: float = pl["scale"]
+		if scale_mul != 1.0:
+			n.scale = Vector3.ONE * scale_mul  # decor honors recipe scale, like colliders
+		_add_contact_shadow(n)
+		container.add_child(n, true)
 	elif node != null:
 		node.free()
 
