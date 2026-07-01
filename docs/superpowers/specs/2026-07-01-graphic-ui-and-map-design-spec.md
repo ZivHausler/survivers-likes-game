@@ -252,6 +252,10 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
 - [ ] **Interiors** (stretch) — enterable building with roof cutaway (ref #6).
 - [x] **Ability icons + portraits** — SHIPPED for the full 10-character roster (§4.5).
       *Remaining:* counter/status icons.
+- [ ] **Lobby / character-select screen v2** — `ui/lobby_3d.tscn` (Task D1, Co-op Foundation)
+      is functional-only right now: default `Button`/`Label`/`CheckButton` controls, no
+      theme/art pass. Needs a visual pass (matches HUD's "command bar" language, uses the
+      existing character portraits/colors from §4.5) once co-op networking stabilizes.
 
 ## 6. Change log
 - 2026-07-01 — Created. Captured map design language (floor-first density, non-blocking,
@@ -363,3 +367,9 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   flag) and **portrait ready-bubbles** during the synced level-up pause. Full HUD overhaul for
   Swarm (Augments/Passives/Weapons panels, scoreboard, boss bar) remains Slice #9. Design:
   `2026-07-01-coop-foundation-design.md`.
+- 2026-07-01 — Task D1 (Co-op Foundation M2) shipped the networked lobby screen described
+  above: `ui/lobby_3d.tscn`/`.gd` (Host/Join/fighter-grid-from-`CHARACTER_PATHS`/player
+  list/Ready/Start/Solo) behind a new persistent `game/session_root.tscn` (`run/main_scene`),
+  which swaps the lobby child for the arena via an authority/call_local RPC instead of
+  `change_scene_to_file` (keeps the tree/RPCs alive across the transition). **This is plumbing
+  only — no visual/theme pass yet**, tracked in §5 roadmap. Suite 1164/1164.
