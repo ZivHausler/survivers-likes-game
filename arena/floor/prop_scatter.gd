@@ -17,6 +17,7 @@ const _FP := {
 	"garden_planter_3d": [0.8, 0.8], "garden_trellis_3d": [1.2, 4.0],
 	"garden_bollard_3d": [0.3, 1.1], "prop_lamp_3d": [0.4, 3.0],
 	"garden_fountain_3d": [1.9, 2.2],
+	"prop_pillar_3d": [0.5, 3.5], "prop_brazier_3d": [0.6, 1.6], "prop_rock_3d": [1.0, 1.2],
 }
 
 func _ready() -> void:
