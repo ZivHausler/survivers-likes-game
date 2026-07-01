@@ -170,6 +170,10 @@ func _add_mesh(root: Node3D, mesh: ArrayMesh, mat: Material, node_name: String) 
 		return
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
+	# Assign to the surface (not just material_override) so the renderer's shadow /
+	# dependency pass never queries a null surface material (avoids per-frame
+	# "Parameter material is null" spam). material_override kept for instance clarity.
+	mesh.surface_set_material(0, mat)
 	mi.material_override = mat
 	mi.name = node_name
 	# force_readable_name=true so duplicate names become "Biome", "Biome2", … instead
