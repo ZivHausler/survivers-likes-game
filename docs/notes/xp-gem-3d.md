@@ -9,19 +9,30 @@
 
 1 world unit ≈ 16 px.
 
-- `MAGNET_SPEED_MAX = 19.0` (was 300 px)
-- `MAGNET_SPEED_MIN = 4.0` (was 60 px)
+- `MAGNET_SPEED_MIN = 4.0` — speed the instant the gem latches
+- `MAGNET_SPEED_MAX = 40.0` — peak speed (well above any player move speed)
+- `MAGNET_ACCEL = 60.0` u/s² — ramp while latched
+- `COLLECT_DIST = 0.35` — arrival auto-collect radius (anti-tunnel safety net)
 
-## magnet_step static helper
+## Magnet behaviour (latch + accelerate)
 
+Once the gem first enters the player's pickup range it **latches** (`_magnetized`) and
+homes in for good — it never un-magnetizes, even if the player outruns it. While latched
+the speed **accelerates** every frame (`MAGNET_SPEED_MIN` → `MAGNET_SPEED_MAX` by
+`MAGNET_ACCEL`), so a latched gem always overtakes the player regardless of move speed.
+This fixes the old bug where a fast player left gems behind: the previous code re-gated on
+`dist > pickup_range` every frame (stopping the gem dead) and crawled at `MIN` speed near
+the range edge.
+
+Pure static helpers (all XZ-only, `y` = 0):
 ```gdscript
-static func magnet_step(gem_pos, player_pos, pickup_range, dt) -> Vector3
+static func in_pickup_range(gem_pos, player_pos, pickup_range) -> bool  # latch gate
+static func next_magnet_speed(current, dt) -> float                     # accel ramp, capped
+static func magnet_delta(gem_pos, player_pos, speed, dt) -> Vector3     # homing step
 ```
-
-Pure function — returns the XZ position delta for one frame.
-- Returns `Vector3.ZERO` when `dist > pickup_range`.
-- Speed lerps from `MAGNET_SPEED_MIN` to `MAGNET_SPEED_MAX` as `dist → 0`.
-- `y` component is always 0 (XZ plane movement).
+`magnet_delta` returns the exact remaining diff when a step would overshoot, so a fast gem
+lands on the player instead of tunnelling past; `_process` also auto-collects within
+`COLLECT_DIST` as a backup to the physics overlap.
 
 ## Collection
 
