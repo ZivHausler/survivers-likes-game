@@ -308,3 +308,12 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   the `gameplay` shot was ~2× too far out; corrected `tools/screenshot.gd` to mirror
   `GameCamera3D` exactly (pitch -65°, distance 15.4, fov 75, pivot origin → pos ≈ (0,13.96,6.51))
   so QA judges the true player view.** See `docs/notes/visual-qa-loop.md` rule 9.
+- 2026-07-01 — ZONE BLENDING re-architected. The per-cell-quad floor + alpha-faded "feather"
+  seam overlays never meshed (an alpha-faded texture is a translucent ghost, not a blend);
+  user rejected it across grass-blocks, grass↔pavement, flowerbed↔grass, and the pond shore.
+  New approach: **splatmap** — one flat ground surface (y=0) + a shader blending all 5 zone
+  textures per-pixel from a control map generated off `ZoneGrid`. Two first-class features:
+  **per-zone `blend` width (0 = razor-sharp "clear road")** and **faux-height plaza** via an
+  edge-shadow (AO) band on the low side of a `tier` drop + optional albedo-luminance depth
+  blend — geometry stays flat so the character is never swallowed. Elevation curbs removed.
+  Full design in `2026-07-01-splatmap-ground-blending-design.md`.
