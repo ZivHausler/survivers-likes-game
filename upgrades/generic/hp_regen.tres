@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Upgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1q0nl1sgdf2j" path="res://upgrades/upgrade.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"hp_regen"
+display_name = "Regeneration"
+kind = 2
+max_level = 5
+effect_kind = &"hp_regen"
+effect_value = 1.0
+description = "Patch yourself up on the move. Recover a little health every second."
+stat_text = "+1 HP/sec"

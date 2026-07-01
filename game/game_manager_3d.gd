@@ -30,6 +30,7 @@ const GENERIC_UPGRADE_PATHS := [
 	"res://upgrades/generic/pickup_range.tres",
 	"res://upgrades/generic/fire_rate.tres",
 	"res://upgrades/generic/armor.tres",
+	"res://upgrades/generic/hp_regen.tres",
 ]
 
 ## Active SkillSystem — used when char_data.skills is non-empty. Tests may inject directly.
