@@ -18,6 +18,8 @@ class_name CharacterData extends Resource
 ## 3-D model fields — additive; defaults so existing 2-D .tres files keep working.
 @export var model_scene: PackedScene     ## Kenney GLB to instance (null = keep capsule placeholder)
 @export var model_scale: float = 1.0    ## Uniform scale applied to the Model Node3D
+@export var model_y_offset: float = 0.0  ## World-space vertical lift for the Model node. 0 = model sits at floor as authored (Kenney convention: origin at feet). Use to ground models pivoted at their center (e.g. the Mixamo soldier), or to make a character hover/levitate.
+@export var model_yaw_offset: float = 0.0  ## Degrees. Corrective facing rotation baked into the model instance, for models whose authored forward axis differs from the Kenney convention (e.g. the Mixamo soldier faces a diagonal). Composes with the per-frame movement-facing rotation.
 @export var model_tint: Color = Color.WHITE  ## Optional albedo tint to differentiate friends sharing a base model
 @export var model_texture: Texture2D    ## Skin atlas applied to all MeshInstance3D surfaces; null = no texture override
 @export var stylize_model: bool = false  ## Apply the cel/rim Stylize layer. Default OFF: existing models keep their native look; only NEW assets that want the neon overlay opt in by setting this true.

@@ -35,7 +35,7 @@ const SHAKE_DECAY: float = 1.5
 ## Minimum zoom multiplier (zoomed all the way in).
 const ZOOM_MIN: float = 0.45
 ## Maximum zoom multiplier (zoomed all the way out).
-const ZOOM_MAX: float = 2.2
+const ZOOM_MAX: float = 1.3
 ## Zoom change per mouse-wheel notch.
 const ZOOM_STEP: float = 0.12
 

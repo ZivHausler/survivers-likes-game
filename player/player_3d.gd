@@ -12,6 +12,11 @@ class_name Player3D extends CharacterBody3D
 ## Velocity below this length plays idle animation instead of walk.
 const WALK_THRESHOLD := 0.05
 
+## Floating world-space HP bar above the player's head. Mirrors the mini-boss bar but a
+## bit bigger (offset clears the tallest scaled model; scale exceeds the 1.0 mini-boss size).
+const HP_BAR_OFFSET_Y := 3.7
+const HP_BAR_SCALE := 1.4
+
 ## Seconds of remaining invulnerability (i-frames). Counts down in _physics_process.
 var _invuln_timer: float = 0.0
 
@@ -35,6 +40,9 @@ var hp: float = 0.0
 
 ## Cached AnimationPlayer from the instanced model; null if model has none or model_scene unset.
 var _anim_player: AnimationPlayer = null
+
+## World-space HP bar floating above the head; created in setup(), driven by player_hp_changed.
+var _health_bar: HealthBar3D = null
 
 @onready var _model: Node3D = $Model
 @onready var _placeholder: MeshInstance3D = $Model/MeshInstance3D
@@ -122,9 +130,11 @@ func setup(data: CharacterData) -> void:
 			inst.free()
 
 	# Install rigged character model if provided; otherwise keep the capsule placeholder.
-	# Tunable defaults: model_scale=1.0 ≈ native Kenney GLB size (~1.8 m); Y offset 0.
-	# Adjust model_scale in the .tres file and the Model node's Y position in the scene for
-	# precise ground contact — these are MANUAL PLAYTEST items.
+	# Tunable per-character in the .tres: model_scale (size) and model_y_offset (vertical
+	# lift). Most models use the Kenney convention (origin at the feet) so model_y_offset=0
+	# leaves them on the floor. Center-pivoted models (e.g. the Mixamo soldier, whose feet
+	# sit ~1 model-unit below origin) need a positive model_y_offset to ground them; a
+	# larger value makes any character hover/levitate.
 	if data.model_scene:
 		if not _model:
 			return
@@ -133,6 +143,10 @@ func setup(data: CharacterData) -> void:
 		var model_inst := data.model_scene.instantiate()
 		_model.add_child(model_inst)
 		_model.scale = Vector3.ONE * data.model_scale
+		_model.position.y = data.model_y_offset
+		# Corrective facing baked into the instance; the Model node's own rotation.y is
+		# driven each frame by face_angle(), so this composes on top for movement heading.
+		model_inst.rotation.y = deg_to_rad(data.model_yaw_offset)
 		if data.model_texture:
 			_apply_texture(model_inst, data.model_texture)
 		if data.model_tint != Color.WHITE:
@@ -150,7 +164,22 @@ func setup(data: CharacterData) -> void:
 		if _anim_player and _anim_player.has_animation("idle"):
 			_anim_player.play("idle")
 
+	# Floating HP bar above the head — same widget as the mini-boss bar, a bit bigger.
+	if _health_bar == null:
+		_health_bar = HealthBar3D.new()
+		_health_bar.bar_scale = HP_BAR_SCALE
+		_health_bar.position = Vector3(0.0, HP_BAR_OFFSET_Y, 0.0)
+		add_child(_health_bar)
+	if not GameEvents.player_hp_changed.is_connected(_on_player_hp_changed):
+		GameEvents.player_hp_changed.connect(_on_player_hp_changed)
+
 	GameEvents.player_hp_changed.emit(hp, stats.max_hp)
+
+## Drive the floating HP bar from the shared player_hp_changed signal (every hp mutation
+## emits it), so the bar stays in sync with the HUD without duplicating the math.
+func _on_player_hp_changed(current: float, maximum: float) -> void:
+	if _health_bar and maximum > 0.0:
+		_health_bar.set_ratio(current / maximum)
 
 ## Route the skeleton's root bone into the AnimationPlayer's root_motion_track so its
 ## baked translation is extracted (and here, discarded) instead of posing the mesh.

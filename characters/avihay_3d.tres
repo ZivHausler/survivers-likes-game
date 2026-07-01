@@ -6,7 +6,7 @@
 [ext_resource type="Resource" path="res://upgrades/avihay/signature.tres" id="4_sig"]
 [ext_resource type="Resource" path="res://upgrades/avihay/passive.tres" id="5_pas"]
 [ext_resource type="Resource" path="res://upgrades/avihay/evolution.tres" id="6_evo"]
-[ext_resource type="PackedScene" uid="uid://dchtk1i3u5kpb" path="res://art/characters_3d/uwu_soldier/uwu_soldier_rifle.glb" id="7_model"]
+[ext_resource type="PackedScene" path="res://art/characters_3d/uwu_soldier/uwu_soldier_rifle.glb" id="7_model"]
 [ext_resource type="Resource" path="res://characters/skills/avihay_spam.tres" id="8_avihay_spam"]
 [ext_resource type="Resource" path="res://characters/skills/avihay_group_call.tres" id="9_group_call"]
 [ext_resource type="Resource" path="res://characters/skills/avihay_voice_blast.tres" id="10_voice_blast"]
@@ -37,7 +37,9 @@ signature_upgrade = ExtResource("4_sig")
 passive_upgrade = ExtResource("5_pas")
 evolution_upgrade = ExtResource("6_evo")
 model_scene = ExtResource("7_model")
-model_scale = 1.3
+model_scale = 1.4
+model_y_offset = 1.39
+model_yaw_offset = -30.0
 model_tint = Color(1, 1, 1, 1)
 stylize_model = false
 skills = Array[Resource]([ExtResource("8_avihay_spam"), ExtResource("9_group_call"), ExtResource("10_voice_blast"), ExtResource("11_mass_dm")])

@@ -7,6 +7,10 @@ class_name HealthBar3D extends Node3D
 const WIDTH := 1.8      ## Bar width in world units (at unit scale; see _process facing).
 const HEIGHT := 0.16    ## Bar height in world units.
 const FILL_EPSILON := 0.002  ## Fill quad sits slightly in front of the background quad.
+const BORDER := 0.05    ## Black border thickness (world units) framing the bar for contrast.
+
+## Border color: pure black frame behind the bar so it reads distinctly against the world.
+const COLOR_BORDER := Color(0.0, 0.0, 0.0, 1.0)
 
 ## Background color: deep navy-black for contrast behind the fill.
 const COLOR_BG := Color(0.05, 0.05, 0.07, 1.0)
@@ -15,11 +19,19 @@ const COLOR_BG := Color(0.05, 0.05, 0.07, 1.0)
 ## where the autoload is not available; _ready() overrides it via _make_quad().
 const COLOR_FILL_FALLBACK := Color(1.0, 0.35, 0.1, 1.0)
 
+## Uniform on-screen size multiplier. 1.0 = default mini-boss size; the player bar uses
+## a larger value. Applied to the billboard basis in _process so it survives the
+## per-frame transform overwrite (external node scale would not).
+var bar_scale: float = 1.0
+
 var _bg: MeshInstance3D = null
 var _fill_pivot: Node3D = null
 var _fill: MeshInstance3D = null
 
 func _ready() -> void:
+	# Black border frame: a slightly larger quad behind everything (lowest priority).
+	var border := _make_quad(WIDTH + BORDER * 2.0, HEIGHT + BORDER * 2.0, COLOR_BORDER, 0.0, -1)
+	add_child(border)
 	_bg = _make_quad(WIDTH, HEIGHT, COLOR_BG, 0.0, 0)
 	add_child(_bg)
 	# Pivot anchored at the bar's left edge; the fill quad is offset +WIDTH/2 so its
@@ -72,4 +84,4 @@ func _process(_dt: float) -> void:
 	if cam == null:
 		return
 	# Assumes the parent boss uses uniform scale and never rotates its body (only its Model child rotates); a non-uniform/rotated body would skew this unit-scale billboard.
-	global_transform = Transform3D(cam.global_transform.basis, global_position)
+	global_transform = Transform3D(cam.global_transform.basis.scaled(Vector3.ONE * bar_scale), global_position)
