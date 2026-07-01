@@ -72,6 +72,8 @@ func confirm_damage(enemy_id:int, new_hp:int, credited:int) -> void:
 ```
 Keep client-side optimism **cosmetic and idempotent** so the host's confirm never causes a gameplay pop.
 
+**Solo vs networked detection (learned in D2 — applies everywhere):** Godot sets `multiplayer.multiplayer_peer` to a **non-null `OfflineMultiplayerPeer`** by default, so `multiplayer_peer == null` is NOT a valid "am I solo?" check — it mis-routes solo through the networked branch. Use a helper: `is_networked() = multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)` (canonical: `GameManager3D._is_networked()`; promote to `NetworkManager.is_networked()` if more callers need it). Branch **behavior** (spawn direct vs `spawner.spawn`, `take_damage` direct vs `request_damage.rpc`) on `is_networked()`. Note: `multiplayer.is_server()` IS correct in solo (the offline peer reports `is_server() == true`), so host-only gates written as `if is_networked() and not multiplayer.is_server(): return` are fine.
+
 **MultiplayerSpawner correctness (Tasks D2, E1, G):**
 - Use a custom `spawn_function` to pass init data (`fighter_id`, xp); call `spawner.spawn(data)` **on the host only**; the callback runs on all peers and returns the node — **don't `add_child` yourself**.
 - **Set `set_multiplayer_authority()` in `_enter_tree()` or the spawn callback — never after `_ready()`.**
@@ -1605,7 +1607,7 @@ Damage targets enemies by `net_id` (client weapons hit a proxy that only carries
 
 ```gdscript
 func apply_damage(enemy: Node, amount: float) -> void:
-	if multiplayer.multiplayer_peer == null:
+	if not _is_networked():                             # OfflineMultiplayerPeer is non-null — see guidelines
 		enemy.take_damage(amount)                      # solo: direct
 	else:
 		request_damage.rpc_id(1, enemy.net_id, amount) # networked: ask host
