@@ -51,3 +51,18 @@ func test_base_tiles_have_surface_material() -> void:
 			if checked >= 5:
 				break
 	assert_true(checked > 0, "at least one base tile inspected")
+
+func test_transition_trims_present_at_seams() -> void:
+	var root := _build()
+	var trims := root.get_node("GardenFloor/TransitionTrims")
+	assert_true(trims.get_child_count() > 0,
+		"seams between zones must produce trim strips (no harsh borders)")
+
+func test_trims_have_surface_material() -> void:
+	var root := _build()
+	var trims := root.get_node("GardenFloor/TransitionTrims")
+	if trims.get_child_count() == 0:
+		return
+	var first := trims.get_child(0) as MeshInstance3D
+	assert_not_null(first, "trim is a MeshInstance3D")
+	assert_not_null(first.mesh.surface_get_material(0), "trim mesh surface has a material")

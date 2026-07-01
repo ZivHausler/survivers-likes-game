@@ -7,10 +7,15 @@ class_name FloorBuilder extends Node
 
 const ZoneGrid = preload("res://arena/floor/zone_grid.gd")
 const TileVariants = preload("res://arena/floor/tile_variants.gd")
+const Autotile = preload("res://arena/floor/autotile.gd")
 
 @export var recipe_path: String = "res://arena/maps/garden_map.gd"
 
 var _mat_cache: Dictionary = {}  # "zone#variant" -> StandardMaterial3D
+var _trim_mat: StandardMaterial3D = null
+
+## Seam offsets/rotations: N,E,S,W -> edge strip along that side of the cell.
+const _EDGE_DIR := [Vector3(0, 0, -1), Vector3(1, 0, 0), Vector3(0, 0, 1), Vector3(-1, 0, 0)]
 
 func _ready() -> void:
 	var parent := get_parent()
@@ -57,6 +62,7 @@ func _build_into_root(root: Node3D) -> void:
 			var wc := grid.cell_center_world(x, y)
 			mi.position = Vector3(wc.x, zdef.get("y", 0.02), wc.z)
 			base_tiles.add_child(mi, true)
+			_lay_trims(trims, grid, recipe["priority"], x, y, wc, cs)
 
 ## A flat, upward-facing quad of side `size` centered on its origin (XZ plane).
 func _tile_mesh(size: float) -> ArrayMesh:
@@ -70,6 +76,47 @@ func _tile_mesh(size: float) -> ArrayMesh:
 		for i in tri:
 			st.set_uv(uv[i]); st.add_vertex(p[i])
 	return st.commit()
+
+func _lay_trims(trims: Node3D, grid: ZoneGrid, priority: Dictionary,
+		x: int, y: int, wc: Vector3, cs: float) -> void:
+	var res := Autotile.resolve(grid, x, y, priority)
+	if res["piece"] == Autotile.PIECE_BASE:
+		return
+	# For edge/outer/inner we lay a beveled strip on each orthogonal side that borders a
+	# lower zone. Re-derive the lower sides directly (robust for all piece types).
+	for i in 4:
+		var d: Vector3 = _EDGE_DIR[i]
+		var nz := grid.zone_at(x + int(d.x), y + int(d.z))
+		if not priority.has(nz):
+			continue
+		if int(priority[nz]) >= int(priority.get(grid.zone_at(x, y), -9999)):
+			continue
+		var strip := MeshInstance3D.new()
+		var mesh := _trim_mesh(cs)
+		mesh.surface_set_material(0, _get_trim_mat())
+		strip.mesh = mesh
+		# Position at the cell's seam edge, slightly raised so it caps the border.
+		strip.position = Vector3(wc.x + d.x * cs * 0.5, 0.06, wc.z + d.z * cs * 0.5)
+		strip.rotation.y = atan2(d.x, d.z)  # face the seam direction
+		trims.add_child(strip, true)
+
+## A thin beveled curb strip spanning one cell edge (length cs, small width/height).
+func _trim_mesh(cs: float) -> ArrayMesh:
+	var box := BoxMesh.new()
+	box.size = Vector3(cs, 0.14, 0.5)
+	return _box_to_array(box)
+
+func _box_to_array(box: BoxMesh) -> ArrayMesh:
+	var am := ArrayMesh.new()
+	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, box.get_mesh_arrays())
+	return am
+
+func _get_trim_mat() -> StandardMaterial3D:
+	if _trim_mat == null:
+		_trim_mat = StandardMaterial3D.new()
+		_trim_mat.albedo_color = Color(0.74, 0.75, 0.78)
+		_trim_mat.roughness = 0.85
+	return _trim_mat
 
 func _material_for(zone: StringName, variant: int, zdef: Dictionary) -> StandardMaterial3D:
 	var key := "%s#%d" % [zone, variant]
