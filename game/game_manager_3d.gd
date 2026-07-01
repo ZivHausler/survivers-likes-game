@@ -507,7 +507,14 @@ func _spawn_party() -> void:
 			players_root.add_child(node, true)
 			_on_player_spawned(node)
 		elif multiplayer.is_server():
-			_player_spawner.spawn(data)  # host only; replicates + runs callback on all peers
+			# Host: spawn() creates the node locally (via spawn_function) AND replicates it to
+			# clients. The `spawned` signal fires on the REMOTE peers that receive the spawn, but
+			# NOT on the authority that called spawn() — so we must notify ourselves here, exactly
+			# as the solo path does after add_child. Without this the host never runs
+			# _on_player_spawned: _players stays empty, _player is null, and no player is set up.
+			var node := _player_spawner.spawn(data)
+			if node != null:
+				_on_player_spawned(node)
 		# Clients: do nothing — the spawner delivers the player and fires `spawned`.
 
 
@@ -537,6 +544,10 @@ func _do_spawn_player(data: Dictionary) -> Node:
 ## player up with its fighter (now that @onready $Model is bound), tracks it, refreshes
 ## enemy-targeting, and focuses the camera on the LOCAL player when it arrives.
 func _on_player_spawned(node: Node) -> void:
+	# Idempotent: the host notifies itself explicitly after spawn() while clients are notified
+	# via the `spawned` signal. Guard against tracking the same node twice if both ever fire.
+	if node in _players:
+		return
 	var p := node as Player3D
 	if p != null and p.character_data == null and p.has_meta("fighter_path"):
 		p.setup(load(String(p.get_meta("fighter_path"))) as CharacterData)
