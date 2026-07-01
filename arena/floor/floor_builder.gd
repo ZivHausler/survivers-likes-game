@@ -68,7 +68,11 @@ func _build_into_root(root: Node3D) -> void:
 			var zdef: Dictionary = zones[z]
 			var variant := TileVariants.variant_for(x, y, int(zdef.get("variants", 1)))
 			var mi := MeshInstance3D.new()
-			var mesh := _tile_mesh(cs)
+			# Organic zones get a per-tile UV rotation so the tiling doesn't line up into a grid.
+			var uv_rot := 0
+			if z == &"grass" or z == &"flowerbed":
+				uv_rot = int(_hash01(x * 7 + y * 13 + 3) * 4.0) % 4
+			var mesh := _tile_mesh(cs, uv_rot)
 			mesh.surface_set_material(0, _material_for(z, variant, zdef))
 			mi.mesh = mesh
 			var wc := grid.cell_center_world(x, y)
@@ -86,7 +90,10 @@ func _build_into_root(root: Node3D) -> void:
 		_build_centerpiece(centre, pc.x, pc.z, float(zone_y.get(&"stone_plaza", 0.45)))
 
 ## A flat, upward-facing quad of side `size` centered on its origin (XZ plane).
-func _tile_mesh(size: float) -> ArrayMesh:
+## `uv_rot` (0-3) rotates the texture 90°·uv_rot on the quad. Used to break obvious tiling
+## repetition on organic zones (grass) without adding textures — rotated tiles don't line up
+## into a visible grid. Left 0 for stone (rotating grout lines would break seam continuity).
+func _tile_mesh(size: float, uv_rot: int = 0) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	st.set_normal(Vector3.UP)
@@ -95,7 +102,7 @@ func _tile_mesh(size: float) -> ArrayMesh:
 	var uv := [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
 	for tri in [[0, 1, 2], [0, 2, 3]]:
 		for i in tri:
-			st.set_uv(uv[i]); st.add_vertex(p[i])
+			st.set_uv(uv[(i + uv_rot) % 4]); st.add_vertex(p[i])
 	return st.commit()
 
 ## Build real curb geometry at every seam where this cell sits HIGHER than a neighbour:
