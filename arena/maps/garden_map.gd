@@ -54,7 +54,7 @@ static var RECIPE := {
 		# MID grey (LoL Swarm / Battlerite plazas are mid-value, not near-white) so the floor
 		# stops reading washed and the emissive centerpiece/props gain contrast to pop against.
 		&"grass":       { "color": Color(0.96, 0.98, 0.96), "tex": "res://art/textures/garden_grass.png", "variants": 3, "y": 0.02, "emissive": false },
-		&"stone_plaza": { "color": Color(0.64, 0.66, 0.70), "tex": "res://art/textures/garden_stone_plaza.png", "variants": 1, "y": 0.08, "emissive": false },
+		&"stone_plaza": { "color": Color(0.64, 0.66, 0.70), "tex": "res://art/textures/garden_stone_plaza.png", "variants": 3, "y": 0.08, "emissive": false },
 		&"stone_path":  { "color": Color(0.70, 0.71, 0.73), "tex": "res://art/textures/garden_stone_path.png", "variants": 3, "y": 0.05, "emissive": false },
 		&"dirt_path":   { "color": Color(0.74, 0.67, 0.55), "tex": "res://art/textures/garden_dirt_path.png", "variants": 2, "y": 0.02, "emissive": false },
 		&"flowerbed":   { "color": Color(1.0, 1.0, 1.0), "tex": "res://art/textures/garden_flowerbed.png", "variants": 2, "y": 0.02, "emissive": false },
@@ -70,7 +70,14 @@ static var RECIPE := {
 		{ "type": "path_wear",       "pos": Vector2(0, -40), "size": 10.0, "rot": 0.0 },
 		{ "type": "leaves",          "pos": Vector2(-40, 40), "size": 8.0, "rot": 0.7 },
 		{ "type": "moss",            "pos": Vector2(-44, 24), "size": 7.0, "rot": 0.0 },
-		{ "type": "crack",           "pos": Vector2(24, 8),  "size": 6.0, "rot": 1.2 },
+		# Plaza wear: break the big flat cobble field with scattered cracks/wear/moss so it
+		# reads lived-in (kept off the medallion at center).
+		{ "type": "crack",           "pos": Vector2(15, -11), "size": 6.0, "rot": 1.2 },
+		{ "type": "crack",           "pos": Vector2(-17, 13), "size": 5.5, "rot": 0.4 },
+		{ "type": "crack",           "pos": Vector2(11, 17),  "size": 5.0, "rot": 2.1 },
+		{ "type": "path_wear",       "pos": Vector2(-13, -8), "size": 8.0, "rot": 0.6 },
+		{ "type": "moss",            "pos": Vector2(19, 7),   "size": 5.5, "rot": 0.0 },
+		{ "type": "moss",            "pos": Vector2(-9, 19),  "size": 4.5, "rot": 1.5 },
 	],
 	# Prop clusters (Task 5 PropLayout shape). role ∈ landmark|medium|small.
 	# item = [scene_key, count, collide, scale].
