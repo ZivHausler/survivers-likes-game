@@ -6,7 +6,29 @@ iterate until the scene reaches production-quality visual standards.
 
 The target is a polished top-down / isometric roguelite swarm arena, **not a prototype map**.
 
-## The loop (repeat until score ≥ 85/100)
+## Non-negotiable process rules (added 2026-07-01 after a false pass)
+
+A prior run self-scored a flat, AI-textured greybox at 87/100 and shipped it. It failed a
+human on sight. The gap was process, not effort. These rules are now mandatory:
+
+1. **Grade the ABSOLUTE bar, never the delta.** The only question is "would this ship in a
+   commercial game?" — never "is this better than the last version?" Improvement is not a
+   passing grade. If you catch yourself citing the previous state as evidence, stop.
+2. **Compare against the north-star references EVERY pass.** Open the shipped-game refs in
+   `docs/superpowers/specs/assets/map-refs/` (LoL Swarm, Battlerite, Temtem) and score your
+   screenshot *next to them*. Judging in isolation is how the 87 happened — the loop never
+   once looked at the references it was supposedly targeting.
+3. **The final gate is an INDEPENDENT adversarial reviewer, not self-assessment.** Before
+   claiming a passing score, dispatch a fresh subagent that did NOT build the scene, give it
+   the screenshots + the reference images + the auto-fail list, and instruct it to default to
+   FAIL and be harsh. The builder's own score does not count as the gate. (See the
+   adversarial-critic dispatch used on 2026-07-01.)
+4. **Auto-fails are LITERAL and DISQUALIFYING.** If any auto-fail condition below is present,
+   the scene fails and the score is capped at 55 — no matter how good anything else is. Do not
+   reword an auto-fail into a strength ("harsh borders" → "clean trims", "sparse props" →
+   "intentional open space"). If the words of the condition match what you see, it fails.
+
+## The loop (repeat until an INDEPENDENT reviewer scores ≥ 85/100)
 
 1. Run the Godot scene (arena via `tools/screenshot.tscn`; HUD via `tools/hud_preview.tscn`).
 2. Capture screenshots.
@@ -19,16 +41,25 @@ The target is a polished top-down / isometric roguelite swarm arena, **not a pro
 
 Do not stop after one attempt unless the screenshot clearly passes the rubric.
 
-## Automatic failure (scene fails if ANY are true)
+## Automatic failure (scene fails + score capped at 55 if ANY are true)
 
 - Large flat colored terrain blobs are visible.
-- Different floor types meet with harsh, ugly borders.
+- **Flat textured planes with no 3D form** — zones all at one height, no curbs/walls/relief.
+  A textured floor plane is still a greybox.
+- Different floor types meet with harsh, ugly, straight borders.
 - Props are sparse, tiny, random, or low quality.
 - There are no meaningful prop clusters.
-- The map looks like a prototype instead of a game arena.
+- The map looks like a prototype/greybox instead of a shipped game arena.
+- **Floor/prop materials are stylistically inconsistent with each other** — e.g. painterly
+  grass beside cartoon-ink-outlined cobble beside semi-photoreal stone. Mixed styles read as
+  an asset-flip / AI-generated mashup. One locked treatment across every surface.
+- **No real directional lighting** — flat ambient with no sun angle, no cast shadows, no
+  ambient occlusion in seams/under props. Light is what creates 3D form; without it, flat.
 - The HUD looks like debug UI.
 - The floor has no tile / trim / decal variation.
-- The central combat area has no visual hierarchy.
+- The central combat area has no integrated visual hierarchy (a flat pasted-on decal that
+  doesn't glow or inlay into the floor does NOT count as hierarchy).
+- **Visible AI-texture artifacts** — mushy/misaligned tile grout, obvious repeating tiling.
 - The full-map screenshot looks like unrelated biome islands pasted together.
 
 ## Report format (write after EVERY screenshot review, verbatim format)
