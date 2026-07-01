@@ -32,6 +32,33 @@ pipeline (`artkit/generation/*`), GUT tests.
 - **Keep the suite green.** Update or replace MapBuilder-tied tests when the floor is swapped; never
   leave the suite red.
 - **Authored, not dumped.** Zone layouts and prop clusters are hand-authored data, not procedural noise.
+- **North-star identity (binding).** Everything obeys the visual identity in
+  `2026-06-30-lol-swarm-visual-identity-design.md`: *stylized 3D cyber-anime bullet-heaven,
+  painterly League materials (baked-AO look, color-blocked, low texture noise, matte with select
+  glowing tech accents), neon cyan/magenta reserved for accents & VFX.* See §0.
+
+## 0. Visual identity alignment (north-star)
+
+This overhaul must read as **"Final City" cyber-anime sci-fi**, not generic fantasy. The identity
+doc and this brief pull in slightly different directions; the resolution:
+
+- **Ground is a readable combat stage, not the star.** Achieve the brief's "rich floor detail"
+  through **value, pattern, trims, seams and decals** — NOT loud color. The environment stays
+  **lower-saturation than combat VFX** (identity §8/§16) so purple enemies and cyan/magenta
+  projectiles pop. Detail ≠ saturation.
+- **Districts are interpreted through the cyber-anime lens.** The Garden slice is a **neon
+  cyber-park within Final City** — muted greens + gray stone paving + subtle cyan tech accents and
+  glowing emissive trims — not a medieval/natural garden. Later districts (industrial, temple,
+  ruined) likewise get a Final-City-sci-fi reading, keeping one coherent universe.
+- **Materials:** painterly/stylized (not realistic PBR): baked soft AO, color-blocked regions,
+  hand-painted gradients, controlled roughness, low noise, matte surfaces with **select** emissive
+  masks. Contact AO under everything.
+- **Lighting:** bright soft ambient, low-to-medium contrast, bloom **only** on emissive/tech/magic
+  accents; neutral ground lighting so VFX provides the drama (identity §7).
+- **HUD:** League DNA — dark panels, bright painterly icons, compact functional layout, no ornate
+  borders (identity §12).
+- **Camera/composition:** top-down slightly-iso tactical field; combat center open; big readable
+  shapes first, small detail second (identity §9).
 
 ## 1. Floor — modular 3D tile system (new)
 
@@ -76,10 +103,15 @@ pipeline (`artkit/generation/*`), GUT tests.
 
 ## 2. Props — clustered & art-directed (Garden)
 
-- **Prop budget per district:** **1 landmark**, **3–6 medium**, **10–25 small**.
-  - Garden landmark: a large hero tree **or** a stone gazebo/statue on a raised plinth.
-  - Medium: stone benches, planters, a lamp cluster, a small pond feature, a trellis/arch.
-  - Small: flowers, bushes, tall grass tufts, mushrooms, pebbles, fallen leaves, low fences.
+- **Prop budget per district:** **1 landmark**, **3–6 medium**, **10–25 small**. Garden = a
+  **neon cyber-park** (Final City lens): natural greenery + sleek sci-fi civic props + subtle glowing
+  tech accents, muted palette so VFX pop.
+  - Garden landmark: a large **bioluminescent hero tree** with cyan emissive veins **or** a
+    holo-shrine / small power-core on a raised stone-plaza plinth.
+  - Medium: sleek sci-fi benches, glowing planters, a neon lamp cluster, a small pond/water feature
+    with a bright rim, a tech-trellis arch.
+  - Small: stylized bushes, tall grass tufts, low glow-flowers, pebbles, fallen leaves, holo-signage,
+    low sci-fi fences/bollards.
 - **Placement (authored clusters, not scatter):** a `PropClusters` data structure lists named clusters
   at **designed anchors** — near the landmark, along path edges, in corners, against the arena rim —
   each a themed set with bounded jitter and min-separation. Combat center stays open (respect the spawn
