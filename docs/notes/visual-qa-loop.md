@@ -6,6 +6,20 @@ iterate until the scene reaches production-quality visual standards.
 
 The target is a polished top-down / isometric roguelite swarm arena, **not a prototype map**.
 
+## This document is authoritative (added 2026-07-01)
+
+The screenshot + its score is the source of truth for how the game looks. **Your
+impression of your own work is not.** When they disagree, the screenshot wins — every
+time, without exception. There is no move where you conclude "the scorer is unreliable"
+or "the critic didn't see my improvements." That conclusion is banned: it is the same
+rationalization as rewording an auto-fail into a strength, one level up. If a score
+seems wrong, the resolution is *always* to open the exact scored PNG and look at it — not
+to discount the number.
+
+This rule exists because it already failed twice: once by self-scoring a greybox 87/100,
+and once by dismissing an accurate 23/100 as "unreliable" while the builder believed
+quality was improving. Both times the screenshot was right and the builder was wrong.
+
 ## Non-negotiable process rules (added 2026-07-01 after a false pass)
 
 A prior run self-scored a flat, AI-textured greybox at 87/100 and shipped it. It failed a
@@ -27,6 +41,25 @@ human on sight. The gap was process, not effort. These rules are now mandatory:
    the scene fails and the score is capped at 55 — no matter how good anything else is. Do not
    reword an auto-fail into a strength ("harsh borders" → "clean trims", "sparse props" →
    "intentional open space"). If the words of the condition match what you see, it fails.
+
+## More non-negotiable rules (added 2026-07-01 after dismissing an accurate score)
+
+5. **Look at the EXACT scored PNG before forming any opinion.** Open the actual
+   `res://_shots/*.png` (or `_progress_snapshots/*.png`) that was rendered this pass and view
+   it *next to* the references. Never judge from the live editor viewport, from memory, or
+   from close-up texture crops — those are different images than the one being scored, and the
+   scored one is what ships. Your eyes and the scorer's must be on the same pixels.
+6. **Grade the FRAME, not the asset.** A nice individual texture does not raise the score. The
+   rubric scores the whole composition; the auto-fails (borders, centerpiece integration,
+   greybox overview, prop density) dominate and cap it. Score those first. Being proud of one
+   surface while the frame trips three auto-fails is exactly the trap.
+7. **Monotonic score movement is SIGNAL, not noise.** If the score moves consistently in one
+   direction as you change one variable, it is tracking a real effect of that change — follow
+   it, do not dismiss it. (A score that fell as zone albedo was pushed toward near-white was
+   correctly reporting that near-white multiply washed the floor into flat pale blobs.)
+8. **The overview shot is a real gate.** If the full-map render looks like a small flat colored
+   tile floating in empty background, that is a greybox and it fails — regardless of how the
+   close-up reads. Do not exempt any camera angle from the auto-fail list.
 
 ## The loop (repeat until an INDEPENDENT reviewer scores ≥ 85/100)
 
