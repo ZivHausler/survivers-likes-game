@@ -29,6 +29,37 @@ static func _ramp(d: float, width: float) -> float:
 		return 1.0
 	return smoothstep(0.0, width, d)
 
+static func _tier_at(grid, tx: int, ty: int, k: int, tier: Dictionary) -> int:
+	var cx := tx / k
+	var cy := ty / k
+	if not grid.in_bounds(cx, cy):
+		return 0
+	return int(tier.get(_field_zone(grid.zone_at(cx, cy)), 0))
+
+# Edge-shadow map: darkens the LOW side of a tier drop within `band` world units, up to
+# `strength`. High side and same-tier areas stay white (v=1). Reads as a low plateau.
+static func build_ao(grid, tier: Dictionary, k: int, band: float, strength: float) -> Image:
+	var w: int = grid.width * k
+	var h: int = grid.height * k
+	var img := Image.create(w, h, false, Image.FORMAT_RGB8)
+	var wpt: float = grid.cell_size / float(k)
+	var r := int(ceil(band / wpt)) + 1
+	for ty in h:
+		for tx in w:
+			var own_t := _tier_at(grid, tx, ty, k, tier)
+			var best := INF
+			for sy in range(-r, r + 1):
+				for sx in range(-r, r + 1):
+					if _tier_at(grid, tx + sx, ty + sy, k, tier) > own_t:
+						var d: float = sqrt(float(sx * sx + sy * sy)) * wpt
+						best = minf(best, d)
+			var shade := 0.0
+			if best < INF:
+				shade = (1.0 - smoothstep(0.0, band, best)) * strength
+			var v := 1.0 - shade
+			img.set_pixel(tx, ty, Color(v, v, v))
+	return img
+
 static func build_splatmap(grid, blend: Dictionary, k: int) -> Image:
 	var w: int = grid.width * k
 	var h: int = grid.height * k
