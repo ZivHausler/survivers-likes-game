@@ -288,3 +288,11 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   refs before judging; grade the frame not the asset; monotonic score movement is signal; the
   overview shot is a real gate. Next visual work: revert near-white zone albedo, fix centerpiece
   integration + straight seams.
+- 2026-07-01 — Ran the auto-fix loop (each pass re-rendered + judged vs refs): (1) stone zones
+  tinted mid-grey so the floor stops reading washed; (2) dense overhanging grass creep + darker
+  curb break the straight zone seams; (3) flat cyan ring replaced by a layered flush inlaid
+  medallion (teal/gold bands + glow ring + emblem); (4) surround ground plane + light distance
+  fog kill the floating-slab overview. Arena tests 17/17. **Also fixed the screenshot harness:
+  the `gameplay` shot was ~2× too far out; corrected `tools/screenshot.gd` to mirror
+  `GameCamera3D` exactly (pitch -65°, distance 15.4, fov 75, pivot origin → pos ≈ (0,13.96,6.51))
+  so QA judges the true player view.** See `docs/notes/visual-qa-loop.md` rule 9.

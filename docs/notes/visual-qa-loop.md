@@ -60,6 +60,14 @@ human on sight. The gap was process, not effort. These rules are now mandatory:
 8. **The overview shot is a real gate.** If the full-map render looks like a small flat colored
    tile floating in empty background, that is a greybox and it fails — regardless of how the
    close-up reads. Do not exempt any camera angle from the auto-fail list.
+9. **The `gameplay` screenshot MUST mirror the real in-game camera exactly.** It is the
+   authoritative frame — the only one the player sees. It must use the same params as
+   `GameCamera3D` (`core/game_camera_3d.gd`, wired in `game/main_3d.tscn`): pitch -65°,
+   distance 15.4, yaw 0, fov 75, pivot = player spawn (origin) → position ≈ (0, 13.96, 6.51).
+   Never eyeball the gameplay height/pull-back: a shot even ~2× too far out silently makes
+   textures look smaller and the scene sparser/flatter than the player experiences, and every
+   judgment made on it is wrong. `overview`/`plaza`/`garden_nw` are diagnostic composition
+   aids only — never score gameplay quality from them.
 
 ## The loop (repeat until an INDEPENDENT reviewer scores ≥ 85/100)
 
