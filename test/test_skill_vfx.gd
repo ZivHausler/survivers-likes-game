@@ -46,7 +46,9 @@ func test_evolution_flash_scene_loads() -> void:
 	var packed := load("res://vfx/evolution_flash.tscn")
 	assert_not_null(packed, "evolution_flash.tscn must load successfully")
 
-func test_evolution_flash_spawned_and_auto_frees() -> void:
+func test_evolution_unlocked_does_not_spawn_flash() -> void:
+	# The white evolution/synergy screen flash was removed as distracting; the
+	# Juice3D handler is now a no-op. evolution_unlocked must spawn nothing.
 	var dummy := Node3D.new()
 	add_child(dummy)
 	Juice3D.register_player(dummy)
@@ -57,15 +59,8 @@ func test_evolution_flash_spawned_and_auto_frees() -> void:
 	GameEvents.evolution_unlocked.emit(&"test")
 	await get_tree().process_frame
 
-	var flash: EvolutionFlash = _find_evolution_flash(spawn_parent)
-	assert_not_null(flash, "EvolutionFlash must be spawned into the scene on evolution_unlocked")
-	var flash_ref: WeakRef = weakref(flash)
-
-	await get_tree().create_timer(1.2).timeout
-
-	assert_null(flash_ref.get_ref(), "EvolutionFlash must auto-free after 0.8 s")
 	assert_null(_find_evolution_flash(spawn_parent),
-		"No EvolutionFlash should remain in the scene subtree after auto-free")
+		"evolution_unlocked must NOT spawn an EvolutionFlash (screen flash removed)")
 
 	dummy.queue_free()
 

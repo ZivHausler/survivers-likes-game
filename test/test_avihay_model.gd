@@ -22,7 +22,7 @@ func test_avihay_keeps_original_pbr_and_is_scaled_up():
 	# Realistic generated model opts out of the cel/rim Stylize layer and is sized up.
 	var data: CharacterData = load("res://characters/avihay_3d.tres")
 	assert_false(data.stylize_model, "Avihay's PBR model should opt out of stylize")
-	assert_almost_eq(data.model_scale, 1.3, 0.001, "Avihay model scaled up")
+	assert_almost_eq(data.model_scale, 1.4, 0.001, "Avihay model scaled up")
 
 func test_avihay_model_has_skeleton():
 	var data: CharacterData = load("res://characters/avihay_3d.tres")

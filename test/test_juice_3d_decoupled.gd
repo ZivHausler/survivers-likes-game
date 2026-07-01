@@ -68,12 +68,21 @@ func test_evolution_unlocked_signal_is_connected() -> void:
 # ── Guards: no player registered → no crash, no spawn ────────────────────────
 
 func _count_children_before_and_after(callable: Callable) -> void:
+	# Track newly-ADDED children by instance id rather than a raw count. Other tests'
+	# queue_free'd nodes may be reaped during the awaited frame (a removal, not a spawn),
+	# which would flake a before/after count comparison. We only care that this handler
+	# adds nothing to root when there is no registered player.
 	var root: Node = get_tree().root
-	var before: int = root.get_child_count()
+	var before_ids := {}
+	for c in root.get_children():
+		before_ids[c.get_instance_id()] = true
 	callable.call()
 	await get_tree().process_frame
-	var after: int = root.get_child_count()
-	assert_eq(after, before, "Juice3D handler must not spawn nodes into root when no player")
+	var added := 0
+	for c in root.get_children():
+		if not before_ids.has(c.get_instance_id()):
+			added += 1
+	assert_eq(added, 0, "Juice3D handler must not spawn nodes into root when no player")
 
 func test_enemy_killed_3d_no_player_no_crash_no_spawn() -> void:
 	await _count_children_before_and_after(func() -> void:
