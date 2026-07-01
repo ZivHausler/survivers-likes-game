@@ -45,11 +45,13 @@ static var RECIPE := {
 	# Painterly matte StandardMaterial3D defs. tex filled in Task 10 (SDXL); color is the
 	# fallback/tint. y is the base-layer height (tiny steps avoid z-fighting).
 	"zones": {
+		# y is a real elevation now (drives curb/skirt geometry): plaza is a raised combat
+		# dais, stone path a low raised walkway; grass/dirt/flowerbed sit at ground level.
 		&"grass":       { "color": Color(0.96, 0.98, 0.96), "tex": "res://art/textures/garden_grass.png", "variants": 3, "y": 0.02, "emissive": false },
-		&"stone_plaza": { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_plaza.png", "variants": 1, "y": 0.03, "emissive": false },
-		&"stone_path":  { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_path.png", "variants": 3, "y": 0.03, "emissive": false },
-		&"dirt_path":   { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_dirt_path.png", "variants": 2, "y": 0.025, "emissive": false },
-		&"flowerbed":   { "color": Color(1.0, 1.0, 1.0), "tex": "res://art/textures/garden_flowerbed.png", "variants": 2, "y": 0.025, "emissive": false },
+		&"stone_plaza": { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_plaza.png", "variants": 1, "y": 0.45, "emissive": false },
+		&"stone_path":  { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_path.png", "variants": 3, "y": 0.20, "emissive": false },
+		&"dirt_path":   { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_dirt_path.png", "variants": 2, "y": 0.02, "emissive": false },
+		&"flowerbed":   { "color": Color(1.0, 1.0, 1.0), "tex": "res://art/textures/garden_flowerbed.png", "variants": 2, "y": 0.02, "emissive": false },
 	},
 	# Pond inset (world coords). Aligned with the '~' cells (upper-right).
 	"pond": {
