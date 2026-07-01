@@ -8,6 +8,9 @@ extends Node
 # (`load("res://arena/maps/garden_map.gd").RECIPE`).
 static var RECIPE := {
 	"cell_size": 8.0,
+	"splat_res": 8,       # splatmap texels per cell
+	"ao_band": 6.0,       # edge-shadow falloff (world units) on the low side of a tier drop
+	"ao_strength": 0.35,  # max darkening of the edge shadow
 	"rows": PackedStringArray([
 		"...........==...........",
 		"...........==...........",
@@ -45,19 +48,11 @@ static var RECIPE := {
 	# Painterly matte StandardMaterial3D defs. tex filled in Task 10 (SDXL); color is the
 	# fallback/tint. y is the base-layer height (tiny steps avoid z-fighting).
 	"zones": {
-		# WALKABLE floor must stay ~flat at the entity plane (y~0): player/enemies live on a
-		# flat navmesh, so any raised walkable zone visually swallows them. Height/relief comes
-		# from normals, non-walkable edge curbs, and props — never from raising the combat floor.
-		# Tiny per-zone offsets are for draw order only.
-		# grass/flowerbed textures are already saturated + high-contrast — keep albedo ~white so
-		# they show true. The stone textures are high-key/pale; tint them toward the reference's
-		# MID grey (LoL Swarm / Battlerite plazas are mid-value, not near-white) so the floor
-		# stops reading washed and the emissive centerpiece/props gain contrast to pop against.
-		&"grass":       { "color": Color(0.96, 0.98, 0.96), "tex": "res://art/textures/garden_grass.png", "variants": 3, "y": 0.02, "emissive": false },
-		&"stone_plaza": { "color": Color(0.64, 0.66, 0.70), "tex": "res://art/textures/garden_stone_plaza.png", "variants": 3, "y": 0.08, "emissive": false },
-		&"stone_path":  { "color": Color(0.70, 0.71, 0.73), "tex": "res://art/textures/garden_stone_path.png", "variants": 3, "y": 0.05, "emissive": false },
-		&"dirt_path":   { "color": Color(0.74, 0.67, 0.55), "tex": "res://art/textures/garden_dirt_path.png", "variants": 2, "y": 0.02, "emissive": false },
-		&"flowerbed":   { "color": Color(1.0, 1.0, 1.0), "tex": "res://art/textures/garden_flowerbed.png", "variants": 2, "y": 0.02, "emissive": false },
+		&"grass":       { "color": Color(0.96, 0.98, 0.96), "tex": "res://art/textures/garden_grass.png", "y": 0.0, "blend": 2.5, "tier": 0, "emissive": false },
+		&"stone_plaza": { "color": Color(0.64, 0.66, 0.70), "tex": "res://art/textures/garden_stone_plaza.png", "y": 0.0, "blend": 2.0, "tier": 1, "emissive": false },
+		&"stone_path":  { "color": Color(0.70, 0.71, 0.73), "tex": "res://art/textures/garden_stone_path.png", "y": 0.0, "blend": 1.5, "tier": 0, "emissive": false },
+		&"dirt_path":   { "color": Color(0.74, 0.67, 0.55), "tex": "res://art/textures/garden_dirt_path.png", "y": 0.0, "blend": 2.5, "tier": 0, "emissive": false },
+		&"flowerbed":   { "color": Color(1.0, 1.0, 1.0), "tex": "res://art/textures/garden_flowerbed.png", "y": 0.0, "blend": 3.0, "tier": 0, "emissive": false },
 	},
 	# Pond inset (world coords). Aligned with the '~' cells (upper-right).
 	"pond": {

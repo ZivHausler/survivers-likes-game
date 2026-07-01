@@ -26,8 +26,11 @@ func test_garden_floor_is_built() -> void:
 	var root := await _build_arena()
 	var floor := root.get_node_or_null("GardenFloor")
 	assert_not_null(floor, "FloorBuilder must build GardenFloor")
-	assert_true(floor.get_node("BaseTiles").get_child_count() > 50, "many base tiles")
-	assert_true(floor.get_node("TransitionTrims").get_child_count() > 0, "seams have trims")
+	var ground := floor.get_node_or_null("Ground") as MeshInstance3D
+	assert_not_null(ground, "splat Ground mesh is built")
+	var mat := ground.mesh.surface_get_material(0)
+	assert_true(mat is ShaderMaterial, "ground uses the splat ShaderMaterial")
+	assert_not_null(mat.get_shader_parameter("splatmap"), "splatmap control texture is set")
 
 func test_props_are_built_and_clustered() -> void:
 	var root := await _build_arena()
