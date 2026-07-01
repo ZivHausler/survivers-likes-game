@@ -150,42 +150,18 @@ func _curb_mat() -> StandardMaterial3D:
 		_curb_m.roughness = 0.8
 	return _curb_m
 
-## Integrated hero centerpiece on the plaza: a low raised circular stone dais (two
-## steps, keeps the combat top open) with a glowing emissive medallion inlay. Replaces
-## the flat pasted-on decal ring so the arena has real, lit visual hierarchy at center.
+## Hero centerpiece = a FLAT glowing emissive medallion inlay on the plaza floor (like the
+## LoL-Swarm plaza floor-decal reference). It must NOT be raised: the player spawns/fights
+## on the plaza center, and raised geometry there swallows the character (flat entity plane).
 func _build_centerpiece(container: Node3D, cx: float, cz: float, top_y: float) -> void:
-	# Three tall concentric steps -> reads as a real raised dais at every camera distance.
-	var s0 := MeshInstance3D.new()
-	s0.mesh = _cyl_mesh(20.0, 0.34, _curb_mat())
-	s0.position = Vector3(cx, top_y + 0.17, cz)
-	container.add_child(s0, true)
-	var s1 := MeshInstance3D.new()
-	s1.mesh = _cyl_mesh(16.5, 0.34, _skirt_mat())
-	s1.position = Vector3(cx, top_y + 0.51, cz)
-	container.add_child(s1, true)
-	var s2 := MeshInstance3D.new()
-	s2.mesh = _cyl_mesh(13.5, 0.34, _curb_mat())
-	s2.position = Vector3(cx, top_y + 0.85, cz)
-	container.add_child(s2, true)
-	# Glowing medallion inlay on the dais top (square texture -> flat quad for clean UVs).
-	if ResourceLoader.exists("res://art/decals/plaza_medallion.png"):
-		var med := MeshInstance3D.new()
-		var mesh := _tile_mesh(24.0)
-		mesh.surface_set_material(0, _medallion_mat())
-		med.mesh = mesh
-		med.position = Vector3(cx, top_y + 1.02, cz)
-		container.add_child(med, true)
-
-func _cyl_mesh(radius: float, height: float, mat: StandardMaterial3D) -> ArrayMesh:
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = radius
-	cyl.bottom_radius = radius
-	cyl.height = height
-	cyl.radial_segments = 48
-	var am := ArrayMesh.new()
-	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, cyl.get_mesh_arrays())
-	am.surface_set_material(0, mat)
-	return am
+	if not ResourceLoader.exists("res://art/decals/plaza_medallion.png"):
+		return
+	var med := MeshInstance3D.new()
+	var mesh := _tile_mesh(30.0)
+	mesh.surface_set_material(0, _medallion_mat())
+	med.mesh = mesh
+	med.position = Vector3(cx, top_y + 0.03, cz)  # a hair above the plaza, still flush/walkable
+	container.add_child(med, true)
 
 ## Break the hard straight border where soft ground (grass/dirt/flowerbed) meets a raised
 ## hard zone: sprinkle small grass tufts along the seam, jittered + overhanging, so the

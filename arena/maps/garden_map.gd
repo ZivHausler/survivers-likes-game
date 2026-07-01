@@ -45,11 +45,13 @@ static var RECIPE := {
 	# Painterly matte StandardMaterial3D defs. tex filled in Task 10 (SDXL); color is the
 	# fallback/tint. y is the base-layer height (tiny steps avoid z-fighting).
 	"zones": {
-		# y is a real elevation now (drives curb/skirt geometry): plaza is a raised combat
-		# dais, stone path a low raised walkway; grass/dirt/flowerbed sit at ground level.
+		# WALKABLE floor must stay ~flat at the entity plane (y~0): player/enemies live on a
+		# flat navmesh, so any raised walkable zone visually swallows them. Height/relief comes
+		# from normals, non-walkable edge curbs, and props — never from raising the combat floor.
+		# Tiny per-zone offsets are for draw order only.
 		&"grass":       { "color": Color(0.96, 0.98, 0.96), "tex": "res://art/textures/garden_grass.png", "variants": 3, "y": 0.02, "emissive": false },
-		&"stone_plaza": { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_plaza.png", "variants": 1, "y": 0.95, "emissive": false },
-		&"stone_path":  { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_path.png", "variants": 3, "y": 0.42, "emissive": false },
+		&"stone_plaza": { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_plaza.png", "variants": 1, "y": 0.08, "emissive": false },
+		&"stone_path":  { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_path.png", "variants": 3, "y": 0.05, "emissive": false },
 		&"dirt_path":   { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_dirt_path.png", "variants": 2, "y": 0.02, "emissive": false },
 		&"flowerbed":   { "color": Color(1.0, 1.0, 1.0), "tex": "res://art/textures/garden_flowerbed.png", "variants": 2, "y": 0.02, "emissive": false },
 	},
