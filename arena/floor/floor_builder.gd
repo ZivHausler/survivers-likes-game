@@ -243,19 +243,22 @@ func _tuft_mesh() -> ArrayMesh:
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	# three crossed FILLED cards (grass-billboard style) -> a low green clump that reads as
 	# MASS from the angled cam. Tapered spikes were sub-pixel; solid cards fill the seam.
-	var cards := 3
-	var hw := 0.55  # half-width
-	var hgt := 0.6
+	var cards := 4
+	var hw := 0.52         # base half-width
+	var tw := 0.12         # top half-width (tapered -> grass-clump silhouette, not a rectangle)
+	var hgt := 0.72
 	var base_c := Color(0.19, 0.40, 0.15)  # shaded root
 	var tip_c := Color(0.47, 0.74, 0.33)   # sunlit tip
 	for c in cards:
 		var a := PI * float(c) / float(cards)
 		var dx := cos(a) * hw
 		var dz := sin(a) * hw
+		var tdx := cos(a) * tw
+		var tdz := sin(a) * tw
 		var b0 := Vector3(-dx, 0.0, -dz)
 		var b1 := Vector3(dx, 0.0, dz)
-		var t0 := Vector3(-dx, hgt, -dz)
-		var t1 := Vector3(dx, hgt, dz)
+		var t0 := Vector3(-tdx, hgt, -tdz)
+		var t1 := Vector3(tdx, hgt, tdz)
 		st.set_normal(Vector3.UP)
 		# per-vertex gradient (base dark -> tip bright) so cards read as grass, not flat paddles
 		st.set_color(base_c); st.add_vertex(b0)
