@@ -118,10 +118,11 @@ func test_synergy_card_is_golden_and_shows_synergy_badge() -> void:
 	assert_eq(_label(ui, 0, "LevelLabel").text, "SYNERGY",
 		"Synergy card must show 'SYNERGY' badge")
 
-	var m := _card(ui, 0).modulate
-	assert_almost_eq(m.r, 1.0,  0.01, "Synergy modulate.r must be 1.0 (golden)")
-	assert_almost_eq(m.g, 0.85, 0.01, "Synergy modulate.g must be 0.85 (golden)")
-	assert_almost_eq(m.b, 0.1,  0.01, "Synergy modulate.b must be 0.1 (golden)")
+	# Synergy cards use the gold accent (frame/glow) rather than a modulate tint.
+	var acc := (_card(ui, 0) as UpgradeCard).accent
+	assert_almost_eq(acc.r, 1.0,  0.01, "Synergy accent.r must be 1.0 (gold)")
+	assert_almost_eq(acc.g, 0.82, 0.01, "Synergy accent.g must be 0.82 (gold)")
+	assert_almost_eq(acc.b, 0.2,  0.01, "Synergy accent.b must be 0.2 (gold)")
 
 
 func test_synergy_card_name_matches_display_name() -> void:

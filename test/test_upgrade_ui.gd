@@ -138,10 +138,11 @@ func test_evolution_card_shows_evolve_badge_and_golden_modulate() -> void:
 	assert_eq(_label(ui, 0, "LevelLabel").text, "EVOLVE",
 		"Evolution card must show EVOLVE badge")
 
-	var m := _card(ui, 0).modulate
-	assert_almost_eq(m.r, 1.0,  0.01, "Evolution modulate.r must be 1.0")
-	assert_almost_eq(m.g, 0.85, 0.01, "Evolution modulate.g must be 0.85")
-	assert_almost_eq(m.b, 0.1,  0.01, "Evolution modulate.b must be 0.1")
+	# Evolution/synergy cards use the gold accent (frame/glow) rather than a modulate tint.
+	var acc := (_card(ui, 0) as UpgradeCard).accent
+	assert_almost_eq(acc.r, 1.0,  0.01, "Evolution accent.r must be 1.0 (gold)")
+	assert_almost_eq(acc.g, 0.82, 0.01, "Evolution accent.g must be 0.82 (gold)")
+	assert_almost_eq(acc.b, 0.2,  0.01, "Evolution accent.b must be 0.2 (gold)")
 
 	assert_eq(_label(ui, 0, "NameLabel").text, "EVOLVE: Fabulous",
 		"Evolution card name must match display_name")

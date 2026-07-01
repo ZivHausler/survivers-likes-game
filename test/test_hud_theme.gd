@@ -53,18 +53,15 @@ func test_evolve_banner_has_cyan_outline() -> void:
 	assert_true(banner.get_theme_constant("outline_size") > 0,
 		"Evolve outline_size must be positive")
 
-func test_upgrade_card_hover_changes_stylebox() -> void:
+func test_upgrade_card_hover_toggles_state() -> void:
+	# Cards now draw their own chamfered neon frame (UpgradeCard._draw) rather than using a
+	# "panel" StyleBox; hover is tracked via the card's `hovered` flag (drives frame + glow).
 	var ui: Node = add_child_autofree(load("res://upgrades/upgrade_ui.tscn").instantiate())
 	var card0: Control = ui.get_node("Panel/PanelVBox/CardRow/Card0") as Control
 	assert_not_null(card0, "Card0 must exist")
-	# Capture the normal stylebox (set in _ready)
-	assert_true(card0.has_theme_stylebox_override("panel"),
-		"Card0 must have a panel override after _ready (normal state)")
-	# get_theme_stylebox returns the effective stylebox (override wins)
-	var style_before: StyleBox = card0.get_theme_stylebox("panel")
-	# Simulate hover
-	(ui as UpgradeUI)._on_card_hover(0, true)
-	var style_after: StyleBox = card0.get_theme_stylebox("panel")
-	assert_not_null(style_after, "Card0 must still have a panel override after hover")
-	assert_true(style_after != style_before,
-		"Card0 panel stylebox must change on hover (different StyleBox object)")
+	assert_true(card0 is UpgradeCard, "Card0 must be an UpgradeCard")
+	var card := card0 as UpgradeCard
+	card.set_hovered(true)
+	assert_true(card.hovered, "set_hovered(true) must set hovered=true")
+	card.set_hovered(false)
+	assert_false(card.hovered, "set_hovered(false) must set hovered=false")

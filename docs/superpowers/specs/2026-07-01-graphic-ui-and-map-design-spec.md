@@ -177,12 +177,28 @@ single-line (see `docs/notes/asset-pipeline.md`).
 - **Top status strip** (full width): timer, kills (+ skull icon), level badge, and a **full-width
   XP bar**. Add **enemy-count** (ref #6) and optionally a **minimap** (top-right, also serves the
   "explore the map" goal).
-- **Bottom command bar** (framed dark-neon panel, full width): LEFT = passives slots; CENTER =
-  prominent **HP bar** w/ heart icon + `cur/max` + (v2) **character portrait**; RIGHT = **weapon
-  cooldown slots** (fill/radial sweep + READY glow + icon) then the **ultimate** slot (radial
-  cooldown, gold ready-glow, **SPACE keybind** label).
+- **Bottom command bar** (2026-07-01 REVISED — now **no panel background**, transparent; holds
+  ONLY skill/passive/ult slots): **ultimate centered**; **weapon (skill) slots grow rightward**
+  from the ult (skill #1 adjacent to it); **passive slots grow leftward** from the ult (passive #1
+  adjacent, so the passives box is END-aligned and its children are inserted in reverse).
+  Weapon slots keep fill/radial sweep + READY glow + icon + keybind; the ult keeps its radial +
+  gold ready-glow + SPACE. **HP is no longer in the command bar** — see below.
+- **Player HP** (2026-07-01 NEW): a **world-space `HealthBar3D`** floating above the player's head
+  (`player_3d.gd`: offset `HP_BAR_OFFSET_Y`, `bar_scale` bigger than the mini-boss bar, black
+  border for contrast), driven by `player_hp_changed`. The shared `HealthBar3D` widget gained a
+  `bar_scale` multiplier (applied to the billboard basis) and a black border frame.
 - **Boss bar** top-center during boss fights (magenta/danger fill + name + cur/max).
 - **Evolve banner** popup (existing fade tween).
+- **Level-up upgrade cards** (2026-07-01 NEW — `upgrades/upgrade_ui.*` + `upgrade_card.gd`):
+  premium LoL-Swarm-style picker over a dark scrim (no full dim). Each card = a custom-drawn
+  `UpgradeCard` (chamfered rounded rect, ONE fat smooth neon border + soft glow, corner "+" ticks,
+  header divider). Top→bottom: level badge (`NEW` / `Lv cur / max`) · rarity-tinted icon plate ·
+  name · description · stat · synergy hint. Accent hue per kind: **teal** weapon/skill, **purple**
+  passive/stat, **gold** evolution/synergy (featured = scaled up + stronger glow). A PASSIVE card
+  that advances an owned skill toward its synergy shows a "▲▲ [skill icon]" tab at the bottom
+  (`SkillSystem.synergy_pending`/`skill_for`). *Deferred:* deal-in/shine/count-up/particle motion;
+  true multi-stat `60›80` rows (needs per-stat before/after data on `Upgrade`, which today carries
+  only a single `stat_text`).
 
 ### 4.2 Data bindings (preserve all — `ui/hud.gd`)
 Signals: `player_hp_changed, player_leveled_up, evolution_unlocked, boss_spawned,

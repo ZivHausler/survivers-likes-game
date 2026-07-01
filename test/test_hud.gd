@@ -18,8 +18,8 @@ func test_boss_spawned_shows_bar_with_name_and_max() -> void:
 	var hud := _make_hud()
 	GameEvents.boss_spawned.emit("Undead Serpent", 2000.0)
 	var bar := hud.get_node("Boss") as Control
-	var name_label := hud.get_node("Boss/BossName") as Label
-	var hp_bar := hud.get_node("Boss/BossHP") as ProgressBar
+	var name_label := hud.get_node("Boss/VBox/BossName") as Label
+	var hp_bar := hud.get_node("Boss/VBox/BossHP") as ProgressBar
 	assert_true(bar.visible, "Boss panel must show on boss_spawned")
 	assert_eq(name_label.text, "Undead Serpent", "boss name displayed")
 	assert_almost_eq(hp_bar.max_value, 2000.0, 0.001, "bar max set to boss max hp")
@@ -29,8 +29,8 @@ func test_boss_hp_changed_updates_value_and_text() -> void:
 	var hud := _make_hud()
 	GameEvents.boss_spawned.emit("Undead Serpent", 2000.0)
 	GameEvents.boss_hp_changed.emit(750.0, 2000.0)
-	var hp_bar := hud.get_node("Boss/BossHP") as ProgressBar
-	var hp_text := hud.get_node("Boss/BossHP/BossHPText") as Label
+	var hp_bar := hud.get_node("Boss/VBox/BossHP") as ProgressBar
+	var hp_text := hud.get_node("Boss/VBox/BossHP/BossHPText") as Label
 	assert_almost_eq(hp_bar.value, 750.0, 0.001, "bar value tracks current hp")
 	assert_eq(hp_text.text, "750 / 2000", "numeric readout shows cur / max")
 

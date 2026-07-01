@@ -9,15 +9,8 @@ func test_hud_process_mode_is_always() -> void:
 	assert_eq(_hud().process_mode, Node.PROCESS_MODE_ALWAYS,
 		"HUD root process_mode must be PROCESS_MODE_ALWAYS")
 
-func test_hp_bar_has_fill_stylebox() -> void:
-	var hp_bar: ProgressBar = _hud().get_node("Command/HP")
-	assert_true(hp_bar.has_theme_stylebox_override("fill"),
-		"Command/HP must have a custom fill StyleBox (danger-orange) via theme_override_styles/fill")
-
-func test_hp_bar_has_background_stylebox() -> void:
-	var hp_bar: ProgressBar = _hud().get_node("Command/HP")
-	assert_true(hp_bar.has_theme_stylebox_override("background"),
-		"Command/HP must have a dark background StyleBox for contrast")
+# Player HP is no longer in the command bar — it floats above the player as a world-space
+# HealthBar3D. The command bar holds only passives | ult | skills.
 
 func test_xp_bar_has_fill_stylebox() -> void:
 	var xp_bar: ProgressBar = _hud().get_node("Top/XP")
