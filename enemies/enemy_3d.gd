@@ -59,6 +59,9 @@ var net_id: int = 0
 ## nav, collision, or contact damage — _physics_process only interpolates toward the
 ## last snapshot target. Set by configure_proxy().
 var _is_proxy := false
+## The run's GameManager3D, injected by it right after building this proxy (Task E2).
+## Used by take_damage()'s proxy branch to forward hits to the host via net_id.
+var _net_manager: Node = null
 ## Interpolation endpoints/param for proxy mode (from→to over NET_INTERVAL).
 var _ip_from: Vector3 = Vector3.ZERO
 var _ip_to: Vector3 = Vector3.ZERO
@@ -388,6 +391,11 @@ func apply_knockback(dir: Vector3, distance: float) -> void:
 	_knockback_timer = KNOCKBACK_DURATION
 
 func take_damage(amount: float) -> void:
+	if _is_proxy:
+		# Client-side proxy: never simulate damage/XP locally — forward to the host authority.
+		if _net_manager != null and net_id != 0:
+			_net_manager.client_deal_damage(net_id, amount)
+		return
 	if data == null:
 		return
 	if _dying:
