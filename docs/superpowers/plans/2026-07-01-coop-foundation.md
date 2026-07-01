@@ -21,26 +21,95 @@
 
 ---
 
+## Networking Data-Transfer Guidelines (research-backed — read before Phases C–H)
+
+These are the rules that make transfer **stable for clients and reliable for the host**. Key sources: Godot [High-level multiplayer](https://docs.godotengine.org/en/stable/tutorials/networking/high_level_multiplayer.html), [Scene replication article](https://godotengine.org/article/multiplayer-in-godot-4-0-scene-replication/), [MultiplayerSpawner](https://docs.godotengine.org/en/stable/classes/class_multiplayerspawner.html), [proposal #3459 (batching)](https://github.com/godotengine/godot-proposals/issues/3459), [GodotSteam multiplayer_peer](https://godotsteam.com/classes/multiplayer_peer/), [`change_scene` mid-session warning](https://github.com/godotengine/godot/issues/68407#issuecomment-2331790407).
+
+**Two Steam-transport facts that shape everything:**
+1. **Over `SteamMultiplayerPeer`, `unreliable_ordered` silently degrades to reliable, and ENet-style per-channel head-of-line isolation is NOT configured.** Design for exactly two modes: `reliable` and `unreliable`. Keep reliable event traffic small/infrequent so it never queues behind bulk data.
+2. **`Steam.run_callbacks()` must run every frame on a `PROCESS_MODE_ALWAYS` node, or P2P silently stalls.** `get_tree().paused` does NOT stop RPC/synchronizer delivery (the MultiplayerAPI polls from `SceneTree.process`), but it WILL stop the Steam pump if that pump sits on a pausable node. → **`NetworkManager` autoload is `PROCESS_MODE_ALWAYS` and owns the Steam callback pump.**
+
+**Mechanism decision rule:** continuously-overwritten state → `MultiplayerSynchronizer` (small counts) or a **batched snapshot RPC** (large counts); discrete "happened once" events → **reliable RPC**. Never spam RPCs for continuous data.
+
+| System | Mechanism | `@rpc(...)` |
+|---|---|---|
+| Local fighter movement (1–4) | `MultiplayerSynchronizer`, authority = owning client, `ALWAYS`/unreliable | n/a |
+| Remote fighters (seen by others) | same synchronizer **+ client-side interpolation** | n/a |
+| **~200 enemy transforms** | **ONE batched snapshot RPC/tick (~15–20 Hz)**, quantized `PackedByteArray`, **NOT per-enemy synchronizers** | `@rpc("authority","call_remote","unreliable")` |
+| Client→host "my hit dealt X to enemy N" | reliable request RPC | `@rpc("any_peer","call_remote","reliable")` |
+| Host→all confirmed HP/death/despawn | reliable broadcast (`call_local` so host runs it too) | `@rpc("authority","call_local","reliable")` |
+| Team XP / Gold totals | reliable authority broadcast (host is sole mutator) | `@rpc("authority","call_remote","reliable")` |
+| Level-up begin / ready-ack / resume | reliable handshake | `@rpc("any_peer","call_local","reliable")` for ack; `authority,call_local` for begin/resume |
+| Spawn/despawn of players & pickups | `MultiplayerSpawner` | n/a |
+| Lobby→arena transition | host spawns arena into a **persistent scene** (NOT `change_scene_to_file`) | `@rpc("authority","call_local","reliable")` |
+
+**`@rpc` hygiene:** every `@rpc` function must be declared **identically on all peers** (checksum-validated). In any `any_peer` handler, immediately `if not multiplayer.is_server(): return` and read `multiplayer.get_remote_sender_id()` — **trust clients only for input, never for authoritative results.**
+
+**~200 enemies — the batched-snapshot pattern (Task E1 uses this):** per-enemy synchronizers hit a per-message wall ("Buffer payload full! Dropping data") long before a bandwidth wall — Godot's own proposal #3459 says syncing each node separately gives "abysmal network performance." Instead: host packs one snapshot per tick — header `u16 tick_seq`, `u16 count`; per enemy `u16 id`, quantized `u16 x`, `u16 z`, `u16 yaw`, `u8 state/hp` (~9 B/enemy ≈ 1.8 KB for 200) — via a single **unreliable** RPC to each client. Clients keep an `id→enemy` dict, spawn/despawn locally, drop stale `tick_seq`, and **interpolate between the last two snapshots**. Discrete enemy events (death, damage-confirm) ride separate **reliable** RPCs. Co-op tolerance is generous (BLASTRONAUT/Coherence Vampire-Survivors co-op correct at ~1 Hz); 15–20 Hz is comfortable.
+
+**Interpolation (remote fighters AND snapshot enemies)** — `MultiplayerSynchronizer` has NO built-in interpolation; at 15–20 Hz vs 60 fps you MUST lerp on receipt or it stutters:
+```gdscript
+# on each received network value: from = current visual pos; to = new authoritative pos; elapsed = 0
+func _process(delta):
+    elapsed += delta
+    visual.global_position = from_pos.lerp(to_pos, clamp(elapsed / NET_INTERVAL, 0.0, 1.0))
+```
+Local player needs **no prediction/reconciliation** — it's client-authoritative, so its own movement is already correct. (Godot 4.3+ `physics_interpolation` fixes tick-vs-frame jitter, NOT network jitter — don't use it for this.)
+
+**Client-damage flow (Task E2) — request → validate → broadcast:**
+```gdscript
+# CLIENT: optimistic cosmetic hit-flash only, then report to host
+request_damage.rpc_id(1, enemy_id, amount)
+@rpc("any_peer","call_remote","reliable")
+func request_damage(enemy_id:int, amount:int) -> void:
+    if not multiplayer.is_server(): return
+    var sender := multiplayer.get_remote_sender_id()          # validate/clamp
+    var new_hp := _apply_damage_authoritative(enemy_id, amount, sender)
+    confirm_damage.rpc(enemy_id, new_hp, sender)              # to all, incl host
+@rpc("authority","call_local","reliable")
+func confirm_damage(enemy_id:int, new_hp:int, credited:int) -> void:
+    _set_enemy_hp_visual(enemy_id, new_hp)                    # host value is final
+```
+Keep client-side optimism **cosmetic and idempotent** so the host's confirm never causes a gameplay pop.
+
+**MultiplayerSpawner correctness (Tasks D2, E1, G):**
+- Use a custom `spawn_function` to pass init data (`fighter_id`, xp); call `spawner.spawn(data)` **on the host only**; the callback runs on all peers and returns the node — **don't `add_child` yourself**.
+- **Set `set_multiplayer_authority()` in `_enter_tree()` or the spawn callback — never after `_ready()`.**
+- **Deterministic node names** across peers: name spawned nodes by peer/entity id and use `add_child(node, true)` (force-readable). Don't reparent/rename networked nodes post-spawn.
+- Freeing a spawner-tracked node on the host auto-replicates despawn — no manual despawn RPC.
+
+**Lobby→arena & synchronized pause (Tasks D1, F):**
+- **Do NOT `change_scene_to_file()` during an active session** (a maintainer explicitly warns against it — deferred tree swap drops packets → "Node not found"/"ID not found in cache"). Instead keep everyone on a **persistent root scene** with the persistent `NetworkManager`; the host adds/spawns the arena via `@rpc("authority","call_local","reliable")`, which replicates to current and late peers. Non-host peers `await` a host "arena ready" signal before spawning their fighter — never spawn in `_ready()`. Gate wave spawning behind an "all peers loaded" ack barrier.
+- Synchronized pause: host `begin_levelup` (pause) → each peer acks `levelup_ready` → host counts acks against its **own** player dict (survives a mid-vote disconnect) → host `resume_game`. Pause is safe because RPC delivery ignores `paused` (given the ALWAYS autoloads).
+
+**Do/Don't checklist:**
+- ✅ Host = single source of truth for HP/death/XP/gold; clients only *request*. ✅ Batch enemy state; interpolate on receipt. ✅ Declare `@rpc` identically everywhere; validate `sender_id`. ✅ Reliable for events, unreliable for the position stream. ✅ Authority before `_ready()`; deterministic names; `add_child(_, true)`. ✅ Steam pump + net autoloads `PROCESS_MODE_ALWAYS`.
+- ❌ Don't rely on `unreliable_ordered`/channel isolation over Steam. ❌ No per-enemy synchronizers at ~200. ❌ No `change_scene_to_file` mid-session; no reparent/rename of networked nodes. ❌ Don't use physics interpolation to fix *network* stutter. ❌ Don't trust client-reported damage without host validation.
+
+---
+
 ## File Structure
 
 **New files (pure logic — unit tested):**
 - `net/lobby_registry.gd` — `class_name LobbyRegistry extends RefCounted`. Party roster: peer→{fighter, name, ready}. Serializable for replication.
 - `net/team_progress.gd` — `class_name TeamProgress extends RefCounted`. Shared team XP + level; `add_xp → levels_gained`.
 - `net/respawn_rules.gd` — `class_name RespawnRules extends RefCounted`. Downed/revive/respawn constants + `respawn_delay(deaths)`.
+- `net/enemy_snapshot.gd` — `class_name EnemySnapshot extends RefCounted`. Pure quantize/dequantize codec: `pack(entries, origin, inv_scale) -> PackedByteArray` / `unpack(bytes, origin, scale) -> Array`. Unit-tested (§Task E1).
 
 **New files (networking runtime):**
 - `net/network_manager.gd` — autoload `NetworkManager`. Transport seam, lobby lifecycle, RPC hub, holds a `LobbyRegistry`.
 - `net/net_transport.gd` — `class_name NetTransport extends RefCounted`. `static func create_peer(mode, opts) -> MultiplayerPeer`.
 - `net/player_spawn.gd` — helper for runtime player instantiation + spawn-point selection.
-- `ui/lobby_3d.gd` / `ui/lobby_3d.tscn` — networked lobby / character-select screen (wraps existing select UI).
+- `game/session_root.gd` / `game/session_root.tscn` — **persistent root scene** (`PROCESS_MODE_ALWAYS` for its net-critical children) that hosts the lobby and, later, the arena as swapped children. This is what avoids `change_scene_to_file` mid-session: the host spawns the arena into this root via RPC and it replicates to all peers. Becomes `run/main_scene`.
+- `ui/lobby_3d.gd` / `ui/lobby_3d.tscn` — networked lobby / character-select screen (a child of the session root; wraps existing select UI).
 
 **Modified files (de-singletoned / networked):**
-- `enemies/enemy_3d.gd` — nearest-of-many retargeting.
-- `spawning/spawner_3d.gd` — party targeting (`_targets`).
-- `pickups/xp_gem_3d.gd` — nearest-player magnet + team award.
-- `player/player_3d.gd` — `peer_id`/authority, input gated to authority, host-authoritative HP/downed, synchronizer.
-- `game/game_manager_3d.gd` — `_players` list, runtime spawning, team XP/level, synced level-up FSM, downed/defeat.
-- `game/main_3d.tscn` — replace authored single `Player` with `PlayerSpawnPoints` + `MultiplayerSpawner`.
+- `enemies/enemy_3d.gd` — nearest-of-many retargeting; `net_id`; **proxy mode** (client visual-only + interpolation).
+- `spawning/spawner_3d.gd` — party targeting (`_targets`); host-only simulation; assigns `net_id`.
+- `pickups/xp_gem_3d.gd` — nearest-player magnet + team award; host-authoritative collection.
+- `player/player_3d.gd` — `peer_id`/authority, input gated to authority, receive-side interpolation, host-authoritative HP/downed.
+- `game/game_manager_3d.gd` — `_players` list, runtime player spawning (spawn_function), team XP/gold/level, **enemy snapshot broadcast + client proxy manager**, damage arbitration, synced level-up FSM, downed/defeat.
+- `game/main_3d.tscn` — replace authored single `Player` with `Players` node + `PlayerSpawner` (`MultiplayerSpawner`); add an `Enemies` container (host-spawned + client proxies).
 - `autoload/game_events.gd` — add co-op-aware signals (peer-tagged), keep existing for solo/back-compat.
 - `autoload/run_state.gd` — party-aware fields.
 - `project.godot` — register `NetworkManager` autoload; add lobby input if needed.
@@ -733,10 +802,17 @@ var registry: LobbyRegistry = LobbyRegistry.new()
 var local_name: String = "Player"
 
 func _ready() -> void:
+	# CRITICAL: never let pause stop the Steam pump, or P2P silently stalls.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
+
+func _process(_dt: float) -> void:
+	# Pump Steam callbacks every frame (no-op until Steam is initialized in Task C2).
+	if Engine.has_singleton("Steam"):
+		Steam.run_callbacks()
 
 func host_enet(port: int = NetTransport.DEFAULT_PORT) -> int:
 	var peer := NetTransport.create_peer("enet_host", {"port": port})
@@ -949,17 +1025,52 @@ git commit -m "feat(net): Steam P2P backend behind transport seam (App ID 480 de
 ### Task D1: Networked lobby / character-select screen
 
 **Files:**
-- Create: `ui/lobby_3d.gd`, `ui/lobby_3d.tscn`
-- Modify: `project.godot` (`run/main_scene` → `res://ui/lobby_3d.tscn`)
+- Create: `game/session_root.gd`, `game/session_root.tscn`, `ui/lobby_3d.gd`, `ui/lobby_3d.tscn`
+- Modify: `project.godot` (`run/main_scene` → `res://game/session_root.tscn`)
 - Reuse: `ui/character_select_3d.gd` `CHARACTER_PATHS` for the fighter grid.
 
 **Interfaces:**
 - Consumes: `NetworkManager` (host/join/registry/signals, `request_set_fighter`, `request_set_ready`), `RunState`.
-- Produces: on Start (host only), writes each peer's fighter into `RunState.party` (`{peer_id:int -> fighter_path:String}`) and calls a host-broadcast RPC to `change_scene_to_file("res://game/main_3d.tscn")` on all peers.
+- Produces: a **persistent** `SessionRoot` that holds the lobby and later the arena as swapped children; on Start (host only) it writes `RunState.party` and, via `@rpc("authority","call_local","reliable")`, **swaps the lobby child for the arena instance on every connected peer WITHOUT `change_scene_to_file`**. `SessionRoot.enter_arena(party:Dictionary)` is the single entry point.
 
-- [ ] **Step 1: Build the lobby scene + script**
+> **Why a session root:** `change_scene_to_file` mid-session drops packets against the freed tree ("Node not found"). Keeping one persistent scene and swapping children under it (bomber-demo pattern) is the reliable path. See the Networking Guidelines above.
 
-`ui/lobby_3d.tscn`: a `Control` with Host / Join(IP) buttons, a fighter `GridContainer` (populated from `CHARACTER_PATHS`), a player list showing name + chosen fighter + ready check, a Ready toggle, and a Start button (host, disabled until `registry.all_ready()`).
+- [ ] **Step 1: Build the persistent session root**
+
+`game/session_root.tscn` = a `Node` (`SessionRoot`) with one child slot for the active screen. It never gets freed for the life of the session.
+
+```gdscript
+# game/session_root.gd
+class_name SessionRoot
+extends Node
+
+const LOBBY_SCENE := preload("res://ui/lobby_3d.tscn")
+const ARENA_SCENE := preload("res://game/main_3d.tscn")
+
+@onready var _slot: Node = $Slot   # the child container we swap
+
+func _ready() -> void:
+	_show_lobby()
+
+func _show_lobby() -> void:
+	_clear_slot()
+	_slot.add_child(LOBBY_SCENE.instantiate(), true)
+
+# Host calls this; call_local runs it on the host too. Replicates to all CURRENT peers.
+@rpc("authority", "call_local", "reliable")
+func enter_arena(party: Dictionary) -> void:
+	RunState.party = party
+	_clear_slot()
+	var arena := ARENA_SCENE.instantiate()
+	arena.name = "Arena"
+	_slot.add_child(arena, true)   # force-readable, deterministic name across peers
+
+func _clear_slot() -> void:
+	for c in _slot.get_children():
+		c.queue_free()
+```
+
+`ui/lobby_3d.tscn`: a `Control` with Host / Join(IP) buttons, a fighter `GridContainer` (from `CHARACTER_PATHS`), a player list (name + fighter + ready check), a Ready toggle, and a Start button (host, disabled until `registry.all_ready()`).
 
 ```gdscript
 # ui/lobby_3d.gd
@@ -967,7 +1078,6 @@ class_name Lobby3D
 extends Control
 
 const CHARACTER_PATHS := preload("res://ui/character_select_3d.gd").CHARACTER_PATHS
-const MAIN_3D_SCENE := "res://game/main_3d.tscn"
 
 func _ready() -> void:
 	NetworkManager.registry_changed.connect(_refresh)
@@ -994,12 +1104,9 @@ func _on_start_pressed() -> void:
 	var party := {}
 	for pid in NetworkManager.registry.peer_ids():
 		party[pid] = NetworkManager.registry.get_player(pid)["fighter_id"]
-	RunState.party = party
-	rpc("_rpc_start_game")
-
-@rpc("authority", "call_local", "reliable")
-func _rpc_start_game() -> void:
-	get_tree().change_scene_to_file(MAIN_3D_SCENE)
+	# No change_scene_to_file: ask the persistent root to swap in the arena on all peers.
+	var root := get_tree().current_scene as SessionRoot
+	root.enter_arena.rpc(party)
 
 func _refresh() -> void:
 	# redraw player list + enable Start iff host and all ready
@@ -1009,14 +1116,13 @@ func _build_fighter_grid() -> void:
 	pass
 
 func _on_host_aborted() -> void:
-	get_tree().change_scene_to_file("res://ui/lobby_3d.tscn")
+	var root := get_tree().current_scene as SessionRoot
+	root._show_lobby()
 ```
 
-> Non-host peers need `RunState.party` too. Broadcast it inside `_rpc_start_game` by passing the party dict as an argument: `rpc("_rpc_start_game", party)` and set `RunState.party = party` in the RPC body.
+- [ ] **Step 2: Point the game at the session root**
 
-- [ ] **Step 2: Point the game at the lobby**
-
-In `project.godot`, set `run/main_scene="res://ui/lobby_3d.tscn"`. Keep `ui/character_select_3d.tscn` for solo fallback (a "Solo" button that sets `RunState.party = {1: chosen}` and loads the arena directly without hosting).
+In `project.godot`, set `run/main_scene="res://game/session_root.tscn"`. Provide a **Solo** button in the lobby that (without hosting) sets `RunState.party = {1: chosen}` and calls `enter_arena({1: chosen})` locally — solo takes the exact same arena path, just with no peer.
 
 - [ ] **Step 3: Manual two-instance verification**
 
@@ -1027,8 +1133,8 @@ Run Multiple Instances = 2:
 - [ ] **Step 4: Commit**
 
 ```bash
-git add ui/lobby_3d.gd ui/lobby_3d.tscn project.godot
-git commit -m "feat(net): networked lobby + character select (M2)"
+git add game/session_root.gd game/session_root.tscn ui/lobby_3d.gd ui/lobby_3d.tscn project.godot
+git commit -m "feat(net): persistent session root + networked lobby/character select (M2)"
 ```
 
 ---
@@ -1089,34 +1195,57 @@ static func spawn_point(index: int, count: int, radius: float) -> Vector3:
 	return Vector3(cos(ang) * radius, 0.0, sin(ang) * radius)
 ```
 
-In `game/game_manager_3d.gd.start()`: replace the fixed `get_node_or_null("Player")` lookup with a loop that instantiates `player_3d.tscn` per `RunState.party` entry under the `Players` node:
+In `game/main_3d.tscn`: delete the authored `Player` node; add an empty `Node3D` named `Players` and a `MultiplayerSpawner` named `PlayerSpawner` with `spawn_path = ../Players`. In `game/game_manager_3d.gd`, set the spawner's custom `spawn_function` and spawn one player per party entry **on the host only** (solo bypasses the spawner). Authority + name + fighter are assigned **inside the spawn callback**, which runs identically on every peer:
 
 ```gdscript
 const PLAYER_SCENE := preload("res://player/player_3d.tscn")
 var _players: Array = []
+var _player_spawner: MultiplayerSpawner = null
 
 func _spawn_party() -> void:
 	var players_root: Node3D = parent.get_node("Players")
+	_player_spawner = parent.get_node("PlayerSpawner")
+	_player_spawner.spawn_function = Callable(self, "_do_spawn_player")
+	_player_spawner.spawned.connect(_on_player_spawned)  # fires on ALL peers per spawn
 	var party: Dictionary = RunState.party if not RunState.party.is_empty() else {1: _fallback_fighter_path()}
 	var pids: Array = party.keys(); pids.sort()
-	var i := 0
-	for pid in pids:
-		var p := PLAYER_SCENE.instantiate()
-		p.name = "Player_%d" % pid
-		p.peer_id = int(pid)
-		players_root.add_child(p)
-		p.global_position = PlayerSpawn.spawn_point(i, pids.size(), 3.0)
-		p.add_to_group("player")
-		var char_data := load(String(party[pid])) as CharacterData
-		p.setup(char_data)
-		if multiplayer.multiplayer_peer != null:
-			p.set_multiplayer_authority(int(pid))
-		_players.append(p)
-		i += 1
-	_player = _players[0]   # keep legacy single ref for camera/HUD wiring
+	for i in range(pids.size()):
+		var pid := int(pids[i])
+		var data := {"peer_id": pid, "fighter": String(party[pid]),
+			"pos": PlayerSpawn.spawn_point(i, pids.size(), 3.0)}
+		if multiplayer.multiplayer_peer == null:
+			# Solo: no peer -> instantiate directly (spawner needs a peer to replicate).
+			players_root.add_child(_do_spawn_player(data), true)
+		else:
+			_player_spawner.spawn(data)   # host only; replicates + runs callback on all peers
+
+# Runs on EVERY peer with identical `data`. Returns the node; the spawner add_child's it.
+func _do_spawn_player(data: Dictionary) -> Node:
+	var p := PLAYER_SCENE.instantiate()
+	p.name = "Player_%d" % int(data["peer_id"])   # deterministic across peers
+	p.peer_id = int(data["peer_id"])
+	p.set_multiplayer_authority(int(data["peer_id"]))  # authority set before _ready()
+	p.add_to_group("player")
+	p.setup(load(String(data["fighter"])) as CharacterData)
+	p.position = data["pos"]
+	return p
+
+func _on_player_spawned(node: Node) -> void:
+	_players.append(node)
+	_player = _players[0]                 # legacy single ref for HUD/camera wiring
+	_spawner.setup_party(_players)         # refresh party targeting as players arrive
+	if node == _local_player():
+		_focus_camera_on(node)
+
+func _local_player() -> Node:
+	var uid := 1 if multiplayer.multiplayer_peer == null else multiplayer.get_unique_id()
+	for p in _players:
+		if p.peer_id == uid:
+			return p
+	return _players[0] if not _players.is_empty() else null
 ```
 
-Wire `_spawner.setup_party(_players)`, camera follows the **local** player (`_local_player()` = the one whose `peer_id == multiplayer.get_unique_id()`, or `_players[0]` in solo). Update `main_3d.tscn`: delete the `Player` node, add an empty `Node3D` named `Players`, and a `MultiplayerSpawner` with `spawn_path = ../Players` and the player scene in its spawnable list.
+> Only the host calls `spawn()`; the spawner replicates each new player to all peers and runs `_do_spawn_player` on each with the same data, so names/authority match everywhere. Camera follows `_local_player()`.
 
 - [ ] **Step 4: Run tests**
 
@@ -1191,17 +1320,35 @@ func is_local_authority() -> bool:
 	return peer_id == multiplayer.get_unique_id()
 ```
 
+Interpolate remote players (the synchronizer replicates a `net_position`; the authority sets it to its real position, non-authorities lerp toward it):
+
+```gdscript
+const NET_INTERVAL := 0.05           # 20 Hz sync period; must match synchronizer interval
+var net_position: Vector3 = Vector3.ZERO   # REPLICATED property (set in SceneReplicationConfig)
+var _lerp_from: Vector3 = Vector3.ZERO
+var _lerp_to: Vector3 = Vector3.ZERO
+var _lerp_t: float = 0.0
+
+func _on_net_position_changed() -> void:   # call from a setter or watch in _process
+	_lerp_from = global_position
+	_lerp_to = net_position
+	_lerp_t = 0.0
+```
+
 Guard input in `_physics_process(dt)`:
 
 ```gdscript
 	if not is_local_authority():
-		# non-authority: transform arrives via MultiplayerSynchronizer; skip input/move.
-		move_and_slide()
+		# Non-authority: no input/physics; smoothly interpolate toward the replicated net_position.
+		_lerp_t = minf(_lerp_t + dt / NET_INTERVAL, 1.0)
+		global_position = _lerp_from.lerp(_lerp_to, _lerp_t)
 		return
+	# Authority: run existing input + movement, then publish for replication:
 	# ... existing input + movement code unchanged ...
+	net_position = global_position
 ```
 
-In `player_3d.tscn` add a `MultiplayerSynchronizer` child; in its replication config replicate `position` (and the model yaw property used for facing). Set its authority in code after spawn: `$MultiplayerSynchronizer.set_multiplayer_authority(peer_id)` inside `setup()` or right after spawn in `_spawn_party`.
+In `player_3d.tscn` add a `MultiplayerSynchronizer` child; in its `SceneReplicationConfig` replicate **`net_position`** (mode `ALWAYS`/unreliable) and the model yaw property used for facing, and set `replication_interval = 0.05`. Detect changes to `net_position` on non-authorities (a property setter that calls `_on_net_position_changed`, or compare against the last value each frame) to refresh the interpolation targets. Authority is assigned in the D2 spawn callback (`set_multiplayer_authority(peer_id)`), so the synchronizer inherits it — do not reassign after `_ready()`.
 
 - [ ] **Step 4: Run tests**
 
@@ -1226,34 +1373,268 @@ git commit -m "feat(net): client-owned avatar movement + transform replication (
 
 > These tasks are integration-heavy; each pairs code with two-instance verification. Pure sub-parts (already covered in Phase B statics) stay unit-tested.
 
-### Task E1: Host-only spawning + enemy replication
+### Task E1: Host-authoritative enemies via batched snapshot (NOT per-enemy synchronizers)
+
+Per-enemy `MultiplayerSynchronizer` hits a per-message wall well before ~200 enemies (proposal #3459: "abysmal network performance"). Host simulates all enemies; each tick it sends **one quantized snapshot RPC** per client; clients keep an `id→proxy` dict and interpolate. Spawn/despawn is driven by first-/last-sight in the snapshot plus a reliable death event — **no `MultiplayerSpawner` for enemies.**
 
 **Files:**
-- Modify: `spawning/spawner_3d.gd` (run only on host), `game/main_3d.tscn` (add `MultiplayerSpawner` for enemies targeting the enemies parent), `enemies/enemy_3d.gd` (add `MultiplayerSynchronizer` for transform + hp)
+- Create: `net/enemy_snapshot.gd`, `test/test_enemy_snapshot.gd`
+- Modify: `spawning/spawner_3d.gd` (host-only), `enemies/enemy_3d.gd` (add `net_id`, proxy mode), `game/game_manager_3d.gd` (snapshot broadcast on host + receive/apply on clients)
 
-**Steps:**
-- [ ] **Step 1:** Gate `Spawner3D._process` to host: at the top, `if multiplayer.multiplayer_peer != null and not multiplayer.is_server(): return`. Enemies are added under a node covered by a `MultiplayerSpawner` (so clients receive them). Set enemy authority to server (default peer 1).
-- [ ] **Step 2:** Add a `MultiplayerSynchronizer` to `enemy_3d.tscn` replicating `position` and `hp` (host-authoritative). Non-host enemies skip AI stepping (guard `_physics_process` like the player: only server steers; clients interpolate replicated transform).
-- [ ] **Step 3 (manual verify):** Host + client Start. Expected: identical enemy waves appear on both; enemies move in sync; only host simulates AI.
-- [ ] **Step 4:** Commit `feat(net): host-authoritative enemy spawning + replication (M3)`.
+**Interfaces:**
+- Produces: `EnemySnapshot.pack(entries:Array, origin:Vector3, inv_scale:float, tick:int) -> PackedByteArray` and `EnemySnapshot.unpack(bytes:PackedByteArray, origin:Vector3, scale:float) -> Dictionary` (`{"tick":int, "entries":Array}` where each entry is `{"id":int,"pos":Vector3,"yaw":float,"state":int}`); `Enemy3D.net_id:int`; `Enemy3D.configure_proxy()` (disables AI/nav/collision, visual only).
 
-### Task E2: Client weapon damage → host arbitration
+- [ ] **Step 1: Write the failing test (codec roundtrip within quantization tolerance)**
 
-**Files:**
-- Modify: `enemies/enemy_3d.gd` (add `@rpc` `receive_damage`), weapon base `core/weapon_3d.gd` (route hits through the host)
-
-**Steps:**
-- [ ] **Step 1:** Add to `Enemy3D`:
 ```gdscript
-@rpc("any_peer", "call_local", "reliable")
-func receive_damage(amount: float) -> void:
-	if multiplayer.multiplayer_peer != null and not multiplayer.is_server():
-		return   # only host applies
-	take_damage(amount)
+# test/test_enemy_snapshot.gd
+extends GutTest
+
+const ORIGIN := Vector3(-100, 0, -100)
+const SPAN := 200.0
+var _inv := 65535.0 / SPAN
+var _scale := SPAN / 65535.0
+
+func test_roundtrip_preserves_ids_and_positions():
+	var entries := [
+		{"id": 1, "pos": Vector3(-100, 0, -100), "yaw": 0.0, "state": 0},
+		{"id": 2, "pos": Vector3(0, 0, 50), "yaw": PI, "state": 1},
+		{"id": 300, "pos": Vector3(99, 0, -20), "yaw": TAU * 0.75, "state": 2},
+	]
+	var bytes := EnemySnapshot.pack(entries, ORIGIN, _inv, 42)
+	var out := EnemySnapshot.unpack(bytes, ORIGIN, _scale)
+	assert_eq(out["tick"], 42)
+	assert_eq(out["entries"].size(), 3)
+	for i in range(3):
+		var a: Dictionary = entries[i]
+		var b: Dictionary = out["entries"][i]
+		assert_eq(b["id"], a["id"])
+		assert_eq(b["state"], a["state"])
+		assert_almost_eq(b["pos"].x, a["pos"].x, 0.02)   # ~1/65535 * 200 ≈ 0.003 quantization
+		assert_almost_eq(b["pos"].z, a["pos"].z, 0.02)
+		assert_almost_eq(b["yaw"], a["yaw"], 0.01)
+
+func test_byte_length_is_header_plus_9_per_entry():
+	var entries := [{"id": 1, "pos": Vector3.ZERO, "yaw": 0.0, "state": 0}]
+	var bytes := EnemySnapshot.pack(entries, ORIGIN, _inv, 0)
+	assert_eq(bytes.size(), 4 + 9)   # u16 tick + u16 count + one 9-byte entry
 ```
-- [ ] **Step 2:** Where weapons currently call `enemy.take_damage(x)` directly, change to: if solo → `take_damage(x)`; if networked → `enemy.rpc_id(1, "receive_damage", x)`. Provide a helper `GameManager3D.apply_damage(enemy, amount)` so all weapons share one path. Enemy death/XP already flows through `GameEvents.enemy_killed_3d` on the host (unchanged).
-- [ ] **Step 3 (manual verify):** Two instances; each player's weapons visibly damage/kill shared enemies; kills register once (no double counting) because only the host applies damage and emits `enemy_killed_3d`.
-- [ ] **Step 4:** Commit `feat(net): client weapons deal damage via host arbitration (M3)`.
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `godot47 --headless -s addons/gut/gut_cmdln.gd -gtest=res://test/test_enemy_snapshot.gd -gexit`
+Expected: FAIL — EnemySnapshot missing.
+
+- [ ] **Step 3: Implement the codec**
+
+```gdscript
+# net/enemy_snapshot.gd
+class_name EnemySnapshot
+extends RefCounted
+
+# Entry layout (9 bytes): u16 id, u16 x, u16 z, u16 yaw, u8 state. Header: u16 tick, u16 count.
+static func pack(entries: Array, origin: Vector3, inv_scale: float, tick: int) -> PackedByteArray:
+	var b := PackedByteArray()
+	b.resize(4 + entries.size() * 9)
+	b.encode_u16(0, tick & 0xFFFF)
+	b.encode_u16(2, entries.size() & 0xFFFF)
+	var off := 4
+	for e in entries:
+		var p: Vector3 = e["pos"]
+		var qx := clampi(int((p.x - origin.x) * inv_scale), 0, 65535)
+		var qz := clampi(int((p.z - origin.z) * inv_scale), 0, 65535)
+		var yaw: float = fposmod(float(e["yaw"]), TAU)
+		var qy := clampi(int(yaw / TAU * 65535.0), 0, 65535)
+		b.encode_u16(off, int(e["id"]) & 0xFFFF); off += 2
+		b.encode_u16(off, qx); off += 2
+		b.encode_u16(off, qz); off += 2
+		b.encode_u16(off, qy); off += 2
+		b.encode_u8(off, int(e["state"]) & 0xFF); off += 1
+	return b
+
+static func unpack(bytes: PackedByteArray, origin: Vector3, scale: float) -> Dictionary:
+	var tick := bytes.decode_u16(0)
+	var count := bytes.decode_u16(2)
+	var entries := []
+	var off := 4
+	for i in range(count):
+		var id := bytes.decode_u16(off); off += 2
+		var qx := bytes.decode_u16(off); off += 2
+		var qz := bytes.decode_u16(off); off += 2
+		var qy := bytes.decode_u16(off); off += 2
+		var st := bytes.decode_u8(off); off += 1
+		entries.append({
+			"id": id,
+			"pos": Vector3(origin.x + qx * scale, 0.0, origin.z + qz * scale),
+			"yaw": float(qy) / 65535.0 * TAU,
+			"state": st,
+		})
+	return {"tick": tick, "entries": entries}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `godot47 --headless -s addons/gut/gut_cmdln.gd -gtest=res://test/test_enemy_snapshot.gd -gexit`
+Expected: PASS (2 tests).
+
+- [ ] **Step 5: Commit the codec**
+
+```bash
+git add net/enemy_snapshot.gd test/test_enemy_snapshot.gd
+git commit -m "feat(net): quantized enemy snapshot codec (pure logic)"
+```
+
+- [ ] **Step 6: Host simulation + net_id + broadcast**
+
+Gate `Spawner3D._process` to host: at the top, `if multiplayer.multiplayer_peer != null and not multiplayer.is_server(): return`. In `_instance_enemy`, assign `enemy.net_id = _next_net_id; _next_net_id += 1` (monotonic counter on the spawner/manager). Add to `Enemy3D` a `var net_id: int = 0` and a `state` accessor (0 normal / 1 elite / 2 boss, from `boss_kind`). In `GameManager3D`, add a fixed-rate snapshot broadcaster (host only):
+
+```gdscript
+const NET_ORIGIN := Vector3(-100, 0, -100)
+const NET_SPAN := 200.0
+var _snap_accum := 0.0
+var _snap_tick := 0
+
+func _process(dt):
+	# ... existing timer code ...
+	if multiplayer.multiplayer_peer != null and multiplayer.is_server():
+		_snap_accum += dt
+		if _snap_accum >= 0.05:      # 20 Hz
+			_snap_accum = 0.0
+			_broadcast_enemy_snapshot()
+
+func _broadcast_enemy_snapshot():
+	var entries := []
+	for e in get_tree().get_nodes_in_group("enemies"):
+		entries.append({"id": e.net_id, "pos": e.global_position, "yaw": e.rotation.y, "state": e.snapshot_state()})
+	var inv := 65535.0 / NET_SPAN
+	var bytes := EnemySnapshot.pack(entries, NET_ORIGIN, inv, _snap_tick)
+	_snap_tick = (_snap_tick + 1) & 0xFFFF
+	for pid in multiplayer.get_peers():
+		receive_enemy_snapshot.rpc_id(pid, bytes)
+```
+
+- [ ] **Step 7: Client proxies + interpolation + despawn**
+
+On clients, enemies are NOT simulated. Add the receiver + proxy manager to `GameManager3D` (runs only on non-host):
+
+```gdscript
+var _proxies := {}        # net_id -> Enemy3D (proxy)
+var _last_seen := {}      # net_id -> _snap_tick when last present
+
+@rpc("authority", "call_remote", "unreliable")
+func receive_enemy_snapshot(bytes: PackedByteArray) -> void:
+	var scale := NET_SPAN / 65535.0
+	var snap := EnemySnapshot.unpack(bytes, NET_ORIGIN, scale)
+	var tick: int = snap["tick"]
+	for e in snap["entries"]:
+		var id: int = e["id"]
+		var proxy: Node3D = _proxies.get(id)
+		if proxy == null:
+			proxy = ENEMY_SCENE.instantiate()
+			proxy.net_id = id
+			parent.get_node("Enemies").add_child(proxy)
+			proxy.add_to_group("enemies")
+			proxy.configure_proxy()             # disable AI/nav/collision
+			proxy.global_position = e["pos"]
+			_proxies[id] = proxy
+		proxy.set_interp_target(e["pos"], e["yaw"])   # from->to lerp (NET_INTERVAL=0.05)
+		_last_seen[id] = tick
+	# despawn proxies not seen for several ticks
+	for id in _proxies.keys():
+		if not _last_seen.has(id) or _tick_gap(tick, _last_seen[id]) > 10:
+			_proxies[id].queue_free(); _proxies.erase(id); _last_seen.erase(id)
+```
+
+In `Enemy3D`, add proxy mode + interpolation:
+
+```gdscript
+var _is_proxy := false
+var _ip_from := Vector3.ZERO
+var _ip_to := Vector3.ZERO
+var _ip_t := 0.0
+var _ip_yaw_to := 0.0
+
+func configure_proxy() -> void:
+	_is_proxy = true
+	set_physics_process(true)   # keep for interpolation, but AI is skipped below
+	# disable collision shapes / NavigationAgent / attack strategy here
+
+func snapshot_state() -> int:
+	return 2 if boss_kind != BossKind.NONE else 0
+
+func set_interp_target(pos: Vector3, yaw: float) -> void:
+	_ip_from = global_position; _ip_to = pos; _ip_yaw_to = yaw; _ip_t = 0.0
+```
+
+Guard the top of `Enemy3D._physics_process(dt)`:
+
+```gdscript
+	if _is_proxy:
+		_ip_t = minf(_ip_t + dt / 0.05, 1.0)
+		global_position = _ip_from.lerp(_ip_to, _ip_t)
+		rotation.y = lerp_angle(rotation.y, _ip_yaw_to, 0.5)
+		return
+```
+
+Add an `Enemies` node to `main_3d.tscn` and parent host-spawned enemies there too (so both host and client group them consistently). Death VFX on clients comes from a reliable event in Task E2's `confirm_damage` path (host broadcasts death → client frees the proxy + plays the dissolve).
+
+- [ ] **Step 8 (manual two-instance verify):** Host + client Start. Expected: on the client, enemies appear/move smoothly (interpolated), matching host positions within a frame or two; no "Buffer payload full" errors in the client log even with 150+ enemies; only the host runs AI.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add spawning/spawner_3d.gd enemies/enemy_3d.gd game/game_manager_3d.gd game/main_3d.tscn
+git commit -m "feat(net): host-simulated enemies via batched snapshot + client interpolation (M3)"
+```
+
+### Task E2: Client weapon damage → host arbitration (by net_id)
+
+Damage targets enemies by `net_id` (client weapons hit a proxy that only carries an id). Flow is request → host validates/applies → host broadcasts confirm (incl. death for proxy cleanup + VFX). One shared damage path so every weapon routes identically.
+
+**Files:**
+- Modify: `game/game_manager_3d.gd` (host `_enemies_by_id` map; `request_damage`/`confirm_damage` RPCs; `apply_damage(enemy, amount)` helper), `core/weapon_3d.gd` and subclasses (call the shared helper), `enemies/enemy_3d.gd` (register/unregister net_id on host)
+
+**Interfaces:**
+- Produces: `GameManager3D.apply_damage(enemy:Node, amount:float) -> void` (solo → direct `take_damage`; networked → `request_damage.rpc_id(1, enemy.net_id, amount)`), `@rpc request_damage(net_id:int, amount:float)`, `@rpc confirm_damage(net_id:int, new_hp:float, dead:bool)`.
+
+- [ ] **Step 1:** On the host, maintain `var _enemies_by_id := {}`; register in `_instance_enemy` (`_enemies_by_id[enemy.net_id] = enemy`) and erase on death. Add the shared helper + RPCs to `GameManager3D`:
+
+```gdscript
+func apply_damage(enemy: Node, amount: float) -> void:
+	if multiplayer.multiplayer_peer == null:
+		enemy.take_damage(amount)                      # solo: direct
+	else:
+		request_damage.rpc_id(1, enemy.net_id, amount) # networked: ask host
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_damage(net_id: int, amount: float) -> void:
+	if not multiplayer.is_server():
+		return
+	var e: Node = _enemies_by_id.get(net_id)
+	if e == null or not is_instance_valid(e):
+		return
+	e.take_damage(max(0.0, amount))                     # host applies -> may emit enemy_killed_3d/gem
+	var dead := not is_instance_valid(e) or e.hp <= 0.0
+	confirm_damage.rpc(net_id, (e.hp if not dead else 0.0), dead)
+
+@rpc("authority", "call_local", "reliable")
+func confirm_damage(net_id: int, new_hp: float, dead: bool) -> void:
+	# Host already applied; clients update proxy visuals / clean up on death.
+	if multiplayer.is_server():
+		return
+	var proxy: Node = _proxies.get(net_id)
+	if proxy == null:
+		return
+	if dead:
+		proxy.play_death_vfx()                          # dissolve
+		proxy.queue_free(); _proxies.erase(net_id)
+	else:
+		proxy.set_hp_visual(new_hp)
+```
+
+- [ ] **Step 2:** Where weapons currently call `enemy.take_damage(x)` directly, route through `GameManager3D.apply_damage(enemy, x)` instead (a single edit point per weapon; use the run's manager reference). Enemy death/XP/gem still flows through `GameEvents.enemy_killed_3d` on the host (unchanged). Add `Enemy3D.play_death_vfx()` and `set_hp_visual(hp)` thin wrappers over the existing dissolve + HP-bar code.
+- [ ] **Step 3 (manual verify):** Two instances; each player's weapons visibly damage/kill shared enemies; kills register exactly once (only host applies + emits `enemy_killed_3d`); dying enemies dissolve on both screens.
+- [ ] **Step 4:** Commit `feat(net): client weapon damage by net_id via host arbitration (M3)`.
 
 ### Task E3: Host-spawned XP gems + team XP pool
 
