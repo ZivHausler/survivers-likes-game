@@ -38,8 +38,8 @@ func test_zones_have_material_defs() -> void:
 	var zones: Dictionary = RECIPE["zones"]
 	for ch in RECIPE["legend"]:
 		var z: StringName = RECIPE["legend"][ch]
-		if z == &"void":
-			continue
+		if z == &"void" or z == &"pond":
+			continue  # pond is an inset (its own water/rim colors in recipe.pond), not a base tile
 		assert_true(zones.has(z), "zone '%s' needs a material def" % z)
 		assert_true(zones[z].has("color"), "zone '%s' needs a color" % z)
 

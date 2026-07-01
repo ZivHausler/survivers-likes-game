@@ -547,8 +547,8 @@ func test_zones_have_material_defs() -> void:
 	var zones: Dictionary = RECIPE["zones"]
 	for ch in RECIPE["legend"]:
 		var z: StringName = RECIPE["legend"][ch]
-		if z == &"void":
-			continue
+		if z == &"void" or z == &"pond":
+			continue  # pond is an inset (its own water/rim colors in recipe.pond), not a base tile
 		assert_true(zones.has(z), "zone '%s' needs a material def" % z)
 		assert_true(zones[z].has("color"), "zone '%s' needs a color" % z)
 
@@ -581,7 +581,10 @@ extends Node
 ## decals + prop clusters. One recipe = one district (replicable). Read by FloorBuilder
 ## and GardenScatter. Pure data — no logic.
 
-const RECIPE := {
+# static var (NOT const): a PackedStringArray literal is not a constant expression in GDScript,
+# so `const RECIPE` fails to parse. `static var` accepts it and is accessed identically via
+# `load("res://arena/maps/garden_map.gd").RECIPE`.
+static var RECIPE := {
 	"cell_size": 8.0,
 	"rows": PackedStringArray([
 		"...........==...........",
@@ -648,7 +651,7 @@ const RECIPE := {
 		{ "role": &"medium", "center": Vector2(-30, 20), "ext": 10.0, "seed": 10, "sep": 6.0,
 			"items": [["garden_bench_3d", 2, true, 1.0], ["garden_planter_3d", 2, true, 1.0]] },
 		{ "role": &"medium", "center": Vector2(34, 30), "ext": 10.0, "seed": 11, "sep": 6.0,
-			"items": [["garden_trellis_3d", 1, true, 1.0], ["prop_lamp_3d", 2, false, 1.0]] },
+			"items": [["garden_trellis_3d", 1, true, 1.0], ["prop_lamp_3d", 1, false, 1.0]] },
 		{ "role": &"small", "center": Vector2(-40, 40), "ext": 10.0, "seed": 20, "sep": 3.0,
 			"items": [["prop_bush_3d", 3, false, 1.0], ["prop_flowers_3d", 4, false, 1.0]] },
 		{ "role": &"small", "center": Vector2(40, -20), "ext": 10.0, "seed": 21, "sep": 3.0,
