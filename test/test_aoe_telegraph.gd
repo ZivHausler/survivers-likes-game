@@ -45,8 +45,12 @@ func test_aoe_telegraph_auto_frees_after_lifetime() -> void:
 		"AoeTelegraph3D must auto-free after its lifetime expires")
 
 # ── SkillVFX dispatch ─────────────────────────────────────────────────────────
+# NOTE: SkillVFX no longer auto-spawns an AoeTelegraph3D on skill_cast — the
+# expanding ring around the caster on every cast was removed as unwanted visual
+# noise (real AoE skills draw their own telegraph). AoeTelegraph3D remains a
+# reusable component, covered by the scene/behaviour tests above.
 
-func test_skill_vfx_spawns_telegraph_on_skill_cast() -> void:
+func test_skill_vfx_does_not_spawn_telegraph_on_skill_cast() -> void:
 	var tree: SceneTree = get_tree()
 	var parent: Node = tree.current_scene if tree.current_scene != null else tree.root
 	var before: int = parent.get_children().filter(
@@ -55,20 +59,5 @@ func test_skill_vfx_spawns_telegraph_on_skill_cast() -> void:
 	await get_tree().process_frame
 	var after: int = parent.get_children().filter(
 		func(c: Node) -> bool: return c is AoeTelegraph3D).size()
-	assert_gt(after, before,
-		"SkillVFX must spawn an AoeTelegraph3D when skill_cast is emitted")
-
-func test_telegraph_rate_limited_per_skill() -> void:
-	var tree: SceneTree = get_tree()
-	var parent: Node = tree.current_scene if tree.current_scene != null else tree.root
-	var before: int = parent.get_children().filter(
-		func(c: Node) -> bool: return c is AoeTelegraph3D).size()
-	# Emit two rapid casts for the same skill (within cooldown window).
-	GameEvents.skill_cast.emit(&"test_rapid_skill", Color.CYAN, Vector3(1, 0, 2))
-	GameEvents.skill_cast.emit(&"test_rapid_skill", Color.CYAN, Vector3(1, 0, 2))
-	await get_tree().process_frame
-	var after: int = parent.get_children().filter(
-		func(c: Node) -> bool: return c is AoeTelegraph3D).size()
-	# Only the first cast's telegraph should spawn; the second is suppressed.
-	assert_eq(after - before, 1,
-		"Rapid successive casts of the same skill must spawn only ONE telegraph")
+	assert_eq(after, before,
+		"SkillVFX must NOT spawn an AoeTelegraph3D on skill_cast (ring removed)")

@@ -35,6 +35,14 @@ Subclasses only override `fire()`.  They get cast VFX for free without any
 per-skill changes.  Calling `fire()` directly (as tests do) skips the emit,
 so existing tests remain behavior-identical.
 
+On `skill_cast`, `SkillVFX` spawns only the small `SkillCastFx3D` burst. It used to
+*also* spawn an expanding `AoeTelegraph3D` ring around the caster on every cast — that
+was removed as unwanted visual noise (it grew a big circle around the character on each
+cooldown tick and couldn't tell real AoE skills apart). Genuine AoE skills draw their own
+telegraph sized to their actual blast radius (e.g. `NovaWeapon3D._spawn_telegraph()`).
+`AoeTelegraph3D` remains a reusable component (still unit-tested) — it's just no longer
+auto-spawned per cast.
+
 ## VFX fields on Weapon3D
 
 ```gdscript

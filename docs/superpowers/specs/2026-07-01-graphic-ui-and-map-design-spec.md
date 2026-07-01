@@ -288,3 +288,15 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   refs before judging; grade the frame not the asset; monotonic score movement is signal; the
   overview shot is a real gate. Next visual work: revert near-white zone albedo, fix centerpiece
   integration + straight seams.
+- 2026-07-01 — Skill-cast VFX cleanup: removed the expanding `AoeTelegraph3D` ring that
+  `SkillVFX` spawned around the character on EVERY `skill_cast` (a big growing circle each
+  cooldown tick — unwanted noise, and it couldn't distinguish real AoE skills). Cast now shows
+  only the small `SkillCastFx3D` burst; genuine AoE skills still draw their own telegraph sized
+  to their real blast radius (e.g. `NovaWeapon3D`). `AoeTelegraph3D` remains a reusable,
+  unit-tested component. See `docs/notes/skill-vfx.md`.
+- 2026-07-01 — Upgrade-card width fix (§4.1): the SYNERGY card rendered wider than the others
+  and its image stretched. Root cause — `NameLabel`/`StatLabel` in `upgrade_ui.tscn` had no
+  `autowrap_mode`, so long synergy text ("SYNERGY: Notification Apocalypse", "Doubles pings,
+  speeds orbit") forced the card's minimum width past the shared 268 px, and the fill-to-plate
+  icon stretched with it. Enabled `autowrap_mode = 3` on both labels for all three cards; cards
+  are now equal width and the image no longer over-stretches.

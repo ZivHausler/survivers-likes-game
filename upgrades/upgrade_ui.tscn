@@ -75,6 +75,7 @@ text = ""
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 20
+autowrap_mode = 3
 
 [node name="GapSpacer" type="Control" parent="Panel/PanelVBox/CardRow/Card0/CardContent"]
 custom_minimum_size = Vector2(0, 12)
@@ -96,6 +97,7 @@ mouse_filter = 2
 text = ""
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
 
 [node name="FillSpacer" type="Control" parent="Panel/PanelVBox/CardRow/Card0/CardContent"]
 layout_mode = 2
@@ -182,6 +184,7 @@ text = ""
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 20
+autowrap_mode = 3
 
 [node name="GapSpacer" type="Control" parent="Panel/PanelVBox/CardRow/Card1/CardContent"]
 custom_minimum_size = Vector2(0, 12)
@@ -203,6 +206,7 @@ mouse_filter = 2
 text = ""
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
 
 [node name="FillSpacer" type="Control" parent="Panel/PanelVBox/CardRow/Card1/CardContent"]
 layout_mode = 2
@@ -289,6 +293,7 @@ text = ""
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 20
+autowrap_mode = 3
 
 [node name="GapSpacer" type="Control" parent="Panel/PanelVBox/CardRow/Card2/CardContent"]
 custom_minimum_size = Vector2(0, 12)
@@ -310,6 +315,7 @@ mouse_filter = 2
 text = ""
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
 
 [node name="FillSpacer" type="Control" parent="Panel/PanelVBox/CardRow/Card2/CardContent"]
 layout_mode = 2
