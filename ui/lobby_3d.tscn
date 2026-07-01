@@ -1,0 +1,66 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/lobby_3d.gd" id="1_lobby_3d"]
+
+[node name="Lobby3D" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_lobby_3d")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+anchor_left = 0.5
+anchor_top = 0.05
+anchor_right = 0.5
+anchor_bottom = 0.95
+offset_left = -260.0
+offset_right = 260.0
+grow_horizontal = 2
+
+[node name="TitleLabel" type="Label" parent="VBox"]
+layout_mode = 2
+text = "Friends Swarm — Lobby"
+horizontal_alignment = 1
+
+[node name="NetRow" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+
+[node name="HostButton" type="Button" parent="VBox/NetRow"]
+layout_mode = 2
+text = "Host"
+
+[node name="JoinButton" type="Button" parent="VBox/NetRow"]
+layout_mode = 2
+text = "Join 127.0.0.1"
+
+[node name="SteamHostButton" type="Button" parent="VBox/NetRow"]
+layout_mode = 2
+text = "Host (Steam)"
+
+[node name="InviteButton" type="Button" parent="VBox/NetRow"]
+layout_mode = 2
+disabled = true
+text = "Invite Friend"
+
+[node name="Scroll" type="ScrollContainer" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="FighterGrid" type="GridContainer" parent="VBox/Scroll"]
+layout_mode = 2
+columns = 2
+
+[node name="PlayerList" type="VBoxContainer" parent="VBox"]
+layout_mode = 2
+
+[node name="ReadyToggle" type="CheckButton" parent="VBox"]
+layout_mode = 2
+text = "Ready"
+
+[node name="StartButton" type="Button" parent="VBox"]
+layout_mode = 2
+disabled = true
+text = "Start"
+
+[node name="SoloButton" type="Button" parent="VBox"]
+layout_mode = 2
+text = "Solo"

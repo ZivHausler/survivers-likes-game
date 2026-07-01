@@ -43,12 +43,32 @@ const KNOCKBACK_DURATION := 0.22
 ## Peak height (world units) of the knockback hop.
 const KNOCKBACK_HOP_HEIGHT := 0.7
 
+## Seconds a proxy takes to slide between two received snapshots (matches the host's
+## ~20 Hz broadcast). Used to advance the interpolation parameter in _physics_process.
+const NET_INTERVAL := 0.05
+
 var data: EnemyData
 var target: Node3D
 var hp: float = 0.0
+
+## Monotonic per-run id assigned by Spawner3D at spawn time; 0 until assigned.
+## On clients this mirrors the host's id so the snapshot receiver can match proxies.
+var net_id: int = 0
+
+## True on CLIENT proxies (visual-only echoes of host enemies). A proxy runs NO AI,
+## nav, collision, or contact damage — _physics_process only interpolates toward the
+## last snapshot target. Set by configure_proxy().
+var _is_proxy := false
+## Interpolation endpoints/param for proxy mode (from→to over NET_INTERVAL).
+var _ip_from: Vector3 = Vector3.ZERO
+var _ip_to: Vector3 = Vector3.ZERO
+var _ip_yaw_to: float = 0.0
+var _ip_t: float = 0.0
 ## Non-melee attack strategy (RangedAttack / DashAttack); null for MELEE (inline default).
 var _attack: EnemyAttack = null
 var _contact_cd: float = 0.0
+## Seconds until the next nearest-player retarget scan (throttled — see _physics_process).
+var _retarget_cd: float = 0.0
 ## Remaining charm time in seconds. While > 0, movement is suppressed.
 var _charm_timer: float = 0.0
 ## Knockback (hop-back) state. While _knockback_timer > 0, nav/attack logic is
@@ -183,6 +203,39 @@ func configure_boss(kind: int, p_name: String = "") -> void:
 		_health_bar.position = Vector3(0.0, MINI_BOSS_BAR_OFFSET_Y, 0.0)
 		_health_bar.set_ratio(1.0)
 
+## Network state tag broadcast in the snapshot: 0 = normal, 2 = boss (mini or big).
+## Kept minimal (no elite tier today) — clients only need it to size/flag proxies.
+func snapshot_state() -> int:
+	return 2 if boss_kind != BossKind.NONE else 0
+
+## Turn this enemy into a CLIENT-side visual proxy: no AI, nav, collision, or contact
+## damage — _physics_process only interpolates toward set_interp_target(). Called by
+## GameManager3D on clients right after instantiating the proxy scene (never on the host).
+func configure_proxy() -> void:
+	_is_proxy = true
+	# Visual-only: no collision so it can't block or be hit, no attack strategy.
+	set_collision_layer(0)
+	set_collision_mask(0)
+	_attack = null
+	if _agent:
+		_agent.avoidance_enabled = false
+
+## Set the proxy's interpolation goal from the latest snapshot. The slide starts at the
+## proxy's current position and eases to `pos`/`yaw` over NET_INTERVAL. No-op semantics
+## on non-proxies (only _physics_process's proxy branch consumes these).
+func set_interp_target(pos: Vector3, yaw: float) -> void:
+	_ip_from = global_position
+	_ip_to = pos
+	_ip_yaw_to = yaw
+	_ip_t = 0.0
+
+## Pure interpolation step (unit-testable without a live physics step): advance the
+## from→to lerp by `dt` and return the new position. Mirrors the proxy branch of
+## _physics_process so tests can assert monotonic approach to the target.
+static func interp_step(from: Vector3, to: Vector3, t: float, dt: float) -> Array:
+	var nt: float = minf(t + dt / NET_INTERVAL, 1.0)
+	return [from.lerp(to, nt), nt]
+
 ## Suppress enemy movement for `duration` seconds.
 ## Stacks by taking the maximum remaining time (mirrors 2D charm logic).
 func charm(duration: float) -> void:
@@ -230,6 +283,26 @@ func _on_velocity_computed(safe_velocity: Vector3) -> void:
 	move_and_slide()
 
 func _physics_process(dt: float) -> void:
+	# CLIENT proxy: pure visual interpolation toward the last snapshot target — no AI,
+	# nav, retarget, or contact damage. Must be the FIRST thing so none of the host-side
+	# simulation below ever runs on a proxy.
+	if _is_proxy:
+		var step := interp_step(_ip_from, _ip_to, _ip_t, dt)
+		global_position = step[0]
+		_ip_t = step[1]
+		rotation.y = lerp_angle(rotation.y, _ip_yaw_to, 0.5)
+		return
+	_retarget_cd -= dt
+	if _retarget_cd <= 0.0:
+		_retarget_cd = 0.4
+		var players := get_tree().get_nodes_in_group("player")
+		var alive: Array = []
+		for p in players:
+			if is_instance_valid(p) and (not p.has_method("is_downed") or not p.is_downed()):
+				alive.append(p)
+		var nearest := nearest_target(global_position, alive)
+		if nearest != null:
+			target = nearest
 	if data == null:
 		return
 	if _dying:
@@ -680,3 +753,18 @@ static func face_angle(velocity: Vector3) -> float:
 	if velocity.is_zero_approx():
 		return 0.0
 	return atan2(velocity.x, velocity.z)
+
+## Pure static targeting helper — unit-testable without a live scene tree.
+## Returns the candidate closest to `from` (by squared distance), ignoring
+## null/freed entries. Returns null when no valid candidate exists.
+static func nearest_target(from: Vector3, candidates: Array) -> Node3D:
+	var best: Node3D = null
+	var best_d := INF
+	for c in candidates:
+		if c == null or not is_instance_valid(c):
+			continue
+		var d := from.distance_squared_to((c as Node3D).global_position)
+		if d < best_d:
+			best_d = d
+			best = c
+	return best

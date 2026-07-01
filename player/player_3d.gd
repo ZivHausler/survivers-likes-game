@@ -24,6 +24,27 @@ var _invuln_timer: float = 0.0
 var _invuln_blink: bool = true
 
 var stats: StatBlock
+## Owning peer id (network authority). 1 for solo / host. Set in GameManager3D._do_spawn_player
+## inside the MultiplayerSpawner callback, before _ready(), so it matches across all peers.
+var peer_id: int = 1
+
+## Sync period for net_position replication (must match the MultiplayerSynchronizer's
+## replication_interval in player_3d.tscn — 20 Hz).
+const NET_INTERVAL := 0.05
+
+## REPLICATED property (see player_3d.tscn's SceneReplicationConfig). The authority writes
+## its real position here every physics frame; non-authorities receive it via replication and
+## retarget the interpolation toward the new value each time it changes (see the setter below).
+var net_position: Vector3 = Vector3.ZERO:
+	set(value):
+		net_position = value
+		_on_net_position_changed()
+
+## Interpolation state driving the non-authority branch of _physics_process: lerps
+## global_position from _lerp_from to _lerp_to over NET_INTERVAL seconds.
+var _lerp_from: Vector3 = Vector3.ZERO
+var _lerp_to: Vector3 = Vector3.ZERO
+var _lerp_t: float = 0.0
 ## The character this player was built from — exposed so the HUD can read the
 ## portrait and per-skill ability icons (SkillData.icon). Set in setup().
 var character_data: CharacterData = null
@@ -251,7 +272,48 @@ func _apply_tint(node: Node, tint: Color) -> void:
 	for child in node.get_children():
 		_apply_tint(child, tint)
 
+## True only in a real networked session. Mirrors GameManager3D._is_networked(): the engine
+## defaults multiplayer_peer to an OfflineMultiplayerPeer (never null) in solo play and headless
+## tests, so a plain null check would wrongly treat solo as networked.
+func _is_networked() -> bool:
+	var peer := multiplayer.multiplayer_peer
+	return peer != null and not (peer is OfflineMultiplayerPeer)
+
+## True when this player's input/physics should run locally: always in solo, and in a
+## networked session only on the peer that owns peer_id. Non-authority peers skip input and
+## physics in _physics_process and instead interpolate toward the replicated net_position.
+func is_local_authority() -> bool:
+	if not _is_networked():
+		return true   # solo
+	return peer_id == multiplayer.get_unique_id()
+
+## Retarget the interpolation whenever net_position changes (wired via the property setter
+## above — fires on both authority, harmlessly, and non-authority, where it matters).
+func _on_net_position_changed() -> void:
+	_lerp_from = global_position
+	_lerp_to = net_position
+	_lerp_t = 0.0
+
+## Pure interpolation step — unit-testable without a scene tree or live multiplayer peer.
+## Advances t by dt/interval (clamped to 1.0) and returns the lerped position alongside the
+## new t. Extracted so tests can exercise the exact math _step_interp() applies each frame.
+static func step_interp(from: Vector3, to: Vector3, t: float, dt: float, interval: float) -> Dictionary:
+	var new_t: float = minf(t + dt / interval, 1.0)
+	return {"position": from.lerp(to, new_t), "t": new_t}
+
+## Advance the replicated-position interpolation by one physics tick and apply it to
+## global_position. Called from the non-authority branch of _physics_process; extracted so
+## tests can drive it directly (is_local_authority() can't be forced false without a live peer).
+func _step_interp(dt: float) -> void:
+	var step: Dictionary = step_interp(_lerp_from, _lerp_to, _lerp_t, dt, NET_INTERVAL)
+	global_position = step["position"]
+	_lerp_t = step["t"]
+
 func _physics_process(dt: float) -> void:
+	if not is_local_authority():
+		# Non-authority: no input/physics; smoothly interpolate toward the replicated net_position.
+		_step_interp(dt)
+		return
 	if not stats:
 		return
 	# Base passive health regeneration (per-character; 0 = none). Only while alive and hurt.
@@ -276,6 +338,7 @@ func _physics_process(dt: float) -> void:
 	var cam_yaw: float = cam.yaw_radians() if cam is GameCamera3D else 0.0
 	velocity = move_to_velocity(dir, stats.move_speed, cam_yaw)
 	move_and_slide()
+	net_position = global_position   # publish for replication (harmless in solo)
 	# Rotate Model toward movement heading (only visual; collision body stays upright).
 	if velocity.length() > WALK_THRESHOLD:
 		_model.rotation.y = face_angle(velocity)

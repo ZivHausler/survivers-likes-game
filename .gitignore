@@ -19,3 +19,8 @@ _hud_log.txt
 _play_log.txt
 _progress_snapshots/
 _import_log.txt
+
+# GodotSteam addon binaries (large, multi-platform) — install locally per machine
+/addons/godotsteam/
+# Steam dev app id (local)
+/steam_appid.txt

@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/session_root.gd" id="1_session_root"]
+
+[node name="SessionRoot" type="Node"]
+script = ExtResource("1_session_root")
+
+[node name="Slot" type="Node" parent="."]

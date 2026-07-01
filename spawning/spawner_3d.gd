@@ -38,7 +38,7 @@ const BIG_BOSS_XP_VALUE:   int   = 200
 ## Model scale for the serpent in big-boss form (playtest-tunable).
 const BIG_BOSS_MODEL_SCALE: float = 2.0
 
-var _target: Node3D
+var _targets: Array = []
 var _timeline: DifficultyTimeline
 var _elapsed: float = 0.0
 var _spawn_cd: float = 0.0
@@ -46,6 +46,10 @@ var _active: bool = false
 
 var _enemy_scene: PackedScene
 var _variants: Dictionary  # StringName → EnemyData
+
+## Monotonic id handed to each spawned enemy (net_id). Host-authoritative: only the host
+## (or solo) spawns, so ids are unique per run and stable to reference in the snapshot.
+var _next_net_id: int = 1
 
 
 # ── Pure static helpers (testable without a scene tree) ───────────────────────
@@ -92,6 +96,18 @@ static func xp_time_mult(elapsed: float) -> float:
 	return 1.0 + elapsed / 120.0
 
 
+## Returns the average global_position of valid targets, ignoring null/invalid entries.
+## Returns Vector3.ZERO if no valid targets are given.
+static func party_center(targets: Array) -> Vector3:
+	var sum := Vector3.ZERO
+	var n := 0
+	for t in targets:
+		if t != null and is_instance_valid(t):
+			sum += (t as Node3D).global_position
+			n += 1
+	return sum / n if n > 0 else Vector3.ZERO
+
+
 ## Recursively apply a texture-preserving albedo tint to all MeshInstance3D nodes under `node`.
 ## Duplicates each surface's active material before setting albedo_color so the original
 ## GLB material is never mutated. Falls back to a blank StandardMaterial3D when the
@@ -123,7 +139,11 @@ static func apply_model_tint(node: Node, tint: Color) -> void:
 # ── Instance methods ──────────────────────────────────────────────────────────
 
 func setup(target: Node3D) -> void:
-	_target = target
+	setup_party([target])
+
+
+func setup_party(targets: Array) -> void:
+	_targets = targets
 	_timeline = DifficultyTimeline.new()
 	_elapsed  = 0.0
 	_spawn_cd = 0.0
@@ -142,10 +162,35 @@ func setup(target: Node3D) -> void:
 	_active = true
 
 
+func get_targets() -> Array:
+	return _targets
+
+
+## True if at least one target in the party is still alive/valid.
+func _has_valid_target() -> bool:
+	for t in _targets:
+		if t != null and is_instance_valid(t):
+			return true
+	return false
+
+
+## True only in a real networked session. Mirrors GameManager3D._is_networked():
+## the engine defaults multiplayer_peer to a (non-null) OfflineMultiplayerPeer in solo
+## and headless tests, so a plain null check would wrongly gate solo spawning.
+func _is_networked() -> bool:
+	var peer := multiplayer.multiplayer_peer
+	return peer != null and not (peer is OfflineMultiplayerPeer)
+
+
 func _process(dt: float) -> void:
+	# Host-authoritative enemies: only the host (or solo) simulates/spawns. A real client
+	# never spawns — it receives host enemies as interpolated proxies via the snapshot RPC.
+	# Solo (is_server true, no peers) and host both pass this gate.
+	if _is_networked() and not multiplayer.is_server():
+		return
 	if not _active:
 		return
-	if not is_instance_valid(_target):
+	if not _has_valid_target():
 		return
 
 	_elapsed  += dt
@@ -239,16 +284,20 @@ func _instance_enemy(data: EnemyData, scale_mult: float) -> Enemy3D:
 	assert(parent != null, "Spawner3D must not be the scene root")
 	parent.add_child(enemy)
 	enemy.add_to_group("enemies")
+	# Assign a unique, monotonic network id so the host snapshot can reference this enemy
+	# and clients can match it to a proxy across ticks.
+	enemy.net_id = _next_net_id
+	_next_net_id += 1
 	enemy.global_position = _random_ring_position()
 	# Knob 1 of 2 for boss sizing: sets the CharacterBody3D (collision + all children).
 	# Boss model also applies a model_scale via Enemy3D.setup() → _model.scale (knob 2).
 	# Result: final visual size = scale_mult × data.model_scale (see _spawn_boss/_spawn_big_boss).
 	enemy.scale = Vector3.ONE * scale_mult
-	enemy.setup(data, _target)
+	enemy.setup(data, Enemy3D.nearest_target(enemy.global_position, _targets))
 	return enemy
 
 
 func _random_ring_position() -> Vector3:
 	var angle: float = randf() * TAU
-	var origin: Vector3 = _target.global_position if is_instance_valid(_target) else global_position
+	var origin: Vector3 = party_center(_targets) if _has_valid_target() else global_position
 	return ring_position(origin, angle, SPAWN_RING_RADIUS)

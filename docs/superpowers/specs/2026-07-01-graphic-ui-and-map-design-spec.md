@@ -252,6 +252,10 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
 - [ ] **Interiors** (stretch) — enterable building with roof cutaway (ref #6).
 - [x] **Ability icons + portraits** — SHIPPED for the full 10-character roster (§4.5).
       *Remaining:* counter/status icons.
+- [ ] **Lobby / character-select screen v2** — `ui/lobby_3d.tscn` (Task D1, Co-op Foundation)
+      is functional-only right now: default `Button`/`Label`/`CheckButton` controls, no
+      theme/art pass. Needs a visual pass (matches HUD's "command bar" language, uses the
+      existing character portraits/colors from §4.5) once co-op networking stabilizes.
 
 ## 6. Change log
 - 2026-07-01 — Created. Captured map design language (floor-first density, non-blocking,
@@ -354,3 +358,23 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   enemy-vs-enemy jostling. **Map-authoring note:** any new map's collidable props must be wrapped
   in `Obstacle3D` and have their footprints fed to the navmesh bake, or enemies will path straight
   through them. Suite 1129/1129.
+- 2026-07-01 — CO-OP transformation kicked off. Decided to transform the game's systems toward
+  Riot's *Swarm / Operation: Anima Squad* bullet-heaven while keeping our friends roster/art
+  (IP-safe). Decomposed into 9 slices; designing **Slice #1 (Co-op Foundation)** first: 1–4
+  player Steam P2P co-op, host-authoritative world / client-owned avatar, team XP & gold,
+  synced level-up, downed/revival. **UI additions from this slice:** a networked **lobby /
+  character-select** screen (reuses the existing `character_select` UI + a per-player ready
+  flag) and **portrait ready-bubbles** during the synced level-up pause. Full HUD overhaul for
+  Swarm (Augments/Passives/Weapons panels, scoreboard, boss bar) remains Slice #9. Design:
+  `2026-07-01-coop-foundation-design.md`.
+- 2026-07-01 — Task D1 (Co-op Foundation M2) shipped the networked lobby screen described
+  above: `ui/lobby_3d.tscn`/`.gd` (Host/Join/fighter-grid-from-`CHARACTER_PATHS`/player
+  list/Ready/Start/Solo) behind a new persistent `game/session_root.tscn` (`run/main_scene`),
+  which swaps the lobby child for the arena via an authority/call_local RPC instead of
+  `change_scene_to_file` (keeps the tree/RPCs alive across the transition). **This is plumbing
+  only — no visual/theme pass yet**, tracked in §5 roadmap. Suite 1164/1164.
+- 2026-07-01 — Task C2 (Co-op Foundation) wired the Steam transport, adding two controls to the
+  lobby screen (`ui/lobby_3d`): **"Host (Steam)"** (creates a friends-only Steam lobby) and
+  **"Invite Friend"** (opens the Steam overlay invite; enabled once the lobby is live). Joining is
+  driven by accepting a Steam overlay invite — no manual join/ID entry. Still plumbing only, no
+  theme pass; the full lobby/HUD visual pass stays Slice #9. Suite 1189/1189.

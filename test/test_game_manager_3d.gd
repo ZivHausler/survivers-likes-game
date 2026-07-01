@@ -5,14 +5,22 @@ extends GutTest
 ## Uses real Player3D + stub Spawner3D to keep tests focused and fast.
 
 # ---------------------------------------------------------------------------
-# Stub spawner — accepts setup() call without loading/spawning enemies.
+# Stub spawner — accepts setup_party() (Task D2 party targeting) without
+# loading/spawning enemies. Keeps setup() too for any legacy single-target callers.
 # ---------------------------------------------------------------------------
 class StubSpawner3D extends Node3D:
 	var setup_called: bool = false
-	var setup_target = null
+	var setup_target = null        # first target (back-compat convenience)
+	var setup_targets: Array = []  # full party list passed to setup_party()
 	func setup(target: Node3D) -> void:
+		setup_party([target])
+	func setup_party(targets: Array) -> void:
 		setup_called = true
-		setup_target = target
+		setup_targets = targets
+		setup_target = targets[0] if not targets.is_empty() else null
+
+# Default single-player fighter used by the run-scene fixtures (RunState.party).
+const RUN_FIGHTER_PATH := "res://characters/ziv_3d.tres"
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -22,23 +30,44 @@ var Player3DScene = null
 func before_all() -> void:
 	Player3DScene = load("res://player/player_3d.tscn")
 
-# Build a minimal scene root with Player3D + StubSpawner3D + GameManager3D.
+func after_each() -> void:
+	# RunState is an autoload that persists across tests — clear party so a spawn
+	# fixture never leaks into unrelated tests.
+	RunState.party = {}
+
+# The runtime-spawned local player lives under Players as "Player_<pid>".
+# Solo fixtures spawn exactly one (pid 1); return it for assertions.
+func _spawned_player(root: Node3D) -> Player3D:
+	var players := root.get_node("Players")
+	return players.get_child(0) as Player3D
+
+# Build a minimal scene root with the D2 runtime-spawn rig: a Players container,
+# a PlayerSpawner (MultiplayerSpawner targeting Players), a StubSpawner3D, and
+# GameManager3D. RunState.party seeds one solo player. GameManager3D.start()
+# spawns it directly (no multiplayer peer → solo branch).
 # Returns the root node (add_child_autofree so it's cleaned up after each test).
 func _make_run_scene() -> Node3D:
 	var root := Node3D.new()
 	add_child_autofree(root)
 
-	var player: Player3D = Player3DScene.instantiate() as Player3D
-	player.name = "Player"
-	root.add_child(player)
+	var players := Node3D.new()
+	players.name = "Players"
+	root.add_child(players)
+
+	var pspawner := MultiplayerSpawner.new()
+	pspawner.name = "PlayerSpawner"
+	pspawner.spawn_path = NodePath("../Players")
+	root.add_child(pspawner)
 
 	var spawner := StubSpawner3D.new()
 	spawner.name = "Spawner3D"
 	root.add_child(spawner)
 
+	RunState.party = {1: RUN_FIGHTER_PATH}
+
 	var manager := GameManager3D.new()
 	manager.name = "GameManager3D"
-	root.add_child(manager)  # triggers _ready() → start()
+	root.add_child(manager)  # triggers _ready() → start() → _spawn_party()
 	return root
 
 # ---------------------------------------------------------------------------
@@ -47,13 +76,13 @@ func _make_run_scene() -> Node3D:
 
 func test_player_has_weapon_after_start() -> void:
 	var root := _make_run_scene()
-	var player := root.get_node("Player") as Player3D
+	var player := _spawned_player(root)
 	assert_not_null(player.weapon,
 			"Player3D should have a weapon assigned after GameManager3D.start()")
 
 func test_weapon_is_node3d() -> void:
 	var root := _make_run_scene()
-	var player := root.get_node("Player") as Player3D
+	var player := _spawned_player(root)
 	if player.weapon == null:
 		fail_test("weapon is null — cannot check type")
 		return
@@ -67,7 +96,7 @@ func test_weapon_is_node3d() -> void:
 func test_spawner_setup_called_with_player() -> void:
 	var root := _make_run_scene()
 	var spawner := root.get_node("Spawner3D") as StubSpawner3D
-	var player  := root.get_node("Player")  as Player3D
+	var player  := _spawned_player(root)
 	assert_true(spawner.setup_called,
 			"spawner.setup() should be called during GameManager3D.start()")
 	assert_eq(spawner.setup_target, player,
@@ -122,14 +151,14 @@ func test_two_kills_spawn_two_gems() -> void:
 
 func test_player_pickup_range_is_world_scaled() -> void:
 	var root := _make_run_scene()
-	var player := root.get_node("Player") as Player3D
+	var player := _spawned_player(root)
 	# pickup_range = 5.0 (80 px / 16)
 	assert_almost_eq(player.get_pickup_range(), 5.0, 0.001,
 			"pickup_range should be 5.0 (80 px / 16) after world-scale setup")
 
 func test_player_move_speed_is_world_scaled() -> void:
 	var root := _make_run_scene()
-	var player := root.get_node("Player") as Player3D
+	var player := _spawned_player(root)
 	# move_speed = 7.5 (120 px / 16)
 	assert_almost_eq(player.stats.move_speed, 7.5, 0.001,
 			"move_speed should be 7.5 (120 px / 16) after world-scale setup")
@@ -189,7 +218,7 @@ func _make_upgrade_system_3d() -> UpgradeSystem:
 func test_3d_apply_upgrade_signature_calls_level_up() -> void:
 	var root := _make_run_scene()
 	var manager := root.get_node("GameManager3D") as GameManager3D
-	var player  := root.get_node("Player") as Player3D
+	var player  := _spawned_player(root)
 	var stub := StubWeapon3D.new()
 	add_child_autofree(stub)
 	player.weapon = stub
@@ -203,7 +232,7 @@ func test_3d_apply_upgrade_signature_calls_level_up() -> void:
 func test_3d_apply_upgrade_evolution_calls_evolve() -> void:
 	var root := _make_run_scene()
 	var manager := root.get_node("GameManager3D") as GameManager3D
-	var player  := root.get_node("Player") as Player3D
+	var player  := _spawned_player(root)
 	var stub := StubWeapon3D.new()
 	add_child_autofree(stub)
 	player.weapon = stub
@@ -217,7 +246,7 @@ func test_3d_apply_upgrade_evolution_calls_evolve() -> void:
 func test_3d_apply_upgrade_passive_calls_apply_passive_with_value() -> void:
 	var root := _make_run_scene()
 	var manager := root.get_node("GameManager3D") as GameManager3D
-	var player  := root.get_node("Player") as Player3D
+	var player  := _spawned_player(root)
 	var stub := StubWeapon3D.new()
 	add_child_autofree(stub)
 	player.weapon = stub
@@ -232,7 +261,7 @@ func test_3d_apply_upgrade_passive_calls_apply_passive_with_value() -> void:
 func test_3d_apply_upgrade_generic_calls_apply_stat_upgrade() -> void:
 	var root    := _make_run_scene()
 	var manager := root.get_node("GameManager3D") as GameManager3D
-	var player  := root.get_node("Player") as Player3D
+	var player  := _spawned_player(root)
 	var orig    := player.stats.move_speed
 
 	var u := _make_upgrade_3d(Upgrade.Kind.GENERIC, &"move_speed", 2.0)
@@ -248,7 +277,7 @@ func test_3d_apply_upgrade_generic_calls_apply_stat_upgrade() -> void:
 func test_3d_stacked_levelups_resolve_in_sequence_and_unpause() -> void:
 	var root    := _make_run_scene()
 	var manager := root.get_node("GameManager3D") as GameManager3D
-	var player  := root.get_node("Player") as Player3D
+	var player  := _spawned_player(root)
 
 	var ui: StubUpgradeUI3D = StubUpgradeUI3D.new()
 	add_child_autofree(ui)
@@ -287,7 +316,7 @@ func test_3d_stacked_levelups_resolve_in_sequence_and_unpause() -> void:
 func test_3d_softlock_guard_grants_bonus_when_all_maxed() -> void:
 	var root    := _make_run_scene()
 	var manager := root.get_node("GameManager3D") as GameManager3D
-	var player  := root.get_node("Player") as Player3D
+	var player  := _spawned_player(root)
 
 	var ui := StubUpgradeUI3D.new()
 	add_child_autofree(ui)
@@ -474,7 +503,7 @@ func test_skill_system_has_available_choices_at_start() -> void:
 
 func test_signature_acquired_in_player_weapons_at_start() -> void:
 	var root   := _make_run_scene()
-	var player := root.get_node("Player") as Player3D
+	var player := _spawned_player(root)
 	assert_true(player.has_skill(&"ziv_mirror_shards"),
 		"Player must have ziv_mirror_shards (signature) weapon in weapons dict after GameManager start()")
 
@@ -710,9 +739,14 @@ func _make_run_scene_with_camera() -> Node3D:
 	var root := Node3D.new()
 	add_child_autofree(root)
 
-	var player: Player3D = Player3DScene.instantiate() as Player3D
-	player.name = "Player"
-	root.add_child(player)
+	var players := Node3D.new()
+	players.name = "Players"
+	root.add_child(players)
+
+	var pspawner := MultiplayerSpawner.new()
+	pspawner.name = "PlayerSpawner"
+	pspawner.spawn_path = NodePath("../Players")
+	root.add_child(pspawner)
 
 	var spawner := StubSpawner3D.new()
 	spawner.name = "Spawner3D"
@@ -722,9 +756,11 @@ func _make_run_scene_with_camera() -> Node3D:
 	cam.name = "GameCamera3D"
 	root.add_child(cam)
 
+	RunState.party = {1: RUN_FIGHTER_PATH}
+
 	var manager := GameManager3D.new()
 	manager.name = "GameManager3D"
-	root.add_child(manager)  # triggers _ready() → start()
+	root.add_child(manager)  # triggers _ready() → start() → _spawn_party()
 	return root
 
 func test_camera_target_is_non_null_after_start() -> void:
@@ -736,7 +772,7 @@ func test_camera_target_is_non_null_after_start() -> void:
 func test_camera_target_is_the_player() -> void:
 	var root   := _make_run_scene_with_camera()
 	var cam    := root.get_node("GameCamera3D") as GameCamera3D
-	var player := root.get_node("Player") as Player3D
+	var player := _spawned_player(root)
 	assert_eq(cam.target, player,
 		"GameCamera3D.target must be the Player3D node assigned by GameManager3D")
 
@@ -752,3 +788,84 @@ func test_camera_y_leaves_origin_after_physics_step() -> void:
 		"Camera global_position.y must reach the orbit height above the target after first physics step, not stay at origin")
 	assert_true(cam.global_position.y > cam.target.global_position.y + 1.0,
 		"Camera must sit above the target, not at origin")
+
+# ---------------------------------------------------------------------------
+# Party runtime spawning (Task D2) — solo branch spawns one player per party entry
+# ---------------------------------------------------------------------------
+
+## Build the D2 runtime-spawn rig WITHOUT seeding the party, so the caller can set
+## RunState.party first. Mirrors _make_run_scene minus the party seed + manager.
+func _make_party_rig() -> Node3D:
+	var root := Node3D.new()
+	add_child_autofree(root)
+	var players := Node3D.new()
+	players.name = "Players"
+	root.add_child(players)
+	var pspawner := MultiplayerSpawner.new()
+	pspawner.name = "PlayerSpawner"
+	pspawner.spawn_path = NodePath("../Players")
+	root.add_child(pspawner)
+	var spawner := StubSpawner3D.new()
+	spawner.name = "Spawner3D"
+	root.add_child(spawner)
+	return root
+
+func test_two_member_party_spawns_two_players() -> void:
+	var root := _make_party_rig()
+	# No multiplayer peer → GameManager3D takes the solo branch and spawns BOTH directly.
+	RunState.party = {
+		1: "res://characters/ziv_3d.tres",
+		2: "res://characters/avihay_3d.tres",
+	}
+	var manager := GameManager3D.new()
+	manager.name = "GameManager3D"
+	root.add_child(manager)  # _ready → start → _spawn_party spawns both players
+
+	var players := root.get_node("Players")
+	assert_eq(players.get_child_count(), 2,
+		"Two party entries must spawn exactly two Player3D nodes under Players")
+
+	var p1 := players.get_node_or_null("Player_1") as Player3D
+	var p2 := players.get_node_or_null("Player_2") as Player3D
+	assert_not_null(p1, "Player_1 must exist for peer id 1")
+	assert_not_null(p2, "Player_2 must exist for peer id 2")
+	if p1 == null or p2 == null:
+		return
+	assert_eq(p1.peer_id, 1, "Player_1.peer_id must be 1")
+	assert_eq(p2.peer_id, 2, "Player_2.peer_id must be 2")
+	assert_true(p1.position.distance_to(p2.position) > 0.1,
+		"Party members must spawn at distinct positions (ring, not stacked)")
+	# Both must be fully set up (post-tree setup ran → stats present).
+	assert_not_null(p1.stats, "Player_1 must be set up with stats")
+	assert_not_null(p2.stats, "Player_2 must be set up with stats")
+
+# ---------------------------------------------------------------------------
+# Enemy snapshot broadcast — solo no-op (Task E1, M3)
+# ---------------------------------------------------------------------------
+
+## In solo (no connected peers) the host broadcast path must send nothing and mutate no
+## state. Calling it directly must early-return cleanly without advancing the tick.
+func test_broadcast_enemy_snapshot_no_peers_is_noop() -> void:
+	var root := _make_run_scene()
+	var manager := root.get_node("GameManager3D") as GameManager3D
+	var tick_before := manager._snap_tick
+	manager._broadcast_enemy_snapshot()  # no peers → early return, no crash
+	assert_eq(manager._snap_tick, tick_before,
+			"no-peers broadcast must not advance the snapshot tick (clean no-op)")
+
+func test_tick_gap_handles_u16_wraparound() -> void:
+	assert_eq(GameManager3D._tick_gap(5, 3), 2, "forward gap is a simple difference")
+	assert_eq(GameManager3D._tick_gap(1, 65535), 2,
+			"gap must wrap across the u16 boundary (65535 → 0 → 1 == 2 ticks)")
+
+func test_manager_tracks_full_party_in_players_list() -> void:
+	var root := _make_party_rig()
+	RunState.party = {
+		1: "res://characters/ziv_3d.tres",
+		2: "res://characters/avihay_3d.tres",
+	}
+	var manager := GameManager3D.new()
+	manager.name = "GameManager3D"
+	root.add_child(manager)
+	assert_eq(manager._players.size(), 2,
+		"GameManager3D._players must hold both spawned party members")

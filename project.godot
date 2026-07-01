@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Friends Swarm"
-run/main_scene="res://ui/character_select_3d.tscn"
+run/main_scene="res://game/session_root.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
 [autoload]
@@ -22,6 +22,7 @@ Juice3D="*res://autoload/juice_3d.gd"
 SkillVFX="*res://autoload/skill_vfx.gd"
 VisualPalette="*res://core/visual_palette.gd"
 Stylize="*res://vfx/stylize.gd"
+NetworkManager="*res://net/network_manager.gd"
 
 [display]
 

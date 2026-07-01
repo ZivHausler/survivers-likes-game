@@ -244,3 +244,19 @@ func test_spawn_big_boss_tags_enemy_as_big_and_emits() -> void:
 	assert_not_null(boss, "a big-boss enemy must be spawned")
 	assert_eq(boss.boss_kind, Enemy3D.BossKind.BIG, "big-boss tagged BIG")
 	assert_signal_emitted(GameEvents, "boss_spawned")
+
+# ── net_id assignment (Task E1) ───────────────────────────────────────────────
+
+func test_net_id_increments_monotonically_per_spawn() -> void:
+	var spawner := _make_active_spawner()
+	var data := load("res://enemies/swarmer.tres") as EnemyData
+	var e1 := spawner._instance_enemy(Spawner3D.scale_enemy_data(data, 1.0), 1.0)
+	var e2 := spawner._instance_enemy(Spawner3D.scale_enemy_data(data, 1.0), 1.0)
+	var e3 := spawner._instance_enemy(Spawner3D.scale_enemy_data(data, 1.0), 1.0)
+	assert_not_null(e1, "first enemy spawned")
+	assert_not_null(e2, "second enemy spawned")
+	assert_not_null(e3, "third enemy spawned")
+	assert_eq(e2.net_id, e1.net_id + 1, "net_id must increment by 1 per spawn")
+	assert_eq(e3.net_id, e2.net_id + 1, "net_id must increment monotonically")
+	assert_true(e1.net_id != e2.net_id and e2.net_id != e3.net_id,
+			"net_ids must be unique across spawns")
