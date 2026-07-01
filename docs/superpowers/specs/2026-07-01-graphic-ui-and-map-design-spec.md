@@ -246,3 +246,15 @@ native 3440×1440 (top-full / bottom-full presets, not 1080p pixel positions).
   HUD → ≥85/100, then replicate). See `2026-07-01-art-directed-arena-overhaul-design.md` and the
   new screenshot self-iteration process at `docs/notes/visual-qa-loop.md`. This supersedes the
   blob-map approach in §1.2/§3.4.
+- 2026-07-01 — Garden vertical slice SHIPPED to QA ≥85 (scored 87/100). Data-driven modular
+  floor (`arena/floor/`: `ZoneGrid`→`Autotile`→`TileVariants`→`FloorBuilder`) + clustered
+  props (`GardenScatter`) driven by `arena/maps/garden_map.gd` (24×24 ASCII recipe). Five
+  **stylized (not photoreal) SDXL floor textures** — grass / stone_plaza / stone_path /
+  dirt_path / flowerbed — generated via `artkit/generation/gen_garden_batch.py` (DreamShaper
+  XL + circular-padding seamless tiling), imported with mipmaps and sampled with anisotropic
+  filtering for the angled MOBA cam. Central flagstone combat plaza with a faint cyan
+  "garden-seal" `plaza_medallion` decal as the focal point; cross of cobble paths to
+  pond / flowerbeds / hero-tree landmark. Procedural RGBA decals (`art/decals/`:
+  contact_shadow, plaza_medallion, path_wear, leaves, moss, crack) — props grounded with
+  contact shadows. Fresh visual-only HUD (`ui/hud.*`). Suite 1103/1103. Remaining polish
+  (non-blocking): plaza prop density, dirt/stone path contrast, grass tiling repetition.
