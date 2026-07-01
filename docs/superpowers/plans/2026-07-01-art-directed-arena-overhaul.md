@@ -828,8 +828,10 @@ func _build() -> Node3D:
 	add_child_autofree(root)
 	var fb := FloorBuilder.new()
 	fb.recipe_path = "res://arena/maps/garden_map.gd"
-	root.add_child(fb)
+	# Do NOT add fb to root — that fires fb._ready(), which builds a SECOND GardenFloor via
+	# call_deferred that never lands under -gexit, orphaning ~500 GPU nodes. Build synchronously.
 	fb.build_into(root)  # synchronous path for tests
+	fb.free()
 	return root
 
 func _count_non_floor_cells() -> int:
@@ -896,17 +898,17 @@ func _ready() -> void:
 		return
 	var root := Node3D.new()
 	root.name = "GardenFloor"
-	build_into_root(root)
+	_build_into_root(root)
 	parent.add_child.call_deferred(root)
 
 ## Test/҂direct entry: build the floor under `parent` synchronously.
 func build_into(parent: Node3D) -> void:
 	var root := Node3D.new()
 	root.name = "GardenFloor"
-	build_into_root(root)
+	_build_into_root(root)
 	parent.add_child(root)
 
-func build_into_root(root: Node3D) -> void:
+func _build_into_root(root: Node3D) -> void:
 	var recipe: Dictionary = load(recipe_path).RECIPE
 	var grid := ZoneGrid.new(recipe["rows"], recipe["legend"], recipe["cell_size"])
 	var zones: Dictionary = recipe["zones"]
@@ -972,7 +974,7 @@ func _material_for(zone: StringName, variant: int, zdef: Dictionary) -> Standard
 ```
 
 > Fix the placeholder identifier in the comment above (`into_root`) — no non-ASCII; the method is
-> `build_into_root`. (Ensure the file contains only ASCII identifiers.)
+> `_build_into_root`. (Ensure the file contains only ASCII identifiers.)
 
 - [ ] **Step 4: Run the test — verify it passes**
 
@@ -1028,7 +1030,7 @@ Run: `... -gtest=res://test/test_floor_builder.gd -gexit`. Expected: the two new
 - [ ] **Step 3: Implement transitions in `floor_builder.gd`**
 
 Add a trim material + strip mesh, and lay strips during the cell loop. Insert the trim call inside
-`build_into_root`'s inner loop right after `base_tiles.add_child(mi, true)`:
+`_build_into_root`'s inner loop right after `base_tiles.add_child(mi, true)`:
 
 ```gdscript
 			_lay_trims(trims, grid, recipe["priority"], x, y, wc, cs)
@@ -1137,7 +1139,7 @@ Run: `... -gtest=res://test/test_floor_builder.gd -gexit`. Expected: the two new
 
 - [ ] **Step 3: Implement decals + pond in `floor_builder.gd`**
 
-At the end of `build_into_root`, after the cell loop, add:
+At the end of `_build_into_root`, after the cell loop, add:
 
 ```gdscript
 	_build_decals(decals, recipe.get("decals", []))
@@ -1992,7 +1994,7 @@ git commit -m "feat(arena/hud): iterate Garden slice to >=85/100 on the visual Q
 
 **Type consistency:** `ZoneGrid.zone_at`/`cell_center_world`, `Autotile.resolve → {piece, rotation}`,
 `TileVariants.variant_for`, `PropLayout.resolve → {key,pos,collide,scale,role}`,
-`FloorBuilder.build_into`/`build_into_root`, `GardenScatter.build_props`, and the HUD pure API
+`FloorBuilder.build_into`/`_build_into_root`, `GardenScatter.build_props`, and the HUD pure API
 (`collect_cooldowns`/`collect_passives`/`_find_siblings`) are used identically across tasks.
 
 **Known follow-ups (out of this slice):** finer 4-unit cells if 8-unit seams read blocky; per-variant
