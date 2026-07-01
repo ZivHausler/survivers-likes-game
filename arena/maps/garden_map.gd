@@ -49,10 +49,14 @@ static var RECIPE := {
 		# flat navmesh, so any raised walkable zone visually swallows them. Height/relief comes
 		# from normals, non-walkable edge curbs, and props — never from raising the combat floor.
 		# Tiny per-zone offsets are for draw order only.
+		# grass/flowerbed textures are already saturated + high-contrast — keep albedo ~white so
+		# they show true. The stone textures are high-key/pale; tint them toward the reference's
+		# MID grey (LoL Swarm / Battlerite plazas are mid-value, not near-white) so the floor
+		# stops reading washed and the emissive centerpiece/props gain contrast to pop against.
 		&"grass":       { "color": Color(0.96, 0.98, 0.96), "tex": "res://art/textures/garden_grass.png", "variants": 3, "y": 0.02, "emissive": false },
-		&"stone_plaza": { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_plaza.png", "variants": 1, "y": 0.08, "emissive": false },
-		&"stone_path":  { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_stone_path.png", "variants": 3, "y": 0.05, "emissive": false },
-		&"dirt_path":   { "color": Color(0.98, 0.98, 0.98), "tex": "res://art/textures/garden_dirt_path.png", "variants": 2, "y": 0.02, "emissive": false },
+		&"stone_plaza": { "color": Color(0.64, 0.66, 0.70), "tex": "res://art/textures/garden_stone_plaza.png", "variants": 1, "y": 0.08, "emissive": false },
+		&"stone_path":  { "color": Color(0.70, 0.71, 0.73), "tex": "res://art/textures/garden_stone_path.png", "variants": 3, "y": 0.05, "emissive": false },
+		&"dirt_path":   { "color": Color(0.74, 0.67, 0.55), "tex": "res://art/textures/garden_dirt_path.png", "variants": 2, "y": 0.02, "emissive": false },
 		&"flowerbed":   { "color": Color(1.0, 1.0, 1.0), "tex": "res://art/textures/garden_flowerbed.png", "variants": 2, "y": 0.02, "emissive": false },
 	},
 	# Pond inset (world coords). Aligned with the '~' cells (upper-right).
